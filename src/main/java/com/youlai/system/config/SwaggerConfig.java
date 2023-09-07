@@ -52,7 +52,7 @@ public class SwaggerConfig {
     @Bean
     public GroupedOpenApi systemApi() {
         String[] paths = {"/**"};
-        String[] packagesToScan = {"com.youlai.system.controller"};
+        String[] packagesToScan = {"com.youlai.system.controller","com.youlai.system.nginx"};
         return GroupedOpenApi.builder()
                 .group("系统接口")
                 .packagesToScan(packagesToScan)

@@ -10,8 +10,8 @@ spring:
   datasource:
     type: com.alibaba.druid.pool.DruidDataSource
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://www.youlai.tech:3306/youlai_boot?zeroDateTimeBehavior=convertToNull&useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&autoReconnect=true&allowMultiQueries=true
-    username: youlai
+    url: jdbc:mysql://127.0.0.1:3306/youlai_boot?zeroDateTimeBehavior=convertToNull&useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&autoReconnect=true&allowMultiQueries=true
+    username: root
     password: 123456
   data:
     redis:
@@ -53,7 +53,7 @@ auth:
   token:
     secret_key: SecretKey012345678901234567890123456789012345678901234567890123456789
     # token 有效期(单位:秒)
-    ttl: 18000
+    ttl: 18000000
 
 oss:
   # OSS 类型 (目前支持aliyun、minio)

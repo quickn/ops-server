@@ -216,6 +216,34 @@
             <artifactId>spring-boot-starter-websocket</artifactId>
         </dependency>
 
+
+        <dependency>
+            <groupId>com.github.oshi</groupId>
+            <artifactId>oshi-core</artifactId>
+            <version>4.0.0</version>
+        </dependency>
+
+        <!--nginx 语法解析 -->
+        <dependency>
+            <groupId>org.antlr</groupId>
+            <artifactId>antlr4-runtime</artifactId>
+            <version>4.7</version>
+        </dependency>
+
+        <dependency>
+            <!-- 这个库的版本比较乱，慎重升级，后期将会使用新的自写类库(https://github.com/onlyGuo/nginx-conf-analysis) -->
+            <!--https://github.com/odiszapc/nginx-java-parser.git-->
+            <groupId>com.github.odiszapc</groupId>
+            <artifactId>nginxparser</artifactId>
+            <version>0.9.3</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.antlr</groupId>
+                    <artifactId>antlr4-runtime</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
     </dependencies>
 
     <build>
