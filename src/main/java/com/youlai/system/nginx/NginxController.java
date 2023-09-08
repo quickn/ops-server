@@ -55,18 +55,6 @@ public class NginxController {
         return Result.success();
     }
 
-    /**
-     * 获取当前最新配置信息(刷新操作)
-     *
-     * @return
-     */
-    @RequestMapping("conf/refresh")
-    @ResponseBody
-    public Result refresh(@RequestBody NginxConf nginxConf) {
-        NginxUtils.toString(NginxUtils.read(nginxConf.getFilePath()));
-        return Result.success();
-    }
-
     @PutMapping("/save")
     @ResponseBody
     public Result save(@RequestBody NginxConf conf) {
@@ -85,6 +73,20 @@ public class NginxController {
             NginxUtils.save(backConf, conf.getFilePath());
             throw new ValidationException("已取消保存操作:" + e.getMessage(), e);
         }
+        return Result.success();
+    }
+
+    @PostMapping("/addConfig")
+    @ResponseBody
+    public Result addConfig(@RequestBody NginxFile nginxFile) {
+        nginxFileService.save(nginxFile);
+        return Result.success();
+    }
+
+    @DeleteMapping("/delete/{ids}")
+    @ResponseBody
+    public Result delete(@PathVariable Integer ids) {
+        nginxFileService.removeById(ids);
         return Result.success();
     }
 }
