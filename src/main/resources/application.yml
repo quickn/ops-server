@@ -3,3 +3,15 @@ spring:
     name: youlai-boot
   profiles:
     active: dev
+
+base:
+  #登陆账号admin的密码
+  admindPwd: 111111
+  #通信token，agent端和此保持一致
+  wgToken: wgcloud
+  #是否开启公众看板，yes开启，no关闭，公众看板页面无需登陆
+  dashView: yes
+  #数据表监控间隔,单位毫秒，默认60分钟
+  dbTableTimes: 3600000
+  #服务接口监控间隔，单位毫秒，默认10分钟
+  heathTimes: 300000

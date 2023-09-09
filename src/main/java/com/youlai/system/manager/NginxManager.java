@@ -3,7 +3,7 @@ package com.youlai.system.manager;
 import com.youlai.system.common.exception.NginxServiceManagerException;
 import com.youlai.system.common.nginx.CMDUtil;
 import com.youlai.system.common.nginx.CommonFields;
-import com.youlai.system.config.Configer;
+import com.youlai.nginx.Configer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
