@@ -1,0 +1,21 @@
+package com.youlai.msg;
+
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+/**
+ * Created by Liuyun on 2023-09-11 14:56
+ **/
+@Service
+@Slf4j
+public class MailServiceImpl extends ServiceImpl<MailSetMapper, MailSet> implements MailService {
+
+    @Override
+    public MailSet getByServiceId(Integer serviceId) {
+        MailSet mailSet = this.baseMapper.selectOne(Wrappers.<MailSet>lambdaQuery()
+                .eq(MailSet::getServiceId, serviceId));
+        return mailSet;
+    }
+}

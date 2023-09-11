@@ -2,6 +2,7 @@ package com.youlai.log;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.youlai.agent.AgentConfig;
+import com.youlai.msg.MailSet;
 import com.youlai.server.SystemInfo;
 
 /**
@@ -13,4 +14,6 @@ public interface LogInfoService extends IService<LogInfo> {
     void save(String title, String commContent, String logError);
 
     void saveErrorLog(String title, String commContent, SystemInfo systemInfo);
+
+    boolean checkSendEmail(MailSet mailSet, String title);
 }

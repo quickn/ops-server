@@ -1,6 +1,7 @@
 package com.youlai.log;
 
 import com.youlai.base.ServiceBaseEntity;
+import com.youlai.server.StaticKeys;
 import lombok.Data;
 
 /**
@@ -38,4 +39,16 @@ public class LogInfo extends ServiceBaseEntity {
 
     private Boolean sendEmail;
 
+    public LogInfo() {
+
+    }
+
+    public LogInfo(String title, String infoContent, Integer serviceId, String serviceName, boolean sendEmail) {
+        this.title = title;
+        this.infoContent = infoContent;
+        this.state = StaticKeys.LOG_ERROR;
+        this.sendEmail = sendEmail;
+        this.setServiceId(serviceId);
+        this.setServiceName(serviceName);
+    }
 }

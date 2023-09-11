@@ -2,6 +2,7 @@ package com.youlai.server;
 
 import com.youlai.base.ServiceBaseEntity;
 import com.youlai.system.common.base.BaseEntity;
+import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Date;
@@ -14,6 +15,7 @@ import java.util.Date;
  * @Description: 查看内存使用情况
  * @Copyright: 2017-2022 www.wgstart.com. All rights reserved.
  */
+@Data
 public class MemState extends ServiceBaseEntity {
 
 
@@ -53,72 +55,5 @@ public class MemState extends ServiceBaseEntity {
      * yyyy-MM-dd hh:mm:ss
      */
     private String dateStr;
-
-    /**
-     * 创建时间
-     */
-    private Date createTime;
-
-
-    public String getTotal() {
-        return total;
-    }
-
-    public void setTotal(String total) {
-        this.total = total;
-    }
-
-    public String getUsed() {
-        return used;
-    }
-
-    public void setUsed(String used) {
-        this.used = used;
-    }
-
-    public String getFree() {
-        return free;
-    }
-
-    public void setFree(String free) {
-        this.free = free;
-    }
-
-
-    public Date getCreateTime() {
-        return createTime;
-    }
-
-    public void setCreateTime(Date createTime) {
-        this.createTime = createTime;
-    }
-
-    public String getDateStr() {
-        if (!StringUtils.isEmpty(dateStr) && dateStr.length() > 16) {
-            return dateStr.substring(5);
-        }
-        return dateStr;
-    }
-
-    public void setDateStr(String dateStr) {
-        this.dateStr = dateStr;
-    }
-
-    public String getHostname() {
-        return hostname;
-    }
-
-    public void setHostname(String hostname) {
-        this.hostname = hostname;
-    }
-
-    public Double getUsePer() {
-        return usePer;
-    }
-
-    public void setUsePer(Double usePer) {
-        this.usePer = usePer;
-    }
-
 
 }

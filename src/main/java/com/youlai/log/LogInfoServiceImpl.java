@@ -3,6 +3,7 @@ package com.youlai.log;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.youlai.agent.AgentConfig;
 import com.youlai.agent.IAgentConfigService;
+import com.youlai.msg.MailSet;
 import com.youlai.msg.WarnMailUtil;
 import com.youlai.server.StaticKeys;
 import com.youlai.server.SystemInfo;
@@ -12,6 +13,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @Service
@@ -48,6 +51,7 @@ public class LogInfoServiceImpl extends ServiceImpl<LogInfoMapper, LogInfo> impl
         return sendEmail;
     }
 
+
     public boolean saveErrorLog(String title, String infoContent, String emailContent, AgentConfig agentConfig) {
         if (StringUtils.isEmpty(title)) {
             return false;
@@ -75,9 +79,9 @@ public class LogInfoServiceImpl extends ServiceImpl<LogInfoMapper, LogInfo> impl
      * @param end   截止日期
      * @return
      */
-    public static Long differMinute(Date start, Date end) {
+    public static Long differMinute(LocalDateTime start, Date end) {
         if (start != null && end != null) {
-            long differTime = end.getTime() - start.getTime();
+            long differTime = end.getTime() - Timestamp.valueOf(start).getTime();
             Long m = differTime / 1000 / 60;
             if ((differTime / 1000) % 60 > 0) {//不足一分钟算一分钟
                 m += 1;
@@ -100,5 +104,17 @@ public class LogInfoServiceImpl extends ServiceImpl<LogInfoMapper, LogInfo> impl
         this.saveErrorLog(title, infoContent, infoContent, agentConfig);
     }
 
+    @Override
+    public boolean checkSendEmail(MailSet mailSet, String title) {
+        LogInfo temp = logInfoMapper.getLastByServiceIdAndTitle(mailSet.getServiceId(), title);
+        if (temp != null) {
+            long minute = LogInfoServiceImpl.differMinute(temp.getCreateTime(), new Date());
+            //小于1个小时
+            if (minute <= mailSet.getHeathInterval()) {
+                return false;
+            }
+        }
+        return true;
+    }
 
 }

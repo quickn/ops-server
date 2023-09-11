@@ -49,7 +49,7 @@ public class RestUtil {
 
     public int get(String url) {
         try {
-            ResponseEntity<String> responseEntity = restTemplate.getForEntity(url, String.class);
+            ResponseEntity<String> responseEntity = restTemplate.getForEntity(url.trim(), String.class);
             return responseEntity.getStatusCodeValue();
         } catch (HttpClientErrorException e) {
             logger.error("服务接口检测任务错误", e);

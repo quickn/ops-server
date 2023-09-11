@@ -71,11 +71,6 @@ public class SystemInfo extends ServiceBaseEntity {
      */
     private String state;
 
-    /**
-     * 创建时间
-     */
-    private Date createTime;
-
     //磁盘总使用率%
     private Double diskPer;
 

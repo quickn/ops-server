@@ -4,6 +4,7 @@ import cn.hutool.extra.spring.SpringUtil;
 import com.youlai.agent.AgentConfig;
 import com.youlai.base.util.ThreadPoolUtil;
 import com.youlai.heath.HeathMonitor;
+import com.youlai.log.LogInfo;
 import com.youlai.log.LogInfoService;
 import com.youlai.server.*;
 import org.apache.commons.lang3.StringUtils;
@@ -30,6 +31,8 @@ public class WarnMailUtil {
 
     private static LogInfoService logInfoService = SpringUtil.getBean(LogInfoService.class);
     private static MailConfig mailConfig = SpringUtil.getBean(MailConfig.class);
+
+    private static MailService mailService = SpringUtil.getBean(MailService.class);
 
     /**
      * 判断系统内存使用率是否超过98%，超过则发送告警邮件
@@ -96,7 +99,7 @@ public class WarnMailUtil {
             return;
         }
         MailSet mailSet = StaticKeys.mailSet;
-        sendMail(mailSet.getToMail(), agentConfig.getServiceName() + " " + title, commContent);
+        sendMail(mailSet, agentConfig.getServiceName() + " " + title, commContent);
     }
 
 
@@ -108,43 +111,18 @@ public class WarnMailUtil {
      * @return
      */
     public static boolean sendHeathInfo(HeathMonitor heathMonitor, boolean isDown) {
-        if (StaticKeys.mailSet == null) {
-            return false;
-        }
-        MailSet mailSet = StaticKeys.mailSet;
-        if (StaticKeys.NO_SEND_WARN.equals(mailConfig.getAllWarnMail()) || StaticKeys.NO_SEND_WARN.equals(mailConfig.getHeathWarnMail())) {
-            return false;
-        }
-        String key = heathMonitor.getId().toString();
         if (isDown) {
-            if (!StringUtils.isEmpty(WarnPools.MEM_WARN_MAP.get(key))) {
-                return false;
-            }
             try {
-                String title = "服务接口检测告警：" + heathMonitor.getAppName();
-                String commContent = "服务接口：" + heathMonitor.getHeathUrl() + "，响应状态码为" + heathMonitor.getHeathStatus() + "，可能存在异常，请查看";
-                //发送邮件
-                sendMail(mailSet.getToMail(), title, commContent);
-                //标记已发送过告警信息
-                WarnPools.MEM_WARN_MAP.put(key, "1");
+                MailSet mailSet = mailService.getByServiceId(heathMonitor.getServiceId());
+                String commContent = heathMonitor.getAppName() + "接口：" + heathMonitor.getHeathUrl() + "，响应状态码为" + heathMonitor.getHeathStatus() + "，可能存在异常，请查看";
+                boolean isEmail = logInfoService.checkSendEmail(mailSet, "接口预警");
+                if (isEmail) {
+                    WarnMailUtil.sendMail(mailSet, mailSet.getServiceName() + "接口预警", commContent);
+                }
                 //记录发送信息
-                logInfoService.save(title, commContent, StaticKeys.LOG_ERROR);
+                logInfoService.save(new LogInfo("接口预警", commContent, heathMonitor.getServiceId(), heathMonitor.getServiceName(), isEmail));
             } catch (Exception e) {
-                logger.error("发送服务健康检测告警邮件失败：", e);
-                logInfoService.save("发送服务健康检测告警邮件错误", e.toString(), StaticKeys.LOG_ERROR);
-            }
-        } else {
-            WarnPools.MEM_WARN_MAP.remove(key);
-            try {
-                String title = "服务接口恢复正常通知：" + heathMonitor.getAppName();
-                String commContent = "服务接口恢复正常通知：" + heathMonitor.getHeathUrl() + "，响应状态码为" + heathMonitor.getHeathStatus() + "";
-                //发送邮件
-                sendMail(mailSet.getToMail(), title, commContent);
-                //记录发送信息
-                logInfoService.save(title, commContent, StaticKeys.LOG_ERROR);
-            } catch (Exception e) {
-                logger.error("发送服务接口恢复正常通知邮件失败：", e);
-                logInfoService.save("发送服务接口恢复正常通知邮件错误", e.toString(), StaticKeys.LOG_ERROR);
+                logger.error("发送主机下线告警邮件失败：", e);
             }
         }
         return false;
@@ -204,7 +182,7 @@ public class WarnMailUtil {
                 String title = "进程下线告警：" + appInfo.getHostname() + "，" + appInfo.getAppName();
                 String commContent = "进程已经超过10分钟未上报数据，可能已经下线：" + appInfo.getHostname() + "，" + appInfo.getAppName() + "。如果不再监控该进程在列表删除即可，同时不会再收到该进程告警邮件";
                 //发送邮件
-                sendMail(mailSet.getToMail(), title, commContent);
+                sendMail(mailSet, title, commContent);
                 //标记已发送过告警信息
                 WarnPools.MEM_WARN_MAP.put(key, "1");
                 //记录发送信息
@@ -219,7 +197,7 @@ public class WarnMailUtil {
                 String title = "进程恢复上线通知：" + appInfo.getHostname() + "，" + appInfo.getAppName();
                 String commContent = "进程恢复上线通知：" + appInfo.getHostname() + "，" + appInfo.getAppName();
                 //发送邮件
-                sendMail(mailSet.getToMail(), title, commContent);
+                sendMail(mailSet, title, commContent);
                 //记录发送信息
                 logInfoService.save(title, commContent, StaticKeys.LOG_ERROR);
             } catch (Exception e) {
@@ -230,21 +208,21 @@ public class WarnMailUtil {
         return false;
     }
 
-    public static String sendMail(String mails, String mailTitle, String mailContent) {
+    public static String sendMail(MailSet mailSet, String mailTitle, String mailContent) {
         ThreadPoolUtil.getInstance().getNewCachedThreadPool().execute(() -> {
             try {
                 HtmlEmail email = new HtmlEmail();
-                email.setHostName(StaticKeys.mailSet.getSmtpHost());
-                email.setSmtpPort(Integer.valueOf(StaticKeys.mailSet.getSmtpPort()));
-                if ("1".equals(StaticKeys.mailSet.getSmtpSSL())) {
+                email.setHostName(mailSet.getSmtpHost());
+                email.setSmtpPort(Integer.valueOf(mailSet.getSmtpPort()));
+                if ("1".equals(mailSet.getSmtpSsl())) {
                     email.setSSL(true);
                 }
-                email.setAuthenticator(new DefaultAuthenticator(StaticKeys.mailSet.getFromMailName(), StaticKeys.mailSet.getFromPwd()));
-                email.setFrom(StaticKeys.mailSet.getFromMailName());//发信者
+                email.setAuthenticator(new DefaultAuthenticator(mailSet.getFromMailName(), mailSet.getFromPwd()));
+                email.setFrom(mailSet.getFromMailName());//发信者
                 email.setSubject("[百胜智能] " + mailTitle);//标题
                 email.setCharset("UTF-8");//编码格式
                 email.setHtmlMsg(mailContent + content_suffix);//内容
-                email.addTo(mails.split(";"));
+                email.addTo(mailSet.getToMail().split(";"));
                 email.setSentDate(new Date());
                 email.send();//发送
                 //   return "success";

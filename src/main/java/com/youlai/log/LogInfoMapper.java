@@ -12,4 +12,7 @@ import org.apache.ibatis.annotations.Select;
 public interface LogInfoMapper extends BaseQueryMapper<LogInfo, LogInfo> {
     @Select(" select * from log_info where hostname=#{hostname} and title=#{title} and send_email=1 order by id desc limit 1 ")
     LogInfo getLastByHostnameAndTitle(@Param("hostname") String hostname, @Param("title") String title);
+
+    @Select(" select * from log_info where service_id=#{serviceId} and title=#{title} and send_email=1 order by id desc limit 1 ")
+    LogInfo getLastByServiceIdAndTitle(@Param("serviceId") Integer serviceId, @Param("title") String title);
 }

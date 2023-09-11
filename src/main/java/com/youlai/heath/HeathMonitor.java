@@ -2,7 +2,7 @@ package com.youlai.heath;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
-import com.youlai.system.common.base.BaseEntity;
+import com.youlai.base.ServiceBaseEntity;
 import lombok.Data;
 
 /**
@@ -14,15 +14,12 @@ import lombok.Data;
  * @Copyright: 2017-2022 wgcloud. All rights reserved.
  */
 @Data
-public class HeathMonitor extends BaseEntity {
+public class HeathMonitor extends ServiceBaseEntity {
 
     /**
      *
      */
     private static final long serialVersionUID = -2913111613773445949L;
-
-    @TableId(type = IdType.AUTO)
-    private Integer id;
 
     /**
      * 应用服务名称
@@ -39,5 +36,6 @@ public class HeathMonitor extends BaseEntity {
      */
     private String heathStatus;
 
+    // private String requestMethod;
 
 }

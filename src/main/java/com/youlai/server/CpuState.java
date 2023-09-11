@@ -1,10 +1,7 @@
 package com.youlai.server;
 
 import com.youlai.base.ServiceBaseEntity;
-import com.youlai.system.common.base.BaseEntity;
-import org.apache.commons.lang3.StringUtils;
-
-import java.util.Date;
+import lombok.Data;
 
 /**
  * @version V2.3
@@ -14,6 +11,7 @@ import java.util.Date;
  * @Description: 查看CPU使用情况
  * @Copyright: 2017-2022 www.wgstart.com. All rights reserved.
  */
+@Data
 public class CpuState extends ServiceBaseEntity {
 
     /**
@@ -62,88 +60,6 @@ public class CpuState extends ServiceBaseEntity {
      * MM-dd hh:mm:ss
      */
     private String dateStr;
-
-    /**
-     * 创建时间
-     */
-    private Date createTime;
-
-
-    public String getUser() {
-        return user;
-    }
-
-    public void setUser(String user) {
-        this.user = user;
-    }
-
-    public Double getSys() {
-        return sys;
-    }
-
-    public void setSys(Double sys) {
-        this.sys = sys;
-    }
-
-    public Double getIdle() {
-        return idle;
-    }
-
-    public void setIdle(Double idle) {
-        this.idle = idle;
-    }
-
-    public Double getIowait() {
-        return iowait;
-    }
-
-    public void setIowait(Double iowait) {
-        this.iowait = iowait;
-    }
-
-    public String getIrq() {
-        return irq;
-    }
-
-    public void setIrq(String irq) {
-        this.irq = irq;
-    }
-
-    public String getSoft() {
-        return soft;
-    }
-
-    public void setSoft(String soft) {
-        this.soft = soft;
-    }
-
-
-    public Date getCreateTime() {
-        return createTime;
-    }
-
-    public void setCreateTime(Date createTime) {
-        this.createTime = createTime;
-    }
-
-    public String getDateStr() {
-        if (!StringUtils.isEmpty(dateStr) && dateStr.length() > 16) {
-            return dateStr.substring(5);
-        }
-        return dateStr;
-    }
-
-    public void setDateStr(String dateStr) {
-        this.dateStr = dateStr;
-    }
-
-    public String getHostname() {
-        return hostname;
-    }
-
-    public void setHostname(String hostname) {
-        this.hostname = hostname;
-    }
 
 
 }

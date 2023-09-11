@@ -9,4 +9,6 @@ import com.baomidou.mybatisplus.extension.service.IService;
 public interface HeathMonitorService extends IService<HeathMonitor> {
 
     Page<HeathMonitor> queryPage(HeathQueryPage heathQueryPage);
+
+    void heathMonitorTask();
 }

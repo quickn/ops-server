@@ -13,23 +13,6 @@ spring:
     url: jdbc:mysql://192.168.10.10:3307/wgcloud?characterEncoding=utf-8&characterSetResults=utf8&autoReconnect=true&useSSL=false&allowMultiQueries=true
     username: root
     password: bszn@1999
-  data:
-    redis:
-      database: 6
-      host: 47.117.115.107
-      port: 6379
-      password: 123456
-      timeout: 10s
-      lettuce:
-        pool:
-          # 连接池最大连接数 默认8 ，负数表示没有限制
-          max-active: 8
-          # 连接池最大阻塞等待时间（使用负值表示没有限制） 默认-1
-          max-wait: -1
-          # 连接池中的最大空闲连接 默认8
-          max-idle: 8
-          # 连接池中的最小空闲连接 默认0
-          min-idle: 0
 mybatis-plus:
   global-config:
     db-config:
@@ -134,4 +117,4 @@ base:
   #数据表监控间隔,单位毫秒，默认60分钟
   dbTableTimes: 3600000
   #服务接口监控间隔，单位毫秒，默认10分钟
-  heathTimes: 3000
+  heathTimes: 120000

@@ -1,9 +1,7 @@
 package com.youlai.server;
 
 import com.youlai.base.ServiceBaseEntity;
-import com.youlai.system.common.base.BaseEntity;
-
-import java.util.Date;
+import lombok.Data;
 
 /**
  * @version v2.3
@@ -13,6 +11,7 @@ import java.util.Date;
  * @Description: app端口信息
  * @Copyright: 2017-2022 wgcloud. All rights reserved.
  */
+@Data
 public class AppInfo extends ServiceBaseEntity {
 
     /**
@@ -58,75 +57,5 @@ public class AppInfo extends ServiceBaseEntity {
     private String state;
 
 
-    /**
-     * 创建时间
-     */
-    private Date createTime;
 
-
-    public Date getCreateTime() {
-        return createTime;
-    }
-
-    public void setCreateTime(Date createTime) {
-        this.createTime = createTime;
-    }
-
-
-    public String getAppPid() {
-        return appPid;
-    }
-
-    public void setAppPid(String appPid) {
-        this.appPid = appPid;
-    }
-
-
-    public String getHostname() {
-        return hostname;
-    }
-
-    public void setHostname(String hostname) {
-        this.hostname = hostname;
-    }
-
-    public String getAppName() {
-        return appName;
-    }
-
-    public void setAppName(String appName) {
-        this.appName = appName;
-    }
-
-    public Double getMemPer() {
-        return memPer;
-    }
-
-    public void setMemPer(Double memPer) {
-        this.memPer = memPer;
-    }
-
-    public Double getCpuPer() {
-        return cpuPer;
-    }
-
-    public void setCpuPer(Double cpuPer) {
-        this.cpuPer = cpuPer;
-    }
-
-    public String getAppType() {
-        return appType;
-    }
-
-    public void setAppType(String appType) {
-        this.appType = appType;
-    }
-
-    public String getState() {
-        return state;
-    }
-
-    public void setState(String state) {
-        this.state = state;
-    }
 }
