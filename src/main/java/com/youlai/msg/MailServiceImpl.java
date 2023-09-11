@@ -14,8 +14,13 @@ public class MailServiceImpl extends ServiceImpl<MailSetMapper, MailSet> impleme
 
     @Override
     public MailSet getByServiceId(Integer serviceId) {
-        MailSet mailSet = this.baseMapper.selectOne(Wrappers.<MailSet>lambdaQuery()
-                .eq(MailSet::getServiceId, serviceId));
+        MailSet mailSet = this.baseMapper.selectOne(Wrappers.<MailSet>lambdaQuery().eq(MailSet::getServiceId, serviceId));
+        if (mailSet == null) {
+            mailSet = this.baseMapper.selectOne(Wrappers.<MailSet>lambdaQuery().isNull(MailSet::getServiceId));
+        }
+        if (mailSet != null) {
+            mailSet.setServiceId(serviceId);
+        }
         return mailSet;
     }
 }

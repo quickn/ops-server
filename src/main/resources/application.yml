@@ -1,6 +1,6 @@
 spring:
   application:
-    name: youlai-boot
+    name: bs-monitor
   profiles:
     active: dev
   data:

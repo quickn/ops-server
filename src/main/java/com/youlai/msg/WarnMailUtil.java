@@ -117,7 +117,7 @@ public class WarnMailUtil {
                 String commContent = heathMonitor.getAppName() + "接口：" + heathMonitor.getHeathUrl() + "，响应状态码为" + heathMonitor.getHeathStatus() + "，可能存在异常，请查看";
                 boolean isEmail = logInfoService.checkSendEmail(mailSet, "接口预警");
                 if (isEmail) {
-                    WarnMailUtil.sendMail(mailSet, mailSet.getServiceName() + "接口预警", commContent);
+                    WarnMailUtil.sendMail(mailSet, heathMonitor.getServiceName() + "接口预警", commContent);
                 }
                 //记录发送信息
                 logInfoService.save(new LogInfo("接口预警", commContent, heathMonitor.getServiceId(), heathMonitor.getServiceName(), isEmail));

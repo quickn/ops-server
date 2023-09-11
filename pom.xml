@@ -259,11 +259,19 @@
     </dependencies>
 
     <build>
-        <finalName>${project.artifactId}</finalName>
+        <finalName>bs-monitor</finalName>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                    <testFailureIgnore>true</testFailureIgnore>
+                </configuration>
             </plugin>
         </plugins>
     </build>

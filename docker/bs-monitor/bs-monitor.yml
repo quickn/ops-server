@@ -1,0 +1,40 @@
+version: '3'
+services:
+  bs-monitor:
+    build:
+      context: ${contextPath}/docker/${bsMonitor}/
+      dockerfile: ./Dockerfile
+      args:
+        contextPath: ${contextPath}
+        profileActive: ${profileActive}
+    ports:
+      - 8989:8989
+    extra_hosts:
+      bs-nacos: ${bsNacos}
+      bs-mysql: ${bsMysql}
+      bs-redis: ${bsRedis}
+      bs-mongodb: ${bsMongodb}
+      bs-rabbitmq: ${bsRabbitmq}
+    container_name: ${bsMonitor}
+    network_mode: "host"
+    hostname: ${bsMonitor}
+    image: ${bsMonitor}
+    restart: always
+    volumes:
+      - ${logPath}/${bsMonitor}:${logPath}
+      - ${contextPath}/docker/config:${contextPath}/config
+      - /etc/timezone:/etc/timezone
+      - /etc/localtime:/etc/localtime
+    logging:
+      driver: json-file
+      options:
+        max-size: "1024m"
+        max-file: "5"
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 200M

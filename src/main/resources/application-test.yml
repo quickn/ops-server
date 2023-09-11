@@ -105,5 +105,7 @@ system:
     xxl-job-enabled: false
     # WebSocket 开关
     websocket-enabled: true
+
 base:
+  #服务接口监控间隔，单位毫秒，默认10分钟
   heathTimes: 120000
