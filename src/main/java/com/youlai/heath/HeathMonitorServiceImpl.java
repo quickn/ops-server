@@ -53,13 +53,20 @@ public class HeathMonitorServiceImpl extends ServiceImpl<HeathMonitorMapper, Hea
             for (HeathMonitor h : heathMonitorAllList) {
                 HeathMonitor updateTemp = new HeathMonitor();
                 updateTemp.setId(h.getId());
+                Long currTime = System.currentTimeMillis();
                 int status = restUtil.get(h.getHeathUrl());
                 updateTemp.setHeathStatus(status + "");
                 heathMonitors.add(updateTemp);
+                String logTitle = "接口状态异常";
+                Long cha = 0L;
                 if ("200".equals(updateTemp.getHeathStatus())) {
-                    continue;
+                    cha = currTime - System.currentTimeMillis();
+                    if (cha <= 3000) {
+                        continue;
+                    }
+                    logTitle = "接口请求超时";
                 }
-                WarnMailUtil.sendHeathInfo(h, true);
+                WarnMailUtil.sendHeathInfo(h, logTitle, true, cha);
             }
             if (heathMonitors.size() == 0) {
                 return;

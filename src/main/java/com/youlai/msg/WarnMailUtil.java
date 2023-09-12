@@ -110,17 +110,18 @@ public class WarnMailUtil {
      * @param isDown
      * @return
      */
-    public static boolean sendHeathInfo(HeathMonitor heathMonitor, boolean isDown) {
+    public static boolean sendHeathInfo(HeathMonitor heathMonitor, String logTitle, boolean isDown, Long time) {
         if (isDown) {
             try {
                 MailSet mailSet = mailService.getByServiceId(heathMonitor.getServiceId());
-                String commContent = heathMonitor.getAppName() + "接口：" + heathMonitor.getHeathUrl() + "，响应状态码为" + heathMonitor.getHeathStatus() + "，可能存在异常，请查看";
-                boolean isEmail = logInfoService.checkSendEmail(mailSet, "接口预警");
+                String commContent = heathMonitor.getAppName() + "接口：" + heathMonitor.getHeathUrl()
+                        + "，响应状态码为" + heathMonitor.getHeathStatus() + "，请求时长:" + time;
+                boolean isEmail = logInfoService.checkSendEmail(mailSet, logTitle);
                 if (isEmail) {
-                    WarnMailUtil.sendMail(mailSet, heathMonitor.getServiceName() + "接口预警", commContent);
+                    WarnMailUtil.sendMail(mailSet, heathMonitor.getServiceName() + logTitle, commContent);
                 }
                 //记录发送信息
-                logInfoService.save(new LogInfo("接口预警", commContent, heathMonitor.getServiceId(), heathMonitor.getServiceName(), isEmail));
+                logInfoService.save(new LogInfo(logTitle, commContent, heathMonitor.getServiceId(), heathMonitor.getServiceName(), isEmail));
             } catch (Exception e) {
                 logger.error("发送主机下线告警邮件失败：", e);
             }
