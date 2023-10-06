@@ -22,5 +22,6 @@ EXPOSE 8089
 
 #ADD ./target/parking-inside-cloud-client.jar ./
 ADD ./bs-monitor.jar ./
+ADD ./wgcloud-server-release.jar ./
 
-CMD java -Djava.security.egd=file:/dev/./urandom -jar ./bs-monitor.jar --spring.profiles.active=${profileActive:test}
+CMD java -jar bs-monitor.jar --spring.profiles.active=${profileActive:test} & java -jar wgcloud-server-release.jar --spring.profiles.active=${profileActive:test}

@@ -9,6 +9,7 @@ services:
         profileActive: ${profileActive}
     ports:
       - 8989:8989
+      - 9999:9999
     extra_hosts:
       bs-nacos: ${bsNacos}
       bs-mysql: ${bsMysql}
