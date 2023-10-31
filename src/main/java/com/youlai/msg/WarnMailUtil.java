@@ -115,7 +115,7 @@ public class WarnMailUtil {
             try {
                 MailSet mailSet = mailService.getByServiceId(heathMonitor.getServiceId());
                 String commContent = heathMonitor.getAppName() + "接口：" + heathMonitor.getHeathUrl()
-                        + "，响应状态码为" + heathMonitor.getHeathStatus() + "，请求时长:" + time;
+                        + "，响应状态码为" + heathMonitor.getHeathStatus() + "，请求时长:" + time+"毫秒";
                 boolean isEmail = logInfoService.checkSendEmail(mailSet, logTitle);
                 if (isEmail) {
                     WarnMailUtil.sendMail(mailSet, heathMonitor.getServiceName() + logTitle, commContent);

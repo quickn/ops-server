@@ -60,12 +60,13 @@ public class HeathMonitorServiceImpl extends ServiceImpl<HeathMonitorMapper, Hea
                 String logTitle = "接口状态异常";
                 Long cha = 0L;
                 if ("200".equals(updateTemp.getHeathStatus())) {
-                    cha = System.currentTimeMillis() - currTime;
                     if (cha <= 3000) {
                         continue;
                     }
                     logTitle = "接口请求超时";
                 }
+                h.setHeathStatus(updateTemp.getHeathStatus());
+                cha = System.currentTimeMillis() - currTime;
                 WarnMailUtil.sendHeathInfo(h, logTitle, true, cha);
             }
             if (heathMonitors.size() == 0) {
