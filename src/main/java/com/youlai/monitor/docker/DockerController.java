@@ -1,6 +1,9 @@
-package com.youlai.heath;
+package com.youlai.monitor.docker;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.youlai.monitor.heath.HeathMonitor;
+import com.youlai.monitor.heath.HeathMonitorService;
+import com.youlai.monitor.heath.HeathQueryPage;
 import com.youlai.system.common.result.Result;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
@@ -10,8 +13,8 @@ import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "接口健康监控")
 @RestController
-@RequestMapping("/heath")
-public class HeathMonitorController {
+@RequestMapping("/docker")
+public class DockerController {
 
     @Resource
     private HeathMonitorService heathMonitorService;
@@ -21,7 +24,7 @@ public class HeathMonitorController {
      *
      * @return
      */
-    @GetMapping(value = "/listHeaths")
+    @GetMapping(value = "/list")
     public Result<Page<HeathMonitor>> listHeaths(@ParameterObject HeathQueryPage heathQueryPage) {
         Page<HeathMonitor> pageInfo = heathMonitorService.queryPage(heathQueryPage);
         return Result.success(pageInfo);

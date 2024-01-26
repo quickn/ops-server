@@ -1,9 +1,8 @@
-package com.youlai.agent;
+package com.youlai.monitor.agent;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.youlai.base.ServiceBaseEntity;
-import com.youlai.system.common.base.BaseEntity;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 

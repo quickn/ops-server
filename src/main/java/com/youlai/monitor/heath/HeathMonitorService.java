@@ -1,4 +1,4 @@
-package com.youlai.heath;
+package com.youlai.monitor.heath;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;

@@ -1,6 +1,6 @@
 package com.youlai.task;
 
-import com.youlai.heath.HeathMonitorService;
+import com.youlai.monitor.heath.HeathMonitorService;
 import com.youlai.system.common.exception.BusinessException;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;

@@ -1,8 +1,8 @@
 package com.youlai.log;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.youlai.agent.AgentConfig;
-import com.youlai.agent.IAgentConfigService;
+import com.youlai.monitor.agent.AgentConfig;
+import com.youlai.monitor.agent.AgentConfigService;
 import com.youlai.msg.MailSet;
 import com.youlai.msg.WarnMailUtil;
 import com.youlai.server.StaticKeys;
@@ -24,7 +24,7 @@ public class LogInfoServiceImpl extends ServiceImpl<LogInfoMapper, LogInfo> impl
     @Autowired
     private LogInfoMapper logInfoMapper;
     @Resource
-    IAgentConfigService iAgentConfigService;
+    AgentConfigService iAgentConfigService;
 
     public void save(String hostname, String infoContent, String state) {
         LogInfo logInfo = new LogInfo();

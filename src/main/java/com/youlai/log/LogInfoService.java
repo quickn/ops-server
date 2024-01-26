@@ -1,7 +1,7 @@
 package com.youlai.log;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.youlai.agent.AgentConfig;
+import com.youlai.monitor.agent.AgentConfig;
 import com.youlai.msg.MailSet;
 import com.youlai.server.SystemInfo;
 

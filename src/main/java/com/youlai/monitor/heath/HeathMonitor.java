@@ -1,4 +1,4 @@
-package com.youlai.heath;
+package com.youlai.monitor.heath;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;

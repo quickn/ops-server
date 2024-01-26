@@ -1,9 +1,9 @@
 package com.youlai.msg;
 
 import cn.hutool.extra.spring.SpringUtil;
-import com.youlai.agent.AgentConfig;
+import com.youlai.monitor.agent.AgentConfig;
 import com.youlai.base.util.ThreadPoolUtil;
-import com.youlai.heath.HeathMonitor;
+import com.youlai.monitor.heath.HeathMonitor;
 import com.youlai.log.LogInfo;
 import com.youlai.log.LogInfoService;
 import com.youlai.server.*;

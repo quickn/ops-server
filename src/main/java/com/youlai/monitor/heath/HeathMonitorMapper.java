@@ -1,4 +1,4 @@
-package com.youlai.heath;
+package com.youlai.monitor.heath;
 
 import com.youlai.base.mapper.BaseQueryMapper;
 import org.apache.ibatis.annotations.Mapper;

@@ -39,7 +39,8 @@ public class SwaggerConfig {
         String[] paths = {"/**"};
         String[] packagesToScan = {"com.youlai.system.controller",
                 "com.youlai.nginx.controller",
-                "com.youlai.heath"};
+                "com.youlai.monitor",
+        };
         return GroupedOpenApi.builder().group("系统接口").packagesToScan(packagesToScan).pathsToMatch(paths).build();
     }
 

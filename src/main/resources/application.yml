@@ -23,3 +23,24 @@ spring:
 base:
   #服务接口监控间隔，单位毫秒，默认10分钟
   heathTimes: 120000
+netty:
+  server:
+    #host: 192.168.40.92
+    port: 18081
+  boss:
+    thread:
+      count: 1
+  worker:
+    thread:
+      count: 100
+  so:
+    keepalive: true
+    backlog: 1024
+  handle:
+    #设置上传最大值 500K
+    maxLength: 512000
+    reader_idle_time_seconds: 0
+    writer_idle_time_seconds: 60
+    all_idle_time_seconds: 0
+    #开启代理 获取远程IP
+    enableProxy: true

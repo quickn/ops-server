@@ -1,4 +1,4 @@
-package com.youlai.heath;
+package com.youlai.monitor.heath;
 
 import com.youlai.base.sql.IQuery;
 import com.youlai.base.sql.PageForm;

@@ -1,4 +1,4 @@
-package com.youlai.server;
+package com.youlai.monitor.service;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;

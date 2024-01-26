@@ -107,3 +107,5 @@ system:
     websocket-enabled: true
 base:
   heathTimes: 120000
+forest:
+  connect-timeout: 30000 # 连接超时时间，单位为毫秒, 默认值为2000

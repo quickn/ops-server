@@ -1,4 +1,4 @@
-package com.youlai.agent;
+package com.youlai.monitor.agent;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.bean.copier.CopyOptions;
@@ -7,15 +7,20 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Created by Liuyun on 2023-07-26 11:16
  **/
 @Service
 @Slf4j
 public class AgentConfigServiceImpl extends ServiceImpl<AgentConfigMapper, AgentConfig>
-        implements IAgentConfigService {
+        implements AgentConfigService {
 
     private final CopyOptions copyOption = CopyOptions.create(null, true);
+
+    static Map<Long, String> cmdMap = new HashMap<>();
 
     @Override
     public AgentConfig getByMac(String mac, String hostname) {
@@ -52,5 +57,25 @@ public class AgentConfigServiceImpl extends ServiceImpl<AgentConfigMapper, Agent
         }
         BeanUtil.copyProperties(config, configCommon, copyOption);
         return configCommon;
+    }
+
+    @Override
+    public void sendCmd(Long agentId, String cmd) {
+        cmdMap.put(agentId, cmd);
+    }
+
+    @Override
+    public String getCmdById(Long id) {
+        return cmdMap.get(id);
+    }
+
+    @Override
+    public void removeCmdById(Long id) {
+        cmdMap.remove(id);
+    }
+
+    @Override
+    public AgentConfig getByServiceIdAndHost(Integer serviceId, String hostname) {
+        return this.baseMapper.getByServiceIdAndHost(serviceId, hostname);
     }
 }
