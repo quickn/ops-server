@@ -50,7 +50,7 @@ public class DockerContainerController {
     public Result restart(@PathVariable Long id) {
         DockerContainer dockerContainer = dockerContainerMapper.selectById(id);
         AgentConfig agentConfig = agentConfigService.getByServiceIdAndHost(dockerContainer.getServiceId(), dockerContainer.getHostname());
-        agentConfigService.sendCmd(agentConfig.getId(), "docker restart");
+        agentConfigService.sendCmd(agentConfig.getId(), "docker restart "+dockerContainer.getNames());
         return Result.success();
     }
 
