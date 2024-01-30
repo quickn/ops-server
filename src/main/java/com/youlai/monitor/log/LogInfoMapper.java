@@ -1,4 +1,4 @@
-package com.youlai.log;
+package com.youlai.monitor.log;
 
 import com.youlai.base.mapper.BaseQueryMapper;
 import org.apache.ibatis.annotations.Mapper;

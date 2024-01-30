@@ -3,7 +3,7 @@ package com.youlai.monitor.heath;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.youlai.base.http.RestUtil;
-import com.youlai.log.LogInfoService;
+import com.youlai.monitor.log.LogInfoService;
 import com.youlai.msg.WarnMailUtil;
 import com.youlai.server.StaticKeys;
 import jakarta.annotation.Resource;

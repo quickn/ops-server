@@ -1,4 +1,4 @@
-package com.youlai.log;
+package com.youlai.monitor.log;
 
 import com.youlai.base.ServiceBaseEntity;
 import com.youlai.server.StaticKeys;

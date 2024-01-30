@@ -1,4 +1,4 @@
-package com.youlai.log;
+package com.youlai.monitor.log;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.youlai.monitor.agent.AgentConfig;
