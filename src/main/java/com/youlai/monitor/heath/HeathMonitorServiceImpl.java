@@ -1,5 +1,6 @@
 package com.youlai.monitor.heath;
 
+import cn.hutool.extra.spring.SpringUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.youlai.base.http.RestUtil;
@@ -7,15 +8,13 @@ import com.youlai.monitor.log.LogInfoService;
 import com.youlai.msg.WarnMailUtil;
 import com.youlai.server.StaticKeys;
 import jakarta.annotation.Resource;
-import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 @Service
@@ -47,38 +46,41 @@ public class HeathMonitorServiceImpl extends ServiceImpl<HeathMonitorMapper, Hea
     @Override
     public void heathMonitorTask() {
         log.info("heathMonitorTask------------");
-        List<HeathMonitor> heathMonitors = new ArrayList<HeathMonitor>();
         try {
             List<HeathMonitor> heathMonitorAllList = heathMonitorMapper.selectListByMonitor();
             if (heathMonitorAllList.size() == 0) {
                 return;
             }
-            for (HeathMonitor h : heathMonitorAllList) {
-                HeathMonitor updateTemp = new HeathMonitor();
-                updateTemp.setId(h.getId());
-                Long currTime = System.currentTimeMillis();
-                int status = restUtil.get(h.getHeathUrl());
-                updateTemp.setHeathStatus(status + "");
-                String logTitle = "接口状态异常";
-                Long cha = System.currentTimeMillis() - currTime;
-                if ("200".equals(updateTemp.getHeathStatus())) {
-                    if (cha <= 3000) {
-                        continue;
-                    }
-                    logTitle = "接口请求超时";
-                }
-                updateTemp.setUpdateTime(LocalDateTime.now());
-                heathMonitors.add(updateTemp);
-                h.setHeathStatus(updateTemp.getHeathStatus());
-                WarnMailUtil.sendHeathInfo(h, logTitle, true, cha);
+            HeathMonitorService heathMonitorService = SpringUtil.getBean(HeathMonitorService.class);
+            for (HeathMonitor heathMonitor : heathMonitorAllList) {
+                heathMonitorService.handle(heathMonitor);
             }
-            if (heathMonitors.size() == 0) {
-                return;
-            }
-            this.updateBatchById(heathMonitors);
         } catch (Exception e) {
             log.error("服务接口检测任务错误", e);
             logInfoService.save("服务接口检测错误", e.toString(), StaticKeys.LOG_ERROR);
         }
+    }
+
+    @Async
+    @Override
+    public void handle(HeathMonitor heathMonitor) {
+        HeathMonitor updateTemp = new HeathMonitor();
+        updateTemp.setId(heathMonitor.getId());
+        Long currTime = System.currentTimeMillis();
+        int status = restUtil.get(heathMonitor.getHeathUrl());
+        updateTemp.setHeathStatus(status + "");
+        String logTitle = "接口状态异常";
+        Long responseTime = System.currentTimeMillis() - currTime;
+        if ("200".equals(updateTemp.getHeathStatus())) {
+            if (responseTime <= 3000) {
+                return;
+            }
+            logTitle = "接口请求超时";
+        }
+        updateTemp.setResponseTime(responseTime);
+        updateTemp.setUpdateTime(LocalDateTime.now());
+        this.updateById(updateTemp);
+        heathMonitor.setHeathStatus(updateTemp.getHeathStatus());
+        WarnMailUtil.sendHeathInfo(heathMonitor, logTitle, true, responseTime);
     }
 }

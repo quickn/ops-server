@@ -11,4 +11,6 @@ public interface HeathMonitorService extends IService<HeathMonitor> {
     Page<HeathMonitor> queryPage(HeathQueryPage heathQueryPage);
 
     void heathMonitorTask();
+
+    void handle(HeathMonitor heathMonitor);
 }

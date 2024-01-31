@@ -44,6 +44,8 @@ public class HeathMonitor extends ServiceBaseEntity {
 
     private Boolean isMonitor;
 
+    private Long responseTime;
+
     @TableField(fill = FieldFill.INSERT)
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")

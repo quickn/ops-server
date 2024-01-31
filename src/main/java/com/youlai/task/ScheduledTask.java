@@ -44,7 +44,7 @@ public class ScheduledTask {
         return taskScheduler;
     }
 
-    @Scheduled(initialDelay = 60000L, fixedRateString = "${base.heathTimes}")
+    @Scheduled(initialDelay = 5000L, fixedRateString = "${base.heathTimes}")
     public void heathMonitorTask() {
         heathMonitorService.heathMonitorTask();
     }
