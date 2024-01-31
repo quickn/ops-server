@@ -2,6 +2,7 @@ package com.youlai.monitor.heath;
 
 import com.youlai.base.mapper.BaseQueryMapper;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
 import java.util.Map;
@@ -19,4 +20,6 @@ public interface HeathMonitorMapper extends BaseQueryMapper<HeathMonitor, HeathM
 
     public void updateList(List<HeathMonitor> recordList) throws Exception;
 
+    @Select(" select * from heath_monitor where is_monitor = 1 ")
+    List<HeathMonitor> selectListByMonitor();
 }

@@ -1,9 +1,15 @@
 package com.youlai.monitor.heath;
 
+import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.youlai.base.ServiceBaseEntity;
 import lombok.Data;
+
+import java.time.LocalDateTime;
 
 /**
  * @version v2.3
@@ -36,6 +42,11 @@ public class HeathMonitor extends ServiceBaseEntity {
      */
     private String heathStatus;
 
-    // private String requestMethod;
+    private Boolean isMonitor;
+
+    @TableField(fill = FieldFill.INSERT)
+    @JsonInclude(value = JsonInclude.Include.NON_NULL)
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime updateTime;
 
 }

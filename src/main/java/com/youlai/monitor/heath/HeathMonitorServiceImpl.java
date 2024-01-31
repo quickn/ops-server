@@ -7,12 +7,15 @@ import com.youlai.monitor.log.LogInfoService;
 import com.youlai.msg.WarnMailUtil;
 import com.youlai.server.StaticKeys;
 import jakarta.annotation.Resource;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 @Service
@@ -46,7 +49,7 @@ public class HeathMonitorServiceImpl extends ServiceImpl<HeathMonitorMapper, Hea
         log.info("heathMonitorTask------------");
         List<HeathMonitor> heathMonitors = new ArrayList<HeathMonitor>();
         try {
-            List<HeathMonitor> heathMonitorAllList = this.list();
+            List<HeathMonitor> heathMonitorAllList = heathMonitorMapper.selectListByMonitor();
             if (heathMonitorAllList.size() == 0) {
                 return;
             }
@@ -56,7 +59,6 @@ public class HeathMonitorServiceImpl extends ServiceImpl<HeathMonitorMapper, Hea
                 Long currTime = System.currentTimeMillis();
                 int status = restUtil.get(h.getHeathUrl());
                 updateTemp.setHeathStatus(status + "");
-                heathMonitors.add(updateTemp);
                 String logTitle = "接口状态异常";
                 Long cha = System.currentTimeMillis() - currTime;
                 if ("200".equals(updateTemp.getHeathStatus())) {
@@ -65,6 +67,8 @@ public class HeathMonitorServiceImpl extends ServiceImpl<HeathMonitorMapper, Hea
                     }
                     logTitle = "接口请求超时";
                 }
+                updateTemp.setUpdateTime(LocalDateTime.now());
+                heathMonitors.add(updateTemp);
                 h.setHeathStatus(updateTemp.getHeathStatus());
                 WarnMailUtil.sendHeathInfo(h, logTitle, true, cha);
             }
