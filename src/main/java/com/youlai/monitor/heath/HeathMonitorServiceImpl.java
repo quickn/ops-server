@@ -15,6 +15,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 
 @Service
@@ -27,6 +28,11 @@ public class HeathMonitorServiceImpl extends ServiceImpl<HeathMonitorMapper, Hea
     LogInfoService logInfoService;
     @Resource
     RestUtil restUtil;
+
+    /**
+     * 累计失败次数
+     */
+    HashMap<Long, Integer> failCount = new HashMap();
 
     @Override
     public boolean save(HeathMonitor HeathMonitor) {
@@ -73,14 +79,25 @@ public class HeathMonitorServiceImpl extends ServiceImpl<HeathMonitorMapper, Hea
         Long responseTime = System.currentTimeMillis() - currTime;
         if ("200".equals(updateTemp.getHeathStatus())) {
             if (responseTime <= 3000) {
+                failCount.put(heathMonitor.getId(), 0);
                 return;
             }
             logTitle = "接口请求超时";
         }
+        Integer count = failCount.get(heathMonitor.getId());
+        if (count == null) {
+            count = 0;
+        }
+        count = ++count;
+        failCount.put(heathMonitor.getId(), count);
         updateTemp.setResponseTime(responseTime);
         updateTemp.setUpdateTime(LocalDateTime.now());
         this.updateById(updateTemp);
         heathMonitor.setHeathStatus(updateTemp.getHeathStatus());
-        WarnMailUtil.sendHeathInfo(heathMonitor, logTitle, true, responseTime);
+        boolean isEmail = false;
+        if (count >= 2) {
+            isEmail = true;
+        }
+        WarnMailUtil.sendHeathInfo(heathMonitor, logTitle, isEmail, responseTime);
     }
 }

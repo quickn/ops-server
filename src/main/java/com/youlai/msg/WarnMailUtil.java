@@ -1,8 +1,8 @@
 package com.youlai.msg;
 
 import cn.hutool.extra.spring.SpringUtil;
-import com.youlai.monitor.agent.AgentConfig;
 import com.youlai.base.util.ThreadPoolUtil;
+import com.youlai.monitor.agent.AgentConfig;
 import com.youlai.monitor.heath.HeathMonitor;
 import com.youlai.monitor.log.LogInfo;
 import com.youlai.monitor.log.LogInfoService;
@@ -107,26 +107,24 @@ public class WarnMailUtil {
      * 服务接口不通发送告警邮件
      *
      * @param heathMonitor
-     * @param isDown
      * @return
      */
-    public static boolean sendHeathInfo(HeathMonitor heathMonitor, String logTitle, boolean isDown, Long time) {
-        if (isDown) {
-            try {
+    public static boolean sendHeathInfo(HeathMonitor heathMonitor, String logTitle, boolean isEmail, Long time) {
+        try {
+            String commContent = heathMonitor.getAppName() + "接口：" + heathMonitor.getHeathUrl()
+                    + "，响应状态码为" + heathMonitor.getHeathStatus() + "，请求时长:" + time + "毫秒";
+            if (isEmail) {
                 MailSet mailSet = mailService.getByServiceId(heathMonitor.getServiceId());
-                String commContent = heathMonitor.getAppName() + "接口：" + heathMonitor.getHeathUrl()
-                        + "，响应状态码为" + heathMonitor.getHeathStatus() + "，请求时长:" + time+"毫秒";
-                boolean isEmail = logInfoService.checkSendEmail(mailSet, logTitle);
+                isEmail = logInfoService.checkSendEmail(mailSet, logTitle);
                 if (isEmail) {
                     WarnMailUtil.sendMail(mailSet, heathMonitor.getServiceName() + logTitle, commContent);
                 }
-                //记录发送信息
-                logInfoService.save(new LogInfo(logTitle, commContent, heathMonitor.getServiceId(), heathMonitor.getServiceName(), isEmail));
-            } catch (Exception e) {
-                logger.error("发送主机下线告警邮件失败：", e);
             }
+            logInfoService.save(new LogInfo(logTitle, commContent, heathMonitor.getServiceId(), heathMonitor.getServiceName(), isEmail));
+        } catch (Exception e) {
+            logger.error("发送主机下线告警邮件失败：", e);
         }
-        return false;
+        return isEmail;
     }
 
     /**
