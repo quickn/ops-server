@@ -1,4 +1,4 @@
-package com.youlai.msg;
+package com.youlai.monitor.email;
 
 import com.youlai.base.ServiceBaseEntity;
 import lombok.Data;

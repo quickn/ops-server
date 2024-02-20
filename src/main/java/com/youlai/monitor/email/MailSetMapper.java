@@ -1,6 +1,7 @@
-package com.youlai.msg;
+package com.youlai.monitor.email;
 
 import com.youlai.base.mapper.BaseQueryMapper;
+import com.youlai.monitor.email.MailSet;
 import org.apache.ibatis.annotations.Mapper;
 
 /**

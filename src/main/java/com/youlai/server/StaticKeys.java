@@ -1,6 +1,6 @@
 package com.youlai.server;
 
-import com.youlai.msg.MailSet;
+import com.youlai.monitor.email.MailSet;
 
 /**
  * @version v2.3

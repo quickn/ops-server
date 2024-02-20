@@ -3,6 +3,8 @@ package com.youlai.msg;
 import cn.hutool.extra.spring.SpringUtil;
 import com.youlai.base.util.ThreadPoolUtil;
 import com.youlai.monitor.agent.AgentConfig;
+import com.youlai.monitor.email.MailService;
+import com.youlai.monitor.email.MailSet;
 import com.youlai.monitor.heath.HeathMonitor;
 import com.youlai.monitor.log.LogInfo;
 import com.youlai.monitor.log.LogInfoService;
@@ -253,5 +255,32 @@ public class WarnMailUtil {
             logInfoService.saveErrorLog("发送磁盘告警邮件错误", e.toString(), null, agentConfig);
         }
         return true;
+    }
+
+    public static String sendMail(String mails, String mailTitle, String mailContent) {
+        ThreadPoolUtil.getInstance().getNewCachedThreadPool().execute(() -> {
+            try {
+                HtmlEmail email = new HtmlEmail();
+                email.setHostName(StaticKeys.mailSet.getSmtpHost());
+                email.setSmtpPort(Integer.valueOf(StaticKeys.mailSet.getSmtpPort()));
+                if ("1".equals(StaticKeys.mailSet.getSmtpSsl())) {
+                    email.setSSL(true);
+                }
+                email.setAuthenticator(new DefaultAuthenticator(StaticKeys.mailSet.getFromMailName(), StaticKeys.mailSet.getFromPwd()));
+                email.setFrom(StaticKeys.mailSet.getFromMailName());//发信者
+                email.setSubject("[百胜智能] " + mailTitle);//标题
+                email.setCharset("UTF-8");//编码格式
+                email.setHtmlMsg(mailContent + content_suffix);//内容
+                email.addTo(mails.split(";"));
+                email.setSentDate(new Date());
+                email.send();//发送
+                //   return "success";
+            } catch (Exception e) {
+                logger.error("发送邮件错误：", e);
+                logInfoService.save("发送邮件错误", e.toString(), StaticKeys.LOG_ERROR);
+                //return "error";
+            }
+        });
+        return null;
     }
 }
