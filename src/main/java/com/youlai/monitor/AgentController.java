@@ -4,6 +4,11 @@ import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import com.youlai.monitor.agent.AgentConfig;
 import com.youlai.monitor.agent.AgentConfigService;
+import com.youlai.monitor.cmd.CmdDataForm;
+import com.youlai.monitor.cmd.HeartCmdForm;
+import com.youlai.monitor.cmd.LogCmdForm;
+import com.youlai.system.common.result.Result;
+import io.swagger.annotations.ApiOperation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -37,10 +42,9 @@ public class AgentController {
     }
 
     @PostMapping(value = "/heart")
-    public String heart(@RequestBody String paramBean) {
-        JSONObject agentJsonObject = (JSONObject) JSONUtil.parse(paramBean);
-        Integer serviceId = agentJsonObject.getInt("serviceId");
-        String hostname = agentJsonObject.getStr("hostname");
+    public String heart(@RequestBody HeartCmdForm heartCmdForm) {
+        Integer serviceId = heartCmdForm.getServiceId();
+        String hostname = heartCmdForm.getHostname();
         if (serviceId == null) {
             return null;
         }
@@ -56,5 +60,21 @@ public class AgentController {
         }
         jsonObject.put("result", "success");
         return jsonObject.toString();
+    }
+
+    @ResponseBody
+    @ApiOperation("实时日志查询")
+    @PostMapping("/getLogsByServiceId")
+    public Result getLogsByServiceId(@RequestBody LogCmdForm logCmdForm) {
+        String log = iAgentConfigService.getLogsByServiceId(logCmdForm);
+        return Result.success(log);
+    }
+
+    @ResponseBody
+    @ApiOperation("接收指令执行数据")
+    @PostMapping("/cmdData")
+    public Result cmdData(@RequestBody CmdDataForm cmdDataForm) {
+        iAgentConfigService.cmdData(cmdDataForm);
+        return Result.success();
     }
 }

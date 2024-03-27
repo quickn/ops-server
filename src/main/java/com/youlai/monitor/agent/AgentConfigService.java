@@ -1,6 +1,8 @@
 package com.youlai.monitor.agent;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.youlai.monitor.cmd.CmdDataForm;
+import com.youlai.monitor.cmd.LogCmdForm;
 
 /**
  * Created by Liuyun on 2023-07-26 11:16
@@ -20,4 +22,7 @@ public interface AgentConfigService extends IService<AgentConfig> {
     AgentConfig getByServiceIdAndHost(Integer serviceId, String hostname);
 
 
+    String getLogsByServiceId(LogCmdForm logCmdForm);
+
+    void cmdData(CmdDataForm cmdDataForm);
 }

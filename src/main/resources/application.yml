@@ -1,6 +1,9 @@
 server:
   port: 8989
 spring:
+  mvc:
+    async:
+      request-timeout: 20000
   jackson:
     ## 默认序列化时间格式
     date-format: yyyy-MM-dd HH:mm:ss

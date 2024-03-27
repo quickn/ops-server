@@ -4,10 +4,15 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.bean.copier.CopyOptions;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.youlai.monitor.cmd.CmdDataForm;
+import com.youlai.monitor.cmd.LogCmdForm;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -77,5 +82,56 @@ public class AgentConfigServiceImpl extends ServiceImpl<AgentConfigMapper, Agent
     @Override
     public AgentConfig getByServiceIdAndHost(Integer serviceId, String hostname) {
         return this.baseMapper.getByServiceIdAndHost(serviceId, hostname);
+    }
+
+    private Map<Long, String> cmdData = new HashMap();
+
+    @Override
+    public String getLogsByServiceId(LogCmdForm logCmdForm) {
+        List<AgentConfig> agentConfigs = this.baseMapper.getByServiceId(logCmdForm.getServiceId(), logCmdForm.getDockerName());
+        for (AgentConfig agentConfig : agentConfigs) {
+            if (StringUtils.isEmpty(logCmdForm.getCmd())) {
+                if (StringUtils.isEmpty(logCmdForm.getCreateDate())) {
+                    cmdMap.put(agentConfig.getId(), "cat /home/park/logs/" + logCmdForm.getDockerName() + "/" + logCmdForm.getLogLevel() + ".log |grep '" + logCmdForm.getKeyword() + "'");
+                } else {
+                    cmdMap.put(agentConfig.getId(), "cat /home/park/logs/" + logCmdForm.getDockerName() + "/" + logCmdForm.getLogLevel() + "/" + logCmdForm.getLogLevel() + "-" + logCmdForm.getCreateDate() + ".*.log |grep '" + logCmdForm.getKeyword() + "'");
+                }
+            } else {
+                cmdMap.put(agentConfig.getId(), logCmdForm.getCmd());
+            }
+        }
+        StringBuffer stringBuffer = new StringBuffer();
+        long startTime = System.currentTimeMillis(); // 记录开始时间
+        while (true) {
+            // 检查是否已经超时
+            long elapsedTime = System.currentTimeMillis() - startTime;
+            if (elapsedTime >= logCmdForm.getTimeout()) {
+                break; // 超时退出循环
+            }
+            Iterator<AgentConfig> iterator = agentConfigs.iterator();
+            while (iterator.hasNext()) {
+                AgentConfig agentConfig = iterator.next();
+                if (cmdData.get(agentConfig.getId()) != null) {
+                    stringBuffer.append(cmdData.get(agentConfig.getId()));
+                    cmdData.remove(agentConfig.getId());
+                    iterator.remove();
+                }
+            }
+            if (!iterator.hasNext()) {
+                break;
+            }
+            // 可选择性让线程暂停一段时间，防止CPU全速运行
+            try {
+                Thread.sleep(100); // 暂停100毫秒
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt(); // 重新设置线程的中断状态
+            }
+        }
+        return stringBuffer.toString();
+    }
+
+    @Override
+    public void cmdData(CmdDataForm cmdDataForm) {
+        cmdData.put(cmdDataForm.getAgentId(), cmdDataForm.getData());
     }
 }
