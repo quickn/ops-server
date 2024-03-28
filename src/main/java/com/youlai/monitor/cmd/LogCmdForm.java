@@ -12,6 +12,7 @@ public class LogCmdForm {
     String keyword;
     String createDate;
     String logLevel = "info";
-    Long timeout = 5000L;
+    Long timeout = 9000L;
     String cmd;
+    String grepPara;
 }

@@ -1,5 +1,6 @@
 package com.youlai.monitor;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.youlai.monitor.agent.AgentConfig;
 import com.youlai.monitor.agent.AgentConfigService;
@@ -12,6 +13,8 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 
 @Tag(name = "docker容器")
@@ -50,8 +53,14 @@ public class DockerContainerController {
     public Result restart(@PathVariable Long id) {
         DockerContainer dockerContainer = dockerContainerMapper.selectById(id);
         AgentConfig agentConfig = agentConfigService.getByServiceIdAndHost(dockerContainer.getServiceId(), dockerContainer.getHostname());
-        agentConfigService.sendCmd(agentConfig.getId(), "docker restart "+dockerContainer.getNames());
+        agentConfigService.sendCmd(agentConfig.getId(), "docker restart " + dockerContainer.getNames());
         return Result.success();
+    }
+
+    @GetMapping(value = "/getListByServiceId/{serviceId}")
+    public Result<List<String>> getListByServiceId(@PathVariable Integer serviceId) {
+        List<String> list = dockerContainerMapper.getListByServiceId(serviceId);
+        return Result.success(list);
     }
 
 }

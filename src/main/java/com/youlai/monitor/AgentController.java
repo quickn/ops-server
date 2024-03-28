@@ -12,6 +12,7 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.web.bind.annotation.*;
 
 
@@ -64,8 +65,8 @@ public class AgentController {
 
     @ResponseBody
     @ApiOperation("实时日志查询")
-    @PostMapping("/getLogsByServiceId")
-    public Result getLogsByServiceId(@RequestBody LogCmdForm logCmdForm) {
+    @GetMapping("/getLogsByServiceId")
+    public Result getLogsByServiceId(@ParameterObject LogCmdForm logCmdForm) {
         String log = iAgentConfigService.getLogsByServiceId(logCmdForm);
         return Result.success(log);
     }

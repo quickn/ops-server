@@ -91,11 +91,22 @@ public class AgentConfigServiceImpl extends ServiceImpl<AgentConfigMapper, Agent
         List<AgentConfig> agentConfigs = this.baseMapper.getByServiceId(logCmdForm.getServiceId(), logCmdForm.getDockerName());
         for (AgentConfig agentConfig : agentConfigs) {
             if (StringUtils.isEmpty(logCmdForm.getCmd())) {
+                StringBuffer stringBuffer = new StringBuffer();
+                stringBuffer.append("cat /home/park/logs/");
+                stringBuffer.append(logCmdForm.getDockerName());
+                stringBuffer.append("/");
+                stringBuffer.append(logCmdForm.getLogLevel());
                 if (StringUtils.isEmpty(logCmdForm.getCreateDate())) {
-                    cmdMap.put(agentConfig.getId(), "cat /home/park/logs/" + logCmdForm.getDockerName() + "/" + logCmdForm.getLogLevel() + ".log |grep '" + logCmdForm.getKeyword() + "'");
+                    stringBuffer.append(".log");
                 } else {
-                    cmdMap.put(agentConfig.getId(), "cat /home/park/logs/" + logCmdForm.getDockerName() + "/" + logCmdForm.getLogLevel() + "/" + logCmdForm.getLogLevel() + "-" + logCmdForm.getCreateDate() + ".*.log |grep '" + logCmdForm.getKeyword() + "'");
+                    stringBuffer.append("-" + logCmdForm.getCreateDate() + ".*.log");
                 }
+                stringBuffer.append("|grep ");
+                if (StringUtils.isNotEmpty(logCmdForm.getGrepPara())) {
+                    stringBuffer.append(logCmdForm.getGrepPara());
+                }
+                stringBuffer.append("'" + logCmdForm.getKeyword() + "'");
+                cmdMap.put(agentConfig.getId(), stringBuffer.toString());
             } else {
                 cmdMap.put(agentConfig.getId(), logCmdForm.getCmd());
             }
@@ -117,7 +128,7 @@ public class AgentConfigServiceImpl extends ServiceImpl<AgentConfigMapper, Agent
                     iterator.remove();
                 }
             }
-            if (!iterator.hasNext()) {
+            if (agentConfigs.size() == 0) {
                 break;
             }
             // 可选择性让线程暂停一段时间，防止CPU全速运行

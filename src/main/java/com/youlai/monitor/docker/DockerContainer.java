@@ -45,4 +45,6 @@ public class DockerContainer extends ServiceBaseEntity {
      */
     private Date updateTime;
 
+    private Integer sort;
+
 }
