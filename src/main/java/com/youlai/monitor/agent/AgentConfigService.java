@@ -25,4 +25,6 @@ public interface AgentConfigService extends IService<AgentConfig> {
     String getLogsByServiceId(LogCmdForm logCmdForm);
 
     void cmdData(CmdDataForm cmdDataForm);
+
+    void upgradeClientByServiceId(Integer serviceId);
 }

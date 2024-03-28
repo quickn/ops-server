@@ -2,12 +2,14 @@ package com.youlai.monitor.agent;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.bean.copier.CopyOptions;
+import cn.hutool.json.JSONObject;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.youlai.monitor.cmd.CmdDataForm;
 import com.youlai.monitor.cmd.LogCmdForm;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -26,6 +28,10 @@ public class AgentConfigServiceImpl extends ServiceImpl<AgentConfigMapper, Agent
     private final CopyOptions copyOption = CopyOptions.create(null, true);
 
     static Map<Long, String> cmdMap = new HashMap<>();
+
+
+    @Value("${upgradeClient.url}")
+    String upgradeClientUrl;
 
     @Override
     public AgentConfig getByMac(String mac, String hostname) {
@@ -144,5 +150,20 @@ public class AgentConfigServiceImpl extends ServiceImpl<AgentConfigMapper, Agent
     @Override
     public void cmdData(CmdDataForm cmdDataForm) {
         cmdData.put(cmdDataForm.getAgentId(), cmdDataForm.getData());
+    }
+
+    @Override
+    public void upgradeClientByServiceId(Integer serviceId) {
+        List<AgentConfig> agentConfigs = this.baseMapper.getListByServiceId(serviceId);
+        for (AgentConfig agentConfig : agentConfigs) {
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.putOnce("handle", "upgradeClient");
+            if (serviceId == 1) {
+                jsonObject.putOnce("url", "http://192.168.10.10:82/client/bs-agent-release.jar");
+            } else {
+                jsonObject.putOnce("url", upgradeClientUrl);
+            }
+            cmdMap.put(agentConfig.getId(), jsonObject.toString());
+        }
     }
 }

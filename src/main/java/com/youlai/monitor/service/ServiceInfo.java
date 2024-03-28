@@ -20,4 +20,9 @@ public class ServiceInfo {
      */
     private String name;
 
+    /**
+     * 排序
+     */
+    private Integer sort;
+
 }

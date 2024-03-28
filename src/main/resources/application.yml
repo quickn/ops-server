@@ -81,3 +81,6 @@ system:
     xxl-job-enabled: false
     # WebSocket 开关
     websocket-enabled: true
+upgradeClient:
+  url: http://local.bisenpark.com:1082/client/bs-agent-release.jar
+  version: 1.0.0

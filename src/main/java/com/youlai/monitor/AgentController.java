@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
 
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 public class AgentController {
     @Resource
     AgentConfigService iAgentConfigService;
+
 
     @ResponseBody
     @PostMapping("/getConf")
@@ -56,7 +58,11 @@ public class AgentController {
         }
         String cmd = iAgentConfigService.getCmdById(agentConfig.getId());
         if (cmd != null) {
-            jsonObject.put("cmd", cmd);
+            if (cmd.startsWith("{")) {
+                jsonObject.put("data", cmd);
+            } else {
+                jsonObject.put("cmd", cmd);
+            }
             iAgentConfigService.removeCmdById(agentConfig.getId());
         }
         jsonObject.put("result", "success");
@@ -76,6 +82,13 @@ public class AgentController {
     @PostMapping("/cmdData")
     public Result cmdData(@RequestBody CmdDataForm cmdDataForm) {
         iAgentConfigService.cmdData(cmdDataForm);
+        return Result.success();
+    }
+
+    @ResponseBody
+    @GetMapping("/upgradeClientByServiceId/{serviceId}")
+    public Result upgradeClientByServiceId(@PathVariable Integer serviceId) {
+        iAgentConfigService.upgradeClientByServiceId(serviceId);
         return Result.success();
     }
 }

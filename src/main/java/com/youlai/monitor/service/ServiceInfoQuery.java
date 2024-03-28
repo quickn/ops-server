@@ -1,6 +1,7 @@
 package com.youlai.monitor.service;
 
 import com.youlai.base.sql.IQuery;
+import com.youlai.base.sql.PageForm;
 import com.youlai.base.sql.annotation.OrderBy;
 import com.youlai.base.sql.annotation.SelectSql;
 import com.youlai.base.sql.annotation.Where;
@@ -11,8 +12,8 @@ import lombok.Data;
  **/
 @Data
 @SelectSql(" * from service_info ")
-@OrderBy(" id ")
-public class ServiceInfoQuery implements IQuery {
+@OrderBy(" sort desc ")
+public class ServiceInfoQuery extends PageForm implements IQuery {
 
     @Where
     private String name;
