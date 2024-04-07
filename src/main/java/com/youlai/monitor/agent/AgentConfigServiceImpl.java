@@ -110,6 +110,7 @@ public class AgentConfigServiceImpl extends ServiceImpl<AgentConfigMapper, Agent
                 stringBuffer.append("|grep ");
                 if (StringUtils.isNotEmpty(logCmdForm.getGrepPara())) {
                     stringBuffer.append(logCmdForm.getGrepPara());
+                    stringBuffer.append(" ");
                 }
                 stringBuffer.append("'" + logCmdForm.getKeyword() + "'");
                 cmdMap.put(agentConfig.getId(), stringBuffer.toString());

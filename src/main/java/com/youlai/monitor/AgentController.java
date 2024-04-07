@@ -9,11 +9,12 @@ import com.youlai.monitor.cmd.HeartCmdForm;
 import com.youlai.monitor.cmd.LogCmdForm;
 import com.youlai.system.common.result.Result;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.annotations.ParameterObject;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
 
@@ -28,6 +29,7 @@ public class AgentController {
 
     @ResponseBody
     @PostMapping("/getConf")
+    @Operation(summary = "获取配置文件")
     public JSONObject getConf(@RequestBody JSONObject jsonObject) {
         String mac = jsonObject.getStr("mac");
         String hostname = jsonObject.getStr("hostname");
@@ -45,6 +47,7 @@ public class AgentController {
     }
 
     @PostMapping(value = "/heart")
+    @Operation(summary = "心跳")
     public String heart(@RequestBody HeartCmdForm heartCmdForm) {
         Integer serviceId = heartCmdForm.getServiceId();
         String hostname = heartCmdForm.getHostname();
@@ -70,19 +73,19 @@ public class AgentController {
     }
 
     @ResponseBody
-    @ApiOperation("实时日志查询")
-    @GetMapping("/getLogsByServiceId")
-    public Result getLogsByServiceId(@ParameterObject LogCmdForm logCmdForm) {
-        String log = iAgentConfigService.getLogsByServiceId(logCmdForm);
-        return Result.success(log);
-    }
-
-    @ResponseBody
-    @ApiOperation("接收指令执行数据")
     @PostMapping("/cmdData")
+    @Operation(summary = "接收指令执行数据")
     public Result cmdData(@RequestBody CmdDataForm cmdDataForm) {
         iAgentConfigService.cmdData(cmdDataForm);
         return Result.success();
+    }
+
+    @ResponseBody
+    @GetMapping("/getLogsByServiceId")
+    @Operation(summary = "实时日志查询")
+    public Result getLogsByServiceId(@ParameterObject LogCmdForm logCmdForm) {
+        String log = iAgentConfigService.getLogsByServiceId(logCmdForm);
+        return Result.success(log);
     }
 
     @ResponseBody
