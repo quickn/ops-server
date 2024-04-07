@@ -12,15 +12,13 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.0.13</version> <!-- lookup parent from repository -->
+        <version>3.1.0</version> <!-- lookup parent from repository -->
         <relativePath/>
     </parent>
 
     <properties>
 
-        <spring.cloud.alibaba.version>2022.0.0.0-RC2</spring.cloud.alibaba.version>
-        <spring.cloud.version>2022.0.0</spring.cloud.version>
-        <spring.boot.version>3.0.13</spring.boot.version>
+        <spring.boot.version>3.1.0</spring.boot.version>
 
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
