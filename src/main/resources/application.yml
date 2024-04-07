@@ -1,6 +1,23 @@
 server:
   port: 8989
+nacos:
+  config:
+    server-addr: bs-nacos:8848
+    encode: UTF-8
+    #配置自动刷新
+    refresh-enabled: true
+    data-id: ${spring.application.name}.yaml
+    type: yaml
+    auto-refresh: true
+    group: DEFAULT_GROUP
+    #是否开启Nacos配置预加载
+    bootstrap:
+      enable: true
+      log-enable: true
+    #namespace: e54fb030-02ad-4ad7-9b0e-9dac3e6e30b6
 spring:
+  application:
+    name: bs-monitor
   mvc:
     async:
       request-timeout: 20000
@@ -9,8 +26,6 @@ spring:
     date-format: yyyy-MM-dd HH:mm:ss
     ## 默认序列化时区
     time-zone: GMT+8
-  application:
-    name: bs-monitor
   profiles:
     active: dev
   data:
@@ -84,3 +99,7 @@ system:
 upgradeClient:
   url: http://local.bisenpark.com:1082/client/bs-agent-release.jar
   version: 1.0.0
+logging:
+  level:
+    com.youlai: debug
+    com.alibaba.boot.nacos: info
