@@ -21,7 +21,7 @@ public class AgentConfig extends ServiceBaseEntity {
 
     @TableId(type = IdType.AUTO)
     private Long id;
-    private boolean isDocker;
+    private Boolean isDocker;
     private String hostname;
     private String mac;
     private Double cpuWarnVal;
@@ -32,7 +32,7 @@ public class AgentConfig extends ServiceBaseEntity {
     private Double cpuWarnValDocker;
 
     @ApiModelProperty("是否发送邮件提醒")
-    private boolean isMail;
+    private Boolean isMail;
 
     @ApiModelProperty("是否监控")
     private Boolean isMonitor;

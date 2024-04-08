@@ -97,7 +97,7 @@ public class WarnMailUtil {
         if (StaticKeys.mailSet == null) {
             return;
         }
-        if (!agentConfig.isMail()) {
+        if (!agentConfig.getIsMail()) {
             return;
         }
         MailSet mailSet = StaticKeys.mailSet;

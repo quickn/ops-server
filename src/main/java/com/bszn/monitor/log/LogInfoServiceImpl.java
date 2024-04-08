@@ -56,7 +56,7 @@ public class LogInfoServiceImpl extends ServiceImpl<LogInfoMapper, LogInfo> impl
         if (StringUtils.isEmpty(title)) {
             return false;
         }
-        boolean sendEmail = this.checkSendEmail(agentConfig.getHostname(), title, agentConfig.isMail());
+        boolean sendEmail = this.checkSendEmail(agentConfig.getHostname(), title, agentConfig.getIsMail());
         LogInfo logInfo = new LogInfo();
         logInfo.setHostname(agentConfig.getHostname());
         logInfo.setServiceName(agentConfig.getServiceName());

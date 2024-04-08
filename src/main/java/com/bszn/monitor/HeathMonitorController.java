@@ -35,7 +35,7 @@ public class HeathMonitorController {
      *
      * @return
      */
-    @PostMapping(value = "save")
+    @PostMapping(value = "/save")
     public Result saveHeathMonitor(@RequestBody HeathMonitor heathMonitor) {
         heathMonitorService.saveOrUpdate(heathMonitor);
         return Result.success();

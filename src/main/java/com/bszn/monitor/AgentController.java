@@ -2,7 +2,10 @@ package com.bszn.monitor;
 
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.bszn.monitor.agent.AgentConfig;
+import com.bszn.monitor.agent.AgentConfigMapper;
+import com.bszn.monitor.agent.AgentConfigQuery;
 import com.bszn.monitor.agent.AgentConfigService;
 import com.bszn.monitor.cmd.ClientMsgForm;
 import com.bszn.monitor.cmd.CmdDataForm;
@@ -24,6 +27,22 @@ import org.springframework.web.bind.annotation.*;
 public class AgentController {
     @Resource
     AgentConfigService iAgentConfigService;
+    @Resource
+    AgentConfigMapper agentConfigMapper;
+
+    @ResponseBody
+    @GetMapping("/listPage")
+    public Result listPage(@ParameterObject AgentConfigQuery agentConfigQuery) {
+        Page<AgentConfig> list = agentConfigMapper.queryPage(agentConfigQuery, agentConfigMapper.getPage());
+        return Result.success(list);
+    }
+
+    @ResponseBody
+    @PostMapping("/save")
+    public Result save(@RequestBody AgentConfig agentConfig) {
+        iAgentConfigService.saveOrUpdate(agentConfig);
+        return Result.success();
+    }
 
 
     @ResponseBody
