@@ -63,7 +63,7 @@
 [application-dev.yml](src/main/resources/application-dev.yml) 修改MySQL、Redis连接配置；
 
 ### 3. 后端启动
-执行 [SystemApplication.java](src/main/java/com/youlai/system/SystemApplication.java) 的 main 方法完成后端项目启动；
+执行 [SystemApplication.java](src/main/java/com/bszn/system/SystemApplication.java) 的 main 方法完成后端项目启动；
 
 访问接口文档地址 [http://localhost:8989/doc.html](http://localhost:8989/doc.html) 验证项目启动。
 

@@ -28,23 +28,23 @@ spring:
     time-zone: GMT+8
   profiles:
     active: dev
-  data:
-    redis:
-      database: 8
-      host: 192.168.10.10
-      port: 6379
-      password: baisheng123
-      timeout: 10s
-      lettuce:
-        pool:
-          # 连接池最大连接数 默认8 ，负数表示没有限制
-          max-active: 8
-          # 连接池最大阻塞等待时间（使用负值表示没有限制） 默认-1
-          max-wait: -1
-          # 连接池中的最大空闲连接 默认8
-          max-idle: 8
-          # 连接池中的最小空闲连接 默认0
-          min-idle: 0
+#  data:
+#    redis:
+#      database: 8
+#      host: bs-redis
+#      port: 6379
+#      password: baisheng123
+#      timeout: 10s
+#      lettuce:
+#        pool:
+#          # 连接池最大连接数 默认8 ，负数表示没有限制
+#          max-active: 8
+#          # 连接池最大阻塞等待时间（使用负值表示没有限制） 默认-1
+#          max-wait: -1
+#          # 连接池中的最大空闲连接 默认8
+#          max-idle: 8
+#          # 连接池中的最小空闲连接 默认0
+#          min-idle: 0
 base:
   #服务接口监控间隔，单位毫秒，默认10分钟
   heathTimes: 120000
@@ -101,5 +101,5 @@ upgradeClient:
   version: 1.0.0
 logging:
   level:
-    com.youlai: debug
+    com.bszn: debug
     com.alibaba.boot.nacos: info

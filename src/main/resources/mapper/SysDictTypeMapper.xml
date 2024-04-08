@@ -2,9 +2,9 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.youlai.system.mapper.SysDictTypeMapper">
+<mapper namespace="com.bszn.system.mapper.SysDictTypeMapper">
 
-    <resultMap id="BaseResultMap" type="com.youlai.system.model.entity.SysDictType">
+    <resultMap id="BaseResultMap" type="com.bszn.system.model.entity.SysDictType">
             <id property="id" column="id" jdbcType="BIGINT"/>
             <result property="name" column="name" jdbcType="VARCHAR"/>
             <result property="code" column="code" jdbcType="VARCHAR"/>

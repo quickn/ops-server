@@ -2,10 +2,10 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.youlai.system.mapper.SysMenuMapper">
+<mapper namespace="com.bszn.system.mapper.SysMenuMapper">
 
     <!-- 菜单路由映射 -->
-    <resultMap id="RouteMap" type="com.youlai.system.model.bo.RouteBO">
+    <resultMap id="RouteMap" type="com.bszn.system.model.bo.RouteBO">
         <id property="id" column="id" jdbcType="BIGINT"/>
         <result property="name" column="name" jdbcType="VARCHAR"/>
         <result property="parentId" column="parent_id" jdbcType="BIGINT"/>
@@ -40,7 +40,7 @@
                  LEFT JOIN sys_role_menu t2 ON t1.id = t2.menu_id
                  LEFT JOIN sys_role t3 ON t2.role_id = t3.id
         WHERE
-            t1.type != '${@com.youlai.system.common.enums.MenuTypeEnum@BUTTON.getValue()}'
+            t1.type != '${@com.bszn.system.common.enums.MenuTypeEnum@BUTTON.getValue()}'
         ORDER BY t1.sort asc
     </select>
 
@@ -53,7 +53,7 @@
                 INNER JOIN sys_role_menu t2 ON t1.id = t2.menu_id
                 INNER JOIN sys_role t3 ON t3.id = t2.role_id
         WHERE
-            t1.type = '${@com.youlai.system.common.enums.MenuTypeEnum@BUTTON.getValue()}'
+            t1.type = '${@com.bszn.system.common.enums.MenuTypeEnum@BUTTON.getValue()}'
           AND t1.perm IS NOT NULL
           <choose>
             <when test="roles!=null and roles.size()>0">
