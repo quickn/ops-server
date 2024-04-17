@@ -15,6 +15,7 @@ import com.bszn.system.common.result.Result;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.web.bind.annotation.*;
@@ -110,7 +111,7 @@ public class AgentController {
     @ResponseBody
     @GetMapping("/getLogsByServiceId")
     @Operation(summary = "实时日志查询")
-    public Result getLogsByServiceId(@ParameterObject LogCmdForm logCmdForm) {
+    public Result getLogsByServiceId(@ParameterObject @Valid LogCmdForm logCmdForm) {
         String log = iAgentConfigService.getLogsByServiceId(logCmdForm);
         return Result.success(log);
     }

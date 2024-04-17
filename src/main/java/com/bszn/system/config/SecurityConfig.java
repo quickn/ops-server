@@ -2,11 +2,13 @@ package com.bszn.system.config;
 
 import com.bszn.system.common.constant.SecurityConstants;
 import com.bszn.system.filter.JwtAuthenticationFilter;
+import com.bszn.system.filter.VerifyCodeFilter;
+import com.bszn.system.security.JwtTokenManager;
 import com.bszn.system.security.exception.MyAccessDeniedHandler;
 import com.bszn.system.security.exception.MyAuthenticationEntryPoint;
-import com.bszn.system.security.JwtTokenManager;
-import com.bszn.system.filter.VerifyCodeFilter;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -32,11 +34,14 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 @EnableMethodSecurity
 @RequiredArgsConstructor
+@Data
+@ConfigurationProperties(prefix = "security")
 public class SecurityConfig {
 
     private final MyAuthenticationEntryPoint authenticationEntryPoint;
     private final MyAccessDeniedHandler accessDeniedHandler;
     private final JwtTokenManager jwtTokenManager;
+    private String[] ignorePaths;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -56,7 +61,7 @@ public class SecurityConfig {
         ;
 
         // 验证码校验过滤器
-        http.addFilterBefore(new VerifyCodeFilter(),UsernamePasswordAuthenticationFilter.class);
+        http.addFilterBefore(new VerifyCodeFilter(), UsernamePasswordAuthenticationFilter.class);
         // JWT 校验过滤器
         http.addFilterBefore(new JwtAuthenticationFilter(jwtTokenManager), UsernamePasswordAuthenticationFilter.class);
 
@@ -69,16 +74,7 @@ public class SecurityConfig {
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
         return (web) -> web.ignoring()
-                .requestMatchers(
-                        "/agent/**",
-                        "/api/v1/auth/captcha",
-                        "/webjars/**",
-                        "/doc.html",
-                        "/swagger-resources/**",
-                        "/v3/api-docs/**",
-                        "/swagger-ui/**",
-                        "/ws/**"
-                );
+                .requestMatchers(ignorePaths);
     }
 
     /**

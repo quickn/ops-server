@@ -38,8 +38,8 @@ public class SwaggerConfig {
     public GroupedOpenApi systemApi() {
         String[] paths = {"/**"};
         String[] packagesToScan = {"com.bszn.system.controller",
-                "com.youlai.nginx.controller",
-                "com.youlai.monitor",
+                "com.bszn.nginx.controller",
+                "com.bszn.monitor",
         };
         return GroupedOpenApi.builder().group("系统接口").packagesToScan(packagesToScan).pathsToMatch(paths).build();
     }

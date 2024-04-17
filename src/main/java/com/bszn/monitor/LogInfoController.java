@@ -5,6 +5,7 @@ import com.bszn.monitor.log.LogInfo;
 import com.bszn.monitor.log.LogInfoMapper;
 import com.bszn.monitor.log.LogInfoQuery;
 import com.bszn.system.common.result.Result;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +22,7 @@ public class LogInfoController {
 
     @ResponseBody
     @GetMapping("/listPage")
+    @Operation(summary = "文件日志查询")
     public Result listPage(@ParameterObject LogInfoQuery logInfoQuery) {
         Page<LogInfo> list = logInfoMapper.queryPage(logInfoQuery, logInfoMapper.getPage());
         return Result.success(list);
@@ -28,6 +30,7 @@ public class LogInfoController {
 
     @ResponseBody
     @DeleteMapping("/deleteById/{id}")
+    @Operation(summary = "删除日志文件")
     public Result deleteById(@PathVariable Long id) {
         logInfoMapper.deleteById(id);
         return Result.success();

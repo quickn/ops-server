@@ -1,15 +1,5 @@
 server:
   port: 8989
-#spring:
-#  datasource:
-#    type: com.alibaba.druid.pool.DruidDataSource
-#    driver-class-name: com.mysql.cj.jdbc.Driver
-#    url: jdbc:mysql://192.168.10.10:3307/wgcloud?characterEncoding=utf-8&characterSetResults=utf8&autoReconnect=true&useSSL=false&allowMultiQueries=true
-#    username: root
-#    password: bszn@1999
-#    druid:
-#      query-timeout: 3000
-#      max-active: 1000
 oss:
   # OSS 类型 (目前支持aliyun、minio)
   type: minio
