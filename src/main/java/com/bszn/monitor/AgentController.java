@@ -111,7 +111,7 @@ public class AgentController {
     @ResponseBody
     @GetMapping("/getLogsByServiceId")
     @Operation(summary = "实时日志查询")
-    public Result getLogsByServiceId(@ParameterObject @Valid LogCmdForm logCmdForm) {
+    public Result getLogsByServiceId(@ParameterObject LogCmdForm logCmdForm) {
         String log = iAgentConfigService.getLogsByServiceId(logCmdForm);
         return Result.success(log);
     }
