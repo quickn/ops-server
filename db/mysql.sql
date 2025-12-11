@@ -1,18 +1,18 @@
 /*
-* youlai_boot 权限系统数据库(MySQL8.x)
+* bs_monitor 权限系统数据库(MySQL8.x)
 * @author haoxr
 */
 
 -- ----------------------------
 -- 1. 创建数据库
 -- ----------------------------
-CREATE DATABASE IF NOT EXISTS youlai_boot DEFAULT CHARACTER SET utf8mb4 DEFAULT COLLATE utf8mb4_general_ci;
+CREATE DATABASE IF NOT EXISTS bs_monitor DEFAULT CHARACTER SET utf8mb4 DEFAULT COLLATE utf8mb4_general_ci;
 
 
 -- ----------------------------
 -- 2. 创建表 && 数据初始化
 -- ----------------------------
-use youlai_boot;
+use bs_monitor;
 
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
@@ -283,16 +283,16 @@ INSERT INTO `sys_role_menu` VALUES (2, 85);
 INSERT INTO `sys_role_menu` VALUES (2, 86);
 INSERT INTO `sys_role_menu` VALUES (2, 87);
 INSERT INTO `sys_role_menu` VALUES (2, 88);
-INSERT INTO `youlai_boot`.`sys_role_menu` (`role_id`, `menu_id`) VALUES (2, 89);
-INSERT INTO `youlai_boot`.`sys_role_menu` (`role_id`, `menu_id`) VALUES (2, 90);
-INSERT INTO `youlai_boot`.`sys_role_menu` (`role_id`, `menu_id`) VALUES (2, 91);
-INSERT INTO `youlai_boot`.`sys_role_menu` (`role_id`, `menu_id`) VALUES (2, 92);
-INSERT INTO `youlai_boot`.`sys_role_menu` (`role_id`, `menu_id`) VALUES (2, 93);
-INSERT INTO `youlai_boot`.`sys_role_menu` (`role_id`, `menu_id`) VALUES (2, 94);
-INSERT INTO `youlai_boot`.`sys_role_menu` (`role_id`, `menu_id`) VALUES (2, 95);
-INSERT INTO `youlai_boot`.`sys_role_menu` (`role_id`, `menu_id`) VALUES (2, 96);
-INSERT INTO `youlai_boot`.`sys_role_menu` (`role_id`, `menu_id`) VALUES (2, 97);
-INSERT INTO `youlai_boot`.`sys_role_menu` (`role_id`, `menu_id`) VALUES (2, 102);
+INSERT INTO `bs_monitor`.`sys_role_menu` (`role_id`, `menu_id`) VALUES (2, 89);
+INSERT INTO `bs_monitor`.`sys_role_menu` (`role_id`, `menu_id`) VALUES (2, 90);
+INSERT INTO `bs_monitor`.`sys_role_menu` (`role_id`, `menu_id`) VALUES (2, 91);
+INSERT INTO `bs_monitor`.`sys_role_menu` (`role_id`, `menu_id`) VALUES (2, 92);
+INSERT INTO `bs_monitor`.`sys_role_menu` (`role_id`, `menu_id`) VALUES (2, 93);
+INSERT INTO `bs_monitor`.`sys_role_menu` (`role_id`, `menu_id`) VALUES (2, 94);
+INSERT INTO `bs_monitor`.`sys_role_menu` (`role_id`, `menu_id`) VALUES (2, 95);
+INSERT INTO `bs_monitor`.`sys_role_menu` (`role_id`, `menu_id`) VALUES (2, 96);
+INSERT INTO `bs_monitor`.`sys_role_menu` (`role_id`, `menu_id`) VALUES (2, 97);
+INSERT INTO `bs_monitor`.`sys_role_menu` (`role_id`, `menu_id`) VALUES (2, 102);
 
 
 
