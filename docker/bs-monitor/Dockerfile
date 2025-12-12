@@ -22,6 +22,6 @@ EXPOSE 8089
 
 #ADD ./target/parking-inside-cloud-client.jar ./
 ADD ./bs-monitor.jar ./
-ADD ./bs-collector-release.jar ./
+ADD ./monitor-collector.jar ./
 
-CMD java -jar bs-monitor.jar --spring.profiles.active=${profileActive:test} & java -jar bs-collector-release.jar --spring.profiles.active=${profileActive:test}
+CMD java -jar bs-monitor.jar --spring.profiles.active=${profileActive:test} & java -jar monitor-collector.jar --spring.profiles.active=${profileActive:test}
