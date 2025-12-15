@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/jar")
+@RequestMapping("/jar")
 @Tag(name = "JAR包管理", description = "JAR包上传、部署和管理")
 @RequiredArgsConstructor
 public class JarPackageController {
