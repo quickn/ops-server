@@ -128,3 +128,8 @@ security:
     - "/v3/api-docs/**"
     - "/swagger-ui/**"
     - "/ws/**"
+
+# JAR包上传配置
+jar:
+  upload:
+    path: /opt/jars  # JAR包存储路径
