@@ -9,9 +9,8 @@ import com.bszn.server.StaticKeys;
 import com.bszn.system.common.result.Result;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -23,9 +22,8 @@ import java.util.Map;
 
 @RestController
 @RequestMapping(value = "/monitor/mailset")
+@Slf4j
 public class MailSetController {
-
-    private static final Logger logger = LoggerFactory.getLogger(MailSetController.class);
 
     @Resource
     private MailService mailService;
@@ -55,7 +53,7 @@ public class MailSetController {
                 model.addAttribute("mailSet", list.get(0));
             }
         } catch (Exception e) {
-            logger.error("查询邮件设置错误", e);
+            log.error("查询邮件设置错误", e);
             logInfoService.save("查询邮件设置错误：", e.toString(), StaticKeys.LOG_ERROR);
 
         }
@@ -82,9 +80,6 @@ public class MailSetController {
 
     /**
      * 保存邮件设置信息
-     *
-     * @param MailSet
-     * @return
      */
     @PostMapping(value = "/save")
     public Result saveMailSet(@RequestBody MailSet mailSet) {
@@ -96,7 +91,7 @@ public class MailSetController {
             }
             StaticKeys.mailSet = mailSet;
         } catch (Exception e) {
-            logger.error("保存邮件设置信息错误：", e);
+            log.error("保存邮件设置信息错误：", e);
             logInfoService.save("邮件设置信息错误", e.toString(), StaticKeys.LOG_ERROR);
         }
         return Result.success();
@@ -109,7 +104,7 @@ public class MailSetController {
             StaticKeys.mailSet = mailSet;
             result = WarnMailUtil.sendMail(mailSet.getToMail(), "测试邮件发送", "测试邮件发送");
         } catch (Exception e) {
-            logger.error("测试邮件设置信息错误：", e);
+            log.error("测试邮件设置信息错误：", e);
             logInfoService.save("测试邮件设置信息错误", e.toString(), StaticKeys.LOG_ERROR);
         }
         return Result.success();
@@ -134,7 +129,7 @@ public class MailSetController {
                 StaticKeys.mailSet = null;
             }
         } catch (Exception e) {
-            logger.error(errorMsg, e);
+            log.error(errorMsg, e);
             logInfoService.save(errorMsg, e.toString(), StaticKeys.LOG_ERROR);
         }
         return null;

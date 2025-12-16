@@ -9,25 +9,16 @@ import com.bszn.monitor.heath.HeathMonitor;
 import com.bszn.monitor.log.LogInfo;
 import com.bszn.monitor.log.LogInfoService;
 import com.bszn.server.*;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.mail.DefaultAuthenticator;
 import org.apache.commons.mail.HtmlEmail;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Date;
 
-/**
- * @version v2.3
- * @ClassName:WarnMailUtil.java
- * @author: http://www.wgstart.com
- * @date: 2019年11月16日
- * @Description: WarnMailUtil.java
- * @Copyright: 2017-2022 wgcloud. All rights reserved.
- */
+@Slf4j
 public class WarnMailUtil {
 
-    private static final Logger logger = LoggerFactory.getLogger(WarnMailUtil.class);
 
     public static final String content_suffix = "<p><a target='_blank' href='http://bisenpark.com'>百胜智能</a>敬上";
 
@@ -58,7 +49,7 @@ public class WarnMailUtil {
             String commContent = "服务器：" + agentConfig.getHostname() + "内存使用率为" + Double.valueOf(memState.getUsePer()) + "%" + ",阈值:" + agentConfig.getMemWarnVal() + "%";
             logInfoService.saveErrorLog(title, commContent, commContent, agentConfig);
         } catch (Exception e) {
-            logger.error("发送内存告警邮件失败：", e);
+            log.error("发送内存告警邮件失败：", e);
             logInfoService.saveErrorLog("发送内存告警邮件错误", e.toString(), null, agentConfig);
         }
         return true;
@@ -87,7 +78,7 @@ public class WarnMailUtil {
             String commContent = "服务器：" + cpuState.getHostname() + ",CPU使用率为" + Double.valueOf(cpuState.getSys()) + "%，阈值:" + agentConfig.getCpuWarnVal() + "%";
             logInfoService.saveErrorLog(title, commContent, commContent, agentConfig);
         } catch (Exception e) {
-            logger.error("发送内存告警邮件失败：", e);
+            log.error("发送内存告警邮件失败：", e);
             logInfoService.saveErrorLog("发送CPU告警邮件错误", e.toString(), null, agentConfig);
         }
         return true;
@@ -124,7 +115,7 @@ public class WarnMailUtil {
             }
             logInfoService.save(new LogInfo(logTitle, commContent, heathMonitor.getServiceId(), heathMonitor.getServiceName(), isEmail));
         } catch (Exception e) {
-            logger.error("发送主机下线告警邮件失败：", e);
+            log.error("发送主机下线告警邮件失败：", e);
         }
         return isEmail;
     }
@@ -143,7 +134,7 @@ public class WarnMailUtil {
                 //记录发送信息
                 logInfoService.saveErrorLog("主机下线告警", commContent, systemInfo);
             } catch (Exception e) {
-                logger.error("发送主机下线告警邮件失败：", e);
+                log.error("发送主机下线告警邮件失败：", e);
                 logInfoService.save("发送主机下线告警邮件错误", e.toString(), StaticKeys.LOG_ERROR);
             }
         } else {
@@ -152,7 +143,7 @@ public class WarnMailUtil {
                 //记录发送信息
                 logInfoService.saveErrorLog("主机恢复上线通知", commContent, systemInfo);
             } catch (Exception e) {
-                logger.error("发送主机恢复上线通知邮件失败：", e);
+                log.error("发送主机恢复上线通知邮件失败：", e);
                 logInfoService.save("发送主机恢复上线通知邮件错误", e.toString(), StaticKeys.LOG_ERROR);
             }
         }
@@ -189,7 +180,7 @@ public class WarnMailUtil {
                 //记录发送信息
                 logInfoService.save(title, commContent, StaticKeys.LOG_ERROR);
             } catch (Exception e) {
-                logger.error("发送进程下线告警邮件失败：", e);
+                log.error("发送进程下线告警邮件失败：", e);
                 logInfoService.save("发送进程下线告警错误", e.toString(), StaticKeys.LOG_ERROR);
             }
         } else {
@@ -202,7 +193,7 @@ public class WarnMailUtil {
                 //记录发送信息
                 logInfoService.save(title, commContent, StaticKeys.LOG_ERROR);
             } catch (Exception e) {
-                logger.error("发送进程恢复上线通知邮件失败：", e);
+                log.error("发送进程恢复上线通知邮件失败：", e);
                 logInfoService.save("发送进程恢复上线通知错误", e.toString(), StaticKeys.LOG_ERROR);
             }
         }
@@ -228,7 +219,7 @@ public class WarnMailUtil {
                 email.send();//发送
                 //   return "success";
             } catch (Exception e) {
-                logger.error("发送邮件错误：", e);
+                log.error("发送邮件错误：", e);
                 logInfoService.save("发送邮件错误", e.toString(), StaticKeys.LOG_ERROR);
                 //return "error";
             }
@@ -251,7 +242,7 @@ public class WarnMailUtil {
             String commContent = "磁盘使用率为" + Double.valueOf(diskState.getUsePer()) + "%，磁盘名：" + diskState.getFileSystem();
             logInfoService.saveErrorLog(title, commContent, commContent, agentConfig);
         } catch (Exception e) {
-            logger.error("发送内存告警邮件失败：", e);
+            log.error("发送内存告警邮件失败：", e);
             logInfoService.saveErrorLog("发送磁盘告警邮件错误", e.toString(), null, agentConfig);
         }
         return true;
@@ -276,7 +267,7 @@ public class WarnMailUtil {
                 email.send();//发送
                 //   return "success";
             } catch (Exception e) {
-                logger.error("发送邮件错误：", e);
+                log.error("发送邮件错误：", e);
                 logInfoService.save("发送邮件错误", e.toString(), StaticKeys.LOG_ERROR);
                 //return "error";
             }

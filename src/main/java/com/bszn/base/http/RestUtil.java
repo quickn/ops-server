@@ -2,8 +2,7 @@ package com.bszn.base.http;
 
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -13,18 +12,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
-/**
- * @version V1.0
- * @ClassName:RestUtil.java
- * @author: http://www.wgstart.com
- * @date: 2019年11月16日
- * @Description: RestUtil.java
- * @Copyright: 2017-2022 wgcloud. All rights reserved.
- */
 @Component
+@Slf4j
 public class RestUtil {
-
-    private Logger logger = LoggerFactory.getLogger(RestUtil.class);
 
     @Autowired
     private RestTemplate restTemplate;
@@ -52,10 +42,10 @@ public class RestUtil {
             ResponseEntity<String> responseEntity = restTemplate.getForEntity(url.trim(), String.class);
             return responseEntity.getStatusCodeValue();
         } catch (HttpClientErrorException e) {
-            logger.error("服务接口检测任务错误", e);
+            log.error("服务接口检测任务错误", e);
             return e.getRawStatusCode();
         } catch (Exception e) {
-            logger.error("服务接口检测任务错误", e);
+            log.error("服务接口检测任务错误", e);
             return 500;
         }
     }
