@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class JarPackageService extends ServiceImpl<JarPackageMapper,JarPackage> {
+public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage> {
 
     private final JarPackageMapper jarPackageMapper;
     private final AgentConfigMapper agentConfigMapper;
@@ -373,8 +373,8 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper,JarPackage> 
             String mkdirCmd = String.format("mkdir -p %s", buildDir);
             agentConfigService.sendCmd(agentId, mkdirCmd);
 
-            // 5. 移动JAR文件到构建目录并重命名为app.jar
-            String moveJarCmd = String.format("mv %s %s/app.jar", jarDownloadPath, buildDir);
+            // 5. 移动JAR文件到构建目录并重命名为jarPackage.jar
+            String moveJarCmd = String.format("mv %s %s/" + jarPackage.getFileName() + ".jar", jarDownloadPath, buildDir);
             agentConfigService.sendCmd(agentId, moveJarCmd);
 
             // 6. 创建Dockerfile
@@ -575,7 +575,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper,JarPackage> 
 
             // 6. 复制新JAR文件到容器内部
             updateDeployRecord(recordId, 1, "替换容器中的JAR文件...");
-            String copyCmd = String.format("docker cp %s %s:/app/app.jar", jarDownloadPath, containerName);
+            String copyCmd = String.format("docker cp %s %s:/app/" + jarPackage.getFileName() + ".jar", jarDownloadPath, containerName);
             agentConfigService.sendCmd(agentId, copyCmd);
 
             // 7. 清理临时文件
