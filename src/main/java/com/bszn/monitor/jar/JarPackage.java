@@ -20,7 +20,11 @@ public class JarPackage {
     private String remark;
     private String jarPath;
 
+    private String downloadUrl;
     private String dockerImageName;
+    private String dockerContainerName;
+    private String dockerfilePath;
+    private String dockerfileContent;
     private String agentIds;
     private String agentNames;
     private String targetContainerNames;

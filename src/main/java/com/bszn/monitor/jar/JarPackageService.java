@@ -1,6 +1,8 @@
 package com.bszn.monitor.jar;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.bszn.monitor.agent.AgentConfig;
 import com.bszn.monitor.agent.AgentConfigMapper;
@@ -17,6 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -27,20 +30,25 @@ import java.util.stream.Collectors;
 public class JarPackageService extends ServiceImpl<JarPackageMapper,JarPackage> {
 
     private final JarPackageMapper jarPackageMapper;
-
     private final AgentConfigMapper agentConfigMapper;
-
     private final DockerContainerMapper dockerContainerMapper;
-
     private final JarDeployRecordMapper jarDeployRecordMapper;
-
     private final AgentConfigService agentConfigService;
 
     @Value("${jar.upload.path:/opt/jars}")
     private String uploadPath;
 
+    @Value("${docker.base.image:openjdk:8-jre-slim}")
+    private String dockerBaseImage;
+
+    @Value("${server.host:localhost}")
+    private String serverHost;
+
+    @Value("${server.port:8080}")
+    private String serverPort;
+
     /**
-     * 上传JAR包（自动生成Docker镜像名称）
+     * 上传JAR包
      */
     public JarPackage uploadJar(MultipartFile file, String remark) throws IOException {
         String originalName = file.getOriginalFilename();
@@ -68,8 +76,13 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper,JarPackage> 
         String filePath = uploadPath + File.separator + saveFileName;
         file.transferTo(new File(filePath));
 
-        // 生成Docker镜像名称
+        // 生成下载URL
+        String downloadUrl = String.format("http://%s:%s/jar/download/%s",
+                serverHost, serverPort, saveFileName);
+
+        // 生成默认Docker镜像名称
         String dockerImageName = fileName.toLowerCase() + ":" + newVersion;
+        String dockerContainerName = fileName.toLowerCase() + "-" + newVersion.replace(".", "-");
 
         // 保存记录
         JarPackage jarPackage = new JarPackage();
@@ -78,7 +91,9 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper,JarPackage> 
         jarPackage.setVersion(newVersion);
         jarPackage.setRemark(remark);
         jarPackage.setJarPath(filePath);
+        jarPackage.setDownloadUrl(downloadUrl);
         jarPackage.setDockerImageName(dockerImageName);
+        jarPackage.setDockerContainerName(dockerContainerName);
         jarPackage.setStatus(0); // 未部署
         jarPackage.setCreateTime(new Date());
         jarPackage.setUpdateTime(new Date());
@@ -88,7 +103,31 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper,JarPackage> 
     }
 
     /**
-     * 获取所有Agent（用于部署选择）
+     * 更新Dockerfile
+     */
+    public boolean updateDockerfile(Integer id, String dockerfileContent) {
+        try {
+            JarPackage jarPackage = jarPackageMapper.selectById(id);
+            if (jarPackage == null) {
+                throw new IllegalArgumentException("JAR包不存在");
+            }
+
+            if (StringUtils.isBlank(dockerfileContent)) {
+                throw new IllegalArgumentException("Dockerfile内容不能为空");
+            }
+
+            jarPackage.setDockerfileContent(dockerfileContent);
+            jarPackage.setUpdateTime(new Date());
+            jarPackageMapper.updateById(jarPackage);
+            return true;
+        } catch (Exception e) {
+            log.error("更新Dockerfile失败", e);
+            throw e;
+        }
+    }
+
+    /**
+     * 获取所有Agent（包含没有容器的Agent）
      */
     public List<Map<String, Object>> getAllAgents() {
         // 获取所有Agent
@@ -105,26 +144,35 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper,JarPackage> 
                             .eq("hostname", agent.getHostname())
             );
 
-            if (!containers.isEmpty()) {
-                Map<String, Object> agentInfo = new HashMap<>();
-                agentInfo.put("agentId", agent.getId());
-                agentInfo.put("agentName", agent.getHostname());
-                agentInfo.put("containers", containers);
-                result.add(agentInfo);
-            }
+            Map<String, Object> agentInfo = new HashMap<>();
+            agentInfo.put("agentId", agent.getId());
+            agentInfo.put("agentName", agent.getHostname());
+//            agentInfo.put("agentIp", agent.getAgentIp());
+//            agentInfo.put("agentPort", agent.getAgentPort());
+            agentInfo.put("containers", containers);
+            agentInfo.put("hasContainers", !containers.isEmpty());
+            agentInfo.put("containerCount", containers.size());
+
+            result.add(agentInfo);
         }
 
         return result;
     }
 
     /**
-     * 部署JAR包
+     * 首次部署 - 根据Dockerfile自动创建容器
      */
     @Async
     public CompletableFuture<Boolean> deploy(Integer jarPackageId, List<Long> agentIds, List<String> containerNames) {
         JarPackage jarPackage = jarPackageMapper.selectById(jarPackageId);
         if (jarPackage == null) {
             log.error("JAR包不存在: id={}", jarPackageId);
+            return CompletableFuture.completedFuture(false);
+        }
+
+        // 验证Dockerfile是否已设置
+        if (StringUtils.isBlank(jarPackage.getDockerfileContent())) {
+            log.error("首次部署需要设置Dockerfile");
             return CompletableFuture.completedFuture(false);
         }
 
@@ -136,6 +184,13 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper,JarPackage> 
 
         if (agentIds.size() != containerNames.size()) {
             log.error("Agent数量与容器数量不匹配");
+            return CompletableFuture.completedFuture(false);
+        }
+
+        // 检查容器名称是否重复
+        Set<String> containerNameSet = new HashSet<>(containerNames);
+        if (containerNameSet.size() != containerNames.size()) {
+            log.error("容器名称不能重复");
             return CompletableFuture.completedFuture(false);
         }
 
@@ -157,9 +212,9 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper,JarPackage> 
             // 创建部署记录
             JarDeployRecord record = createDeployRecord(jarPackageId, agentId, containerName);
 
-            // 异步执行部署
+            // 异步执行首次部署（根据Dockerfile创建容器）
             CompletableFuture<Boolean> future = CompletableFuture.supplyAsync(() -> {
-                return deployToAgent(jarPackage, agentId, containerName, record.getId());
+                return deployWithDockerfile(jarPackage, agentId, containerName, record.getId());
             });
 
             futures.add(future);
@@ -185,25 +240,34 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper,JarPackage> 
                     jarPackage.setUpdateTime(new Date());
                     jarPackageMapper.updateById(jarPackage);
 
-                    log.info("JAR包部署完成: id={}, success={}", jarPackageId, allSuccess);
+                    log.info("JAR包首次部署完成: id={}, success={}", jarPackageId, allSuccess);
                     return allSuccess;
                 });
     }
 
     /**
-     * 重新部署
+     * 重新部署 - 只替换JAR包
      */
     @Async
-    public CompletableFuture<Boolean> redeploy(Integer jarPackageId) {
+    public CompletableFuture<Boolean> redeploy(Integer jarPackageId, List<Long> agentIds, List<String> containerNames) {
         JarPackage jarPackage = jarPackageMapper.selectById(jarPackageId);
-        if (jarPackage == null || jarPackage.getStatus() != 2) {
-            log.error("JAR包不存在或未部署成功");
+        if (jarPackage == null) {
+            log.error("JAR包不存在: id={}", jarPackageId);
             return CompletableFuture.completedFuture(false);
         }
 
-        // 获取之前的部署目标
-        List<Long> agentIds = getAgentIdList(jarPackage.getAgentIds());
-        List<String> containerNames = getContainerNameList(jarPackage.getTargetContainerNames());
+        // 如果提供了新的部署目标，则更新目标
+        if (agentIds != null && !agentIds.isEmpty() && containerNames != null && !containerNames.isEmpty()) {
+            if (agentIds.size() != containerNames.size()) {
+                log.error("Agent数量与容器数量不匹配");
+                return CompletableFuture.completedFuture(false);
+            }
+            saveDeploymentTargets(jarPackage, agentIds, containerNames);
+        } else {
+            // 使用原来的部署目标
+            agentIds = getAgentIdList(jarPackage.getAgentIds());
+            containerNames = getContainerNameList(jarPackage.getTargetContainerNames());
+        }
 
         if (agentIds.isEmpty() || containerNames.isEmpty()) {
             log.error("没有部署目标");
@@ -225,9 +289,9 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper,JarPackage> 
             // 创建部署记录
             JarDeployRecord record = createDeployRecord(jarPackageId, agentId, containerName);
 
-            // 异步执行重新部署
+            // 异步执行重新部署（只替换JAR包）
             CompletableFuture<Boolean> future = CompletableFuture.supplyAsync(() -> {
-                return redeployToAgent(jarPackage, agentId, containerName, record.getId());
+                return redeployJarOnly(jarPackage, agentId, containerName, record.getId());
             });
 
             futures.add(future);
@@ -259,6 +323,359 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper,JarPackage> 
     }
 
     /**
+     * 根据Dockerfile部署到Agent（自动构建镜像并创建容器）
+     */
+    private boolean deployWithDockerfile(JarPackage jarPackage, Long agentId,
+                                         String containerName, Integer recordId) {
+        try {
+            AgentConfig agentConfig = agentConfigMapper.selectById(agentId);
+            if (agentConfig == null) {
+                updateDeployRecord(recordId, 3, "Agent不存在");
+                return false;
+            }
+
+            // 1. 检查Dockerfile是否已设置
+            if (StringUtils.isBlank(jarPackage.getDockerfileContent())) {
+                updateDeployRecord(recordId, 3, "Dockerfile未设置");
+                return false;
+            }
+
+            // 2. 检查容器名称是否已存在
+            updateDeployRecord(recordId, 1, "检查容器状态...");
+            boolean containerExists = checkContainerExists(agentId, containerName);
+
+            if (containerExists) {
+                updateDeployRecord(recordId, 3, "容器名称已存在: " + containerName);
+                return false;
+            }
+
+            // 3. 在Agent端下载JAR包
+            updateDeployRecord(recordId, 1, "下载JAR文件...");
+            String downloadUrl = jarPackage.getDownloadUrl();
+            String jarFileName = jarPackage.getFileName() + "-" + jarPackage.getVersion() + ".jar";
+            String jarDownloadPath = "/tmp/" + jarFileName;
+
+            String downloadCmd = String.format("curl -L -o %s '%s'", jarDownloadPath, downloadUrl);
+            agentConfigService.sendCmd(agentId, downloadCmd);
+
+            // 检查下载是否成功
+            String checkDownloadCmd = String.format("[ -f %s ] && echo 'exists' || echo 'not exists'", jarDownloadPath);
+            String checkResult = agentConfigService.sendCmdWithResult(agentId, checkDownloadCmd);
+
+            if (!"exists".equals(checkResult.trim())) {
+                updateDeployRecord(recordId, 3, "JAR文件下载失败");
+                return false;
+            }
+
+            // 4. 创建Docker构建目录
+            updateDeployRecord(recordId, 1, "准备构建环境...");
+            String buildDir = "/tmp/build-" + System.currentTimeMillis();
+            String mkdirCmd = String.format("mkdir -p %s", buildDir);
+            agentConfigService.sendCmd(agentId, mkdirCmd);
+
+            // 5. 移动JAR文件到构建目录并重命名为app.jar
+            String moveJarCmd = String.format("mv %s %s/app.jar", jarDownloadPath, buildDir);
+            agentConfigService.sendCmd(agentId, moveJarCmd);
+
+            // 6. 创建Dockerfile
+            updateDeployRecord(recordId, 1, "创建Dockerfile...");
+            String dockerfileContent = jarPackage.getDockerfileContent();
+            String dockerfilePath = buildDir + "/Dockerfile";
+
+            // 转义特殊字符
+            dockerfileContent = dockerfileContent.replace("'", "'\"'\"'");
+            String createDockerfileCmd = String.format("echo '%s' > %s", dockerfileContent, dockerfilePath);
+            agentConfigService.sendCmd(agentId, createDockerfileCmd);
+
+            // 7. 构建Docker镜像
+            updateDeployRecord(recordId, 1, "构建Docker镜像...");
+            String imageName = jarPackage.getDockerImageName();
+            String buildCmd = String.format("cd %s && docker build -t %s .", buildDir, imageName);
+            String buildResult = agentConfigService.sendCmdWithResult(agentId, buildCmd);
+
+            if (StringUtils.contains(buildResult, "error") || StringUtils.contains(buildResult, "ERROR")) {
+                updateDeployRecord(recordId, 3, "构建镜像失败: " + buildResult);
+                return false;
+            }
+
+            // 8. 清理构建目录
+            String cleanupBuildCmd = String.format("rm -rf %s", buildDir);
+            agentConfigService.sendCmd(agentId, cleanupBuildCmd);
+
+            // 9. 解析Dockerfile获取端口等信息
+            Map<String, String> dockerInfo = parseDockerfileInfo(jarPackage.getDockerfileContent());
+            String exposedPort = dockerInfo.getOrDefault("EXPOSE", "8080");
+
+            // 10. 运行容器
+            updateDeployRecord(recordId, 1, "启动容器...");
+            String runCmd = buildDockerRunCommand(containerName, imageName, exposedPort, dockerInfo);
+            agentConfigService.sendCmd(agentId, runCmd);
+
+            // 11. 等待容器启动
+            Thread.sleep(5000);
+
+            // 12. 检查容器状态
+            updateDeployRecord(recordId, 1, "检查容器状态...");
+            String statusCmd = String.format("docker inspect -f '{{.State.Status}}' %s", containerName);
+            String status = agentConfigService.sendCmdWithResult(agentId, statusCmd);
+
+            if ("running".equals(status.trim())) {
+                // 获取容器日志
+                String logsCmd = String.format("docker logs --tail=10 %s", containerName);
+                String logs = agentConfigService.sendCmdWithResult(agentId, logsCmd);
+                updateDeployRecord(recordId, 2, "部署成功！\n容器状态: running\n容器日志:\n" + logs);
+
+                // 更新容器信息到数据库
+                updateContainerInfo(agentId, containerName, imageName);
+                return true;
+            } else {
+                // 获取容器错误日志
+                String logsCmd = String.format("docker logs --tail=20 %s", containerName);
+                String logs = agentConfigService.sendCmdWithResult(agentId, logsCmd);
+                updateDeployRecord(recordId, 3, "容器启动失败\n状态: " + status + "\n错误日志:\n" + logs);
+                return false;
+            }
+
+        } catch (Exception e) {
+            log.error("根据Dockerfile部署失败", e);
+            updateDeployRecord(recordId, 3, "部署失败: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 解析Dockerfile获取配置信息
+     */
+    private Map<String, String> parseDockerfileInfo(String dockerfileContent) {
+        Map<String, String> info = new HashMap<>();
+
+        if (StringUtils.isBlank(dockerfileContent)) {
+            return info;
+        }
+
+        String[] lines = dockerfileContent.split("\n");
+        for (String line : lines) {
+            line = line.trim().toUpperCase();
+
+            // 解析EXPOSE指令
+            if (line.startsWith("EXPOSE")) {
+                String[] parts = line.split("\\s+");
+                if (parts.length > 1) {
+                    info.put("EXPOSE", parts[1]);
+                }
+            }
+            // 解析ENV指令
+            else if (line.startsWith("ENV")) {
+                String envPart = line.substring(3).trim();
+                String[] envParts = envPart.split("\\s+");
+                if (envParts.length >= 2) {
+                    String key = envParts[0];
+                    String value = envParts[1].replace("\"", "").replace("'", "");
+                    info.put("ENV_" + key, value);
+                }
+            }
+            // 解析WORKDIR指令
+            else if (line.startsWith("WORKDIR")) {
+                String[] parts = line.split("\\s+");
+                if (parts.length > 1) {
+                    info.put("WORKDIR", parts[1]);
+                }
+            }
+        }
+
+        return info;
+    }
+
+    /**
+     * 构建docker run命令
+     */
+    private String buildDockerRunCommand(String containerName, String imageName,
+                                         String exposedPort, Map<String, String> dockerInfo) {
+        StringBuilder runCmd = new StringBuilder();
+        runCmd.append("docker run -d");
+        runCmd.append(" --name ").append(containerName);
+        runCmd.append(" --restart=always");
+
+        // 端口映射：默认使用EXPOSE的端口，或8080
+        if (StringUtils.isNotBlank(exposedPort)) {
+            runCmd.append(" -p ").append(exposedPort).append(":").append(exposedPort);
+        } else {
+            runCmd.append(" -p 8080:8080");
+        }
+
+        // 添加Dockerfile中定义的ENV变量
+        for (Map.Entry<String, String> entry : dockerInfo.entrySet()) {
+            if (entry.getKey().startsWith("ENV_")) {
+                String envKey = entry.getKey().substring(4);
+                runCmd.append(" -e ").append(envKey).append("=").append(entry.getValue());
+            }
+        }
+
+        // 设置时区（如果没有在Dockerfile中设置）
+        if (!dockerInfo.containsKey("ENV_TZ")) {
+            runCmd.append(" -e TZ=Asia/Shanghai");
+        }
+
+        runCmd.append(" ").append(imageName);
+
+        return runCmd.toString();
+    }
+
+    /**
+     * 重新部署：只替换JAR包
+     */
+    private boolean redeployJarOnly(JarPackage jarPackage, Long agentId, String containerName, Integer recordId) {
+        try {
+            AgentConfig agentConfig = agentConfigMapper.selectById(agentId);
+            if (agentConfig == null) {
+                updateDeployRecord(recordId, 3, "Agent不存在");
+                return false;
+            }
+
+            // 1. 检查容器是否存在
+            updateDeployRecord(recordId, 1, "检查容器状态...");
+            boolean containerExists = checkContainerExists(agentId, containerName);
+
+            if (!containerExists) {
+                updateDeployRecord(recordId, 3, "容器不存在，请先部署");
+                return false;
+            }
+
+            // 2. 检查容器是否在运行
+            String statusCmd = String.format("docker inspect -f '{{.State.Status}}' %s", containerName);
+            String status = agentConfigService.sendCmdWithResult(agentId, statusCmd);
+            boolean isRunning = "running".equals(status.trim());
+
+            // 3. 停止容器（如果正在运行）
+            if (isRunning) {
+                updateDeployRecord(recordId, 1, "停止容器...");
+                String stopCmd = String.format("docker stop %s", containerName);
+                agentConfigService.sendCmd(agentId, stopCmd);
+                Thread.sleep(2000);
+            }
+
+            // 4. 获取下载URL
+            String downloadUrl = jarPackage.getDownloadUrl();
+            String jarFileName = jarPackage.getFileName() + "-" + jarPackage.getVersion() + ".jar";
+            String jarDownloadPath = "/tmp/" + jarFileName;
+
+            // 5. 在Agent端下载新JAR包
+            updateDeployRecord(recordId, 1, "下载新JAR文件...");
+            String downloadCmd = String.format("curl -L -o %s '%s'", jarDownloadPath, downloadUrl);
+            agentConfigService.sendCmd(agentId, downloadCmd);
+
+            // 检查下载是否成功
+            String checkDownloadCmd = String.format("[ -f %s ] && echo 'exists' || echo 'not exists'", jarDownloadPath);
+            String checkResult = agentConfigService.sendCmdWithResult(agentId, checkDownloadCmd);
+
+            if (!"exists".equals(checkResult.trim())) {
+                updateDeployRecord(recordId, 3, "JAR文件下载失败");
+                return false;
+            }
+
+            // 6. 复制新JAR文件到容器内部
+            updateDeployRecord(recordId, 1, "替换容器中的JAR文件...");
+            String copyCmd = String.format("docker cp %s %s:/app/app.jar", jarDownloadPath, containerName);
+            agentConfigService.sendCmd(agentId, copyCmd);
+
+            // 7. 清理临时文件
+            String cleanupCmd = String.format("rm -f %s", jarDownloadPath);
+            agentConfigService.sendCmd(agentId, cleanupCmd);
+
+            // 8. 启动容器
+            updateDeployRecord(recordId, 1, "启动容器...");
+            String startCmd = String.format("docker start %s", containerName);
+            agentConfigService.sendCmd(agentId, startCmd);
+
+            // 9. 等待容器启动
+            Thread.sleep(5000);
+
+            // 10. 检查容器状态
+            updateDeployRecord(recordId, 1, "检查容器状态...");
+            status = agentConfigService.sendCmdWithResult(agentId, statusCmd);
+
+            if ("running".equals(status.trim())) {
+                // 获取容器日志
+                String logsCmd = String.format("docker logs --tail=10 %s", containerName);
+                String logs = agentConfigService.sendCmdWithResult(agentId, logsCmd);
+                updateDeployRecord(recordId, 2, "重新部署成功！\n容器状态: running\n容器日志:\n" + logs);
+                return true;
+            } else {
+                // 获取容器错误日志
+                String logsCmd = String.format("docker logs --tail=20 %s", containerName);
+                String logs = agentConfigService.sendCmdWithResult(agentId, logsCmd);
+                updateDeployRecord(recordId, 3, "容器启动失败\n状态: " + status + "\n错误日志:\n" + logs);
+                return false;
+            }
+
+        } catch (Exception e) {
+            log.error("重新部署失败", e);
+            updateDeployRecord(recordId, 3, "重新部署失败: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 检查容器是否存在
+     */
+    private boolean checkContainerExists(Long agentId, String containerName) {
+        try {
+            AgentConfig agent = agentConfigMapper.selectById(agentId);
+            if (agent == null) {
+                return false;
+            }
+
+            // 执行docker ps命令检查容器
+            String checkCmd = String.format("docker ps -a --filter 'name=^%s$' --format '{{.Names}}'", containerName);
+            String result = agentConfigService.sendCmdWithResult(agentId, checkCmd);
+
+            return StringUtils.isNotBlank(result) && result.trim().equals(containerName);
+        } catch (Exception e) {
+            log.error("检查容器存在失败", e);
+            return false;
+        }
+    }
+
+    /**
+     * 更新容器信息到数据库
+     */
+    private void updateContainerInfo(Long agentId, String containerName, String imageName) {
+        try {
+            AgentConfig agent = agentConfigMapper.selectById(agentId);
+            if (agent == null) {
+                return;
+            }
+
+            // 检查容器是否已存在数据库中
+            QueryWrapper<DockerContainer> queryWrapper = new QueryWrapper<>();
+            queryWrapper.eq("hostname", agent.getHostname())
+                    .eq("names", containerName);
+
+            DockerContainer existing = dockerContainerMapper.selectOne(queryWrapper);
+
+            if (existing == null) {
+                // 创建新的容器记录
+                DockerContainer container = new DockerContainer();
+                container.setHostname(agent.getHostname());
+                container.setNames(containerName);
+                container.setImage(imageName);
+                container.setStatus("running");
+                container.setCreateTime(LocalDateTime.now());
+                dockerContainerMapper.insert(container);
+            } else {
+                // 更新现有记录
+                existing.setImage(imageName);
+                existing.setStatus("running");
+                existing.setUpdateTime(new Date());
+                dockerContainerMapper.updateById(existing);
+            }
+
+        } catch (Exception e) {
+            log.error("更新容器信息失败", e);
+        }
+    }
+
+    /**
      * 保存部署目标
      */
     private void saveDeploymentTargets(JarPackage jarPackage, List<Long> agentIds, List<String> containerNames) {
@@ -278,82 +695,13 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper,JarPackage> 
             jarPackage.setAgentIds(String.join(",", agentIds.stream().map(String::valueOf).collect(Collectors.toList())));
             jarPackage.setAgentNames(String.join(",", agentNameList));
             jarPackage.setTargetContainerNames(String.join(",", containerNames));
+            jarPackage.setDockerContainerName(String.join(",", containerNames));
             jarPackage.setUpdateTime(new Date());
 
             jarPackageMapper.updateById(jarPackage);
 
         } catch (Exception e) {
             log.error("保存部署目标失败", e);
-        }
-    }
-
-    /**
-     * 部署到单个Agent
-     */
-    private boolean deployToAgent(JarPackage jarPackage, Long agentId, String containerName, Integer recordId) {
-        try {
-            AgentConfig agentConfig = agentConfigMapper.selectById(agentId);
-            if (agentConfig == null) {
-                updateDeployRecord(recordId, 3, "Agent不存在");
-                return false;
-            }
-
-            // 1. 复制JAR包到容器
-            updateDeployRecord(recordId, 1, "正在复制JAR包...");
-            String copyCmd = String.format("docker cp %s %s:/app/app.jar",
-                    jarPackage.getJarPath(), containerName);
-            agentConfigService.sendCmd(agentId, copyCmd);
-
-            // 2. 重启容器
-            updateDeployRecord(recordId, 1, "正在重启容器...");
-            String restartCmd = String.format("docker restart %s", containerName);
-            agentConfigService.sendCmd(agentId, restartCmd);
-
-            // 3. 等待重启完成
-            Thread.sleep(5000);
-
-            updateDeployRecord(recordId, 2, "部署成功");
-            return true;
-
-        } catch (Exception e) {
-            log.error("部署失败", e);
-            updateDeployRecord(recordId, 3, "部署失败: " + e.getMessage());
-            return false;
-        }
-    }
-
-    /**
-     * 重新部署到单个Agent
-     */
-    private boolean redeployToAgent(JarPackage jarPackage, Long agentId, String containerName, Integer recordId) {
-        try {
-            AgentConfig agentConfig = agentConfigMapper.selectById(agentId);
-            if (agentConfig == null) {
-                updateDeployRecord(recordId, 3, "Agent不存在");
-                return false;
-            }
-
-            // 1. 复制新JAR包到容器
-            updateDeployRecord(recordId, 1, "正在复制新JAR包...");
-            String copyCmd = String.format("docker cp %s %s:/app/app.jar",
-                    jarPackage.getJarPath(), containerName);
-            agentConfigService.sendCmd(agentId, copyCmd);
-
-            // 2. 重启容器
-            updateDeployRecord(recordId, 1, "正在重启容器...");
-            String restartCmd = String.format("docker restart %s", containerName);
-            agentConfigService.sendCmd(agentId, restartCmd);
-
-            // 3. 等待重启完成
-            Thread.sleep(3000);
-
-            updateDeployRecord(recordId, 2, "重新部署成功");
-            return true;
-
-        } catch (Exception e) {
-            log.error("重新部署失败", e);
-            updateDeployRecord(recordId, 3, "重新部署失败: " + e.getMessage());
-            return false;
         }
     }
 
@@ -392,6 +740,17 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper,JarPackage> 
     }
 
     /**
+     * 获取JAR包下载文件
+     */
+    public File getJarFileForDownload(String fileName) {
+        File jarFile = new File(uploadPath + File.separator + fileName);
+        if (!jarFile.exists()) {
+            throw new IllegalArgumentException("文件不存在: " + fileName);
+        }
+        return jarFile;
+    }
+
+    /**
      * 获取部署记录
      */
     public List<JarDeployRecord> getDeployRecords(Integer jarPackageId) {
@@ -399,12 +758,10 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper,JarPackage> 
     }
 
     /**
-     * 获取JAR包列表
+     * 获取JAR包列表（带分页）
      */
-    public List<JarPackage> getJarPackageList() {
-        return jarPackageMapper.selectList(
-                new QueryWrapper<JarPackage>().orderByDesc("create_time")
-        );
+    public Page<JarPackage> getJarPackagePage(Page<JarPackage> page, LambdaQueryWrapper<JarPackage> wrapper) {
+        return jarPackageMapper.selectPage(page, wrapper);
     }
 
     /**

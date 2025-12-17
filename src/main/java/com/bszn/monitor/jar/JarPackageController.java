@@ -1,17 +1,28 @@
 package com.bszn.monitor.jar;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.bszn.monitor.docker.DockerContainer;
 import com.bszn.system.common.result.Result;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 @Slf4j
@@ -43,6 +54,69 @@ public class JarPackageController {
         }
     }
 
+    @PutMapping("/{id}/dockerfile")
+    @Operation(summary = "更新Dockerfile")
+    public Result<String> updateDockerfile(@PathVariable Integer id,
+                                           @RequestBody DockerfileRequest request) {
+        try {
+            if (request.getDockerfileContent() == null || request.getDockerfileContent().isEmpty()) {
+                return Result.failed("Dockerfile内容不能为空");
+            }
+
+            boolean success = jarPackageService.updateDockerfile(id, request.getDockerfileContent());
+            if (success) {
+                return Result.success("Dockerfile更新成功");
+            }
+            return Result.failed("Dockerfile更新失败");
+        } catch (IllegalArgumentException e) {
+            return Result.failed(e.getMessage());
+        } catch (Exception e) {
+            log.error("更新Dockerfile异常", e);
+            return Result.failed("更新异常: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/{id}/dockerfile")
+    @Operation(summary = "获取Dockerfile")
+    public Result<String> getDockerfile(@PathVariable Integer id) {
+        try {
+            JarPackage jarPackage = jarPackageService.getJarPackageById(id);
+            if (jarPackage == null) {
+                return Result.failed("JAR包不存在");
+            }
+            return Result.success(jarPackage.getDockerfileContent());
+        } catch (Exception e) {
+            log.error("获取Dockerfile异常", e);
+            return Result.failed("获取失败");
+        }
+    }
+
+    @GetMapping("/download/{fileName}")
+    @Operation(summary = "下载JAR包")
+    public ResponseEntity<Resource> downloadJar(@PathVariable String fileName,
+                                                HttpServletRequest request) {
+        try {
+            File file = jarPackageService.getJarFileForDownload(fileName);
+
+            Resource resource = new FileSystemResource(file);
+
+            String contentType = request.getServletContext().getMimeType(file.getAbsolutePath());
+            if (contentType == null) {
+                contentType = "application/octet-stream";
+            }
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"" + file.getName() + "\"")
+                    .body(resource);
+
+        } catch (Exception e) {
+            log.error("下载JAR包异常", e);
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     @GetMapping("/agents")
     @Operation(summary = "获取所有Agent")
     public Result<List<Map<String, Object>>> getAllAgents() {
@@ -56,7 +130,7 @@ public class JarPackageController {
     }
 
     @PostMapping("/deploy/{id}")
-    @Operation(summary = "部署JAR包")
+    @Operation(summary = "首次部署JAR包（根据Dockerfile创建容器）")
     public Result<String> deploy(@PathVariable Integer id,
                                  @RequestBody DeployRequest request) {
         try {
@@ -65,18 +139,35 @@ public class JarPackageController {
             }
 
             if (request.getContainerNames() == null || request.getContainerNames().isEmpty()) {
-                return Result.failed("请选择容器");
+                return Result.failed("请输入容器名称");
             }
 
             if (request.getAgentIds().size() != request.getContainerNames().size()) {
                 return Result.failed("Agent数量与容器数量必须一致");
             }
 
+            // 检查容器名称是否重复
+            Set<String> containerNameSet = new HashSet<>(request.getContainerNames());
+            if (containerNameSet.size() != request.getContainerNames().size()) {
+                return Result.failed("容器名称不能重复");
+            }
+
+            // 检查JAR包是否存在
+            JarPackage jarPackage = jarPackageService.getJarPackageById(id);
+            if (jarPackage == null) {
+                return Result.failed("JAR包不存在");
+            }
+
+            // 检查Dockerfile是否已设置
+            if (StringUtils.isBlank(jarPackage.getDockerfileContent())) {
+                return Result.failed("首次部署需要先设置Dockerfile");
+            }
+
             CompletableFuture<Boolean> future = jarPackageService.deploy(
                     id, request.getAgentIds(), request.getContainerNames()
             );
 
-            return Result.success("开始部署，请稍后查看状态");
+            return Result.success("开始部署，系统将根据Dockerfile自动创建容器");
 
         } catch (Exception e) {
             log.error("部署异常", e);
@@ -85,34 +176,45 @@ public class JarPackageController {
     }
 
     @PostMapping("/redeploy/{id}")
-    @Operation(summary = "重新部署")
-    public Result<String> redeploy(@PathVariable Integer id) {
+    @Operation(summary = "重新部署（只替换JAR包）")
+    public Result<String> redeploy(@PathVariable Integer id,
+                                   @RequestBody(required = false) DeployRequest request) {
         try {
-            CompletableFuture<Boolean> future = jarPackageService.redeploy(id);
-            return Result.success("开始重新部署");
+            List<Long> agentIds = null;
+            List<String> containerNames = null;
+
+            if (request != null) {
+                agentIds = request.getAgentIds();
+                containerNames = request.getContainerNames();
+
+                if (agentIds != null && containerNames != null &&
+                        !agentIds.isEmpty() && !containerNames.isEmpty()) {
+                    if (agentIds.size() != containerNames.size()) {
+                        return Result.failed("Agent数量与容器数量必须一致");
+                    }
+                }
+            }
+
+            CompletableFuture<Boolean> future = jarPackageService.redeploy(
+                    id, agentIds, containerNames
+            );
+
+            return Result.success("开始重新部署，请稍后查看状态");
+
         } catch (Exception e) {
             log.error("重新部署异常", e);
             return Result.failed("重新部署异常: " + e.getMessage());
         }
     }
 
-    @GetMapping("/list")
-    @Operation(summary = "获取JAR包列表")
-    public Result<List<JarPackage>> listJarPackages() {
-        try {
-            List<JarPackage> jarPackages = jarPackageService.getJarPackageList();
-            return Result.success(jarPackages);
-        } catch (Exception e) {
-            log.error("获取JAR包列表异常", e);
-            return Result.failed("获取列表失败");
-        }
-    }
-
     @GetMapping("/page")
-    @Operation(summary = "获取JAR包列表")
+    @Operation(summary = "获取JAR包列表（分页）")
     public Result<Page<JarPackage>> page(JarQueryPage jarQueryPage) {
         try {
-            return Result.success(jarPackageService.page(jarQueryPage.getPage(), jarQueryPage.buildLambda()));
+            return Result.success(jarPackageService.getJarPackagePage(
+                    jarQueryPage.getPage(),
+                    jarQueryPage.buildLambda()
+            ));
         } catch (Exception e) {
             log.error("获取JAR包列表异常", e);
             return Result.failed("获取列表失败");
@@ -150,33 +252,8 @@ public class JarPackageController {
     @Operation(summary = "获取部署状态")
     public Result<Map<String, Object>> getDeployStatus(@PathVariable Integer id) {
         try {
-            // 获取JAR包信息
-            JarPackage jarPackage = jarPackageService.getJarPackageById(id);
-            if (jarPackage == null) {
-                return Result.failed("JAR包不存在");
-            }
-
-            // 获取部署记录
-            List<JarDeployRecord> records = jarPackageService.getDeployRecords(id);
-
-            // 计算统计信息
-            Map<String, Object> status = new java.util.HashMap<>();
-            status.put("jarPackage", jarPackage);
-            status.put("deployRecords", records);
-
-            long total = records.size();
-            long success = records.stream().filter(r -> r.getStatus() == 2).count();
-            long failed = records.stream().filter(r -> r.getStatus() == 3).count();
-            long deploying = records.stream().filter(r -> r.getStatus() == 1).count();
-
-            status.put("total", total);
-            status.put("success", success);
-            status.put("failed", failed);
-            status.put("deploying", deploying);
-            status.put("progress", total > 0 ? (success * 100 / total) : 0);
-
-            return Result.success(status);
-
+            Map<String, Object> stats = jarPackageService.getJarPackageStats(id);
+            return Result.success(stats);
         } catch (Exception e) {
             log.error("获取部署状态异常", e);
             return Result.failed("获取部署状态失败");
@@ -188,5 +265,10 @@ public class JarPackageController {
     public static class DeployRequest {
         private List<Long> agentIds;
         private List<String> containerNames;
+    }
+
+    @Data
+    public static class DockerfileRequest {
+        private String dockerfileContent;
     }
 }

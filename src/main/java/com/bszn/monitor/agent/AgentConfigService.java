@@ -30,4 +30,6 @@ public interface AgentConfigService extends IService<AgentConfig> {
     void upgradeClientByServiceId(Integer serviceId);
 
     void receiveClientMsg(ClientMsgForm clientMsgForm);
+
+    String sendCmdWithResult(Long agentId, String checkCmd);
 }

@@ -67,3 +67,4 @@ security:
     - "/v3/api-docs/**"
     - "/swagger-ui/**"
     - "/ws/**"
+    - "/jar/download/*.jar"

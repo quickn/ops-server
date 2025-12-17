@@ -78,6 +78,12 @@ public class AgentConfigServiceImpl extends ServiceImpl<AgentConfigMapper, Agent
     }
 
     @Override
+    public String sendCmdWithResult(Long agentId, String checkCmd) {
+        cmdMap.put(agentId, checkCmd);
+        return "running";
+    }
+
+    @Override
     public String getCmdById(Long id) {
         return cmdMap.get(id);
     }
