@@ -1,4 +1,4 @@
-FROM openjdk:17-ea-oracle
+FROM adoptopenjdk:8-jdk-hotspot
 
 ARG profileActive
 ENV profileActive=${profileActive}
@@ -16,8 +16,8 @@ RUN if [[ '$os' == 'ubuntu' ]] ; then echo $TZ > /etc/timezone ; else echo $os ;
 RUN mkdir -p ${contextPath}
 WORKDIR ${contextPath}
 
-EXPOSE 8089
+EXPOSE 9999
 
-ADD ./bs-monitor.jar ./
+ADD ./monitor-collector.jar ./
 
-CMD java -jar bs-monitor.jar --spring.profiles.active=${profileActive:test}
+ENTRYPOINT ["sh","-c","java -Djava.security.egd=file:/dev/./urandom -jar ./monitor-collector.jar --spring.profiles.active=$profileActive"]
