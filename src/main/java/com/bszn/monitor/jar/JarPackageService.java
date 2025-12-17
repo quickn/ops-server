@@ -1,6 +1,7 @@
 package com.bszn.monitor.jar;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.bszn.monitor.agent.AgentConfig;
 import com.bszn.monitor.agent.AgentConfigMapper;
 import com.bszn.monitor.agent.AgentConfigService;
@@ -23,7 +24,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class JarPackageService {
+public class JarPackageService extends ServiceImpl<JarPackageMapper,JarPackage> {
 
     private final JarPackageMapper jarPackageMapper;
 
@@ -31,7 +32,7 @@ public class JarPackageService {
 
     private final DockerContainerMapper dockerContainerMapper;
 
-    private JarDeployRecordMapper jarDeployRecordMapper;
+    private final JarDeployRecordMapper jarDeployRecordMapper;
 
     private final AgentConfigService agentConfigService;
 
@@ -102,7 +103,6 @@ public class JarPackageService {
             List<DockerContainer> containers = dockerContainerMapper.selectList(
                     new QueryWrapper<DockerContainer>()
                             .eq("hostname", agent.getHostname())
-                            .eq("status", "running")
             );
 
             if (!containers.isEmpty()) {

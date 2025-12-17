@@ -1,5 +1,6 @@
 package com.bszn.monitor.jar;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.bszn.system.common.result.Result;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -101,6 +102,17 @@ public class JarPackageController {
         try {
             List<JarPackage> jarPackages = jarPackageService.getJarPackageList();
             return Result.success(jarPackages);
+        } catch (Exception e) {
+            log.error("获取JAR包列表异常", e);
+            return Result.failed("获取列表失败");
+        }
+    }
+
+    @GetMapping("/page")
+    @Operation(summary = "获取JAR包列表")
+    public Result<Page<JarPackage>> page(JarQueryPage jarQueryPage) {
+        try {
+            return Result.success(jarPackageService.page(jarQueryPage.getPage(), jarQueryPage.buildLambda()));
         } catch (Exception e) {
             log.error("获取JAR包列表异常", e);
             return Result.failed("获取列表失败");
