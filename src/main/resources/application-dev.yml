@@ -59,6 +59,7 @@ xxl:
       logretentiondays: 30
 security:
   ignore-paths:
+    - "/mq/**"
     - "/agent/**"
     - "/api/v1/auth/captcha"
     - "/webjars/**"

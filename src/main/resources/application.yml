@@ -21,6 +21,7 @@ spring:
   main:
     #开启快速启动模式
     lazy-initialization: true
+    allow-circular-references: true
   application:
     name: bs-monitor
   mvc:
@@ -64,6 +65,53 @@ spring:
       max-file-size: 1024MB  # 单个文件最大大小
       max-request-size: 1024MB  # 整个请求最大大小
       enabled: true
+  rabbitmq:
+    #开启confirmCallback 生产者 -> 队列 （可靠投递）
+    publisher-confirm-type: correlated
+    # 开启returnCallback 交换机到队列的保证机制
+    publisher-returns: true
+    template:
+      #定义消息路由失败时的策略。true，则调用ReturnCallback
+      mandatory: true
+      retry:
+        #重试间隔时间（单位毫秒）
+        initial-interval: 3000
+        max-attempts: 3
+        enabled: true
+        max-interval: 3s
+        multiplier: 1.2
+    listener:
+      simple:
+        # 最小线程数量
+        concurrency: 8
+        # 最大线程数量
+        max-concurrency: 32
+        #重试次数超过上面的设置之后是否丢弃
+        default-requeue-rejected: true
+        #消息接收确认
+        acknowledge-mode: manual
+        #每个消费者可能未完成的最大未确认消息数量
+        #每个线程都会抓取10个消息到内存进行消费 可以增大消息的传递提升并发量
+        #代表多少消息未被ack时，rabbitmq不会给消费者发送新的消息
+        prefetch: 50
+        #添加本地重试机制
+        retry:
+          #开启消费者出现异常情况下重试
+          enabled: true
+          #重试间隔时间（单位毫秒）
+          initial-interval: 3000
+          #乘子
+          multiplier: 1
+          #最大重试次数
+          max-attempts: 5
+          # true无状态；false有状态
+          stateless: true
+    host: bs-rabbitmq
+    port: 5672
+    username: baisheng
+    password: baisheng123
+    virtual-host: bs_monitor
+    publisher-confirms: true
 base:
   #服务接口监控间隔，单位毫秒，默认10分钟
   heathTimes: 120000
@@ -147,3 +195,8 @@ jar:
 docker:
   base:
     image: openjdk:8-jre-slim
+
+rabbitmq:
+  cmd:
+    xMessageTTL: 60000
+    concurrency: 8
