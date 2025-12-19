@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class JarPackageService extends ServiceImpl<JarPackageMapper,JarPackage> {
+public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage> {
 
     private final JarPackageMapper jarPackageMapper;
     private final AgentConfigMapper agentConfigMapper;
@@ -784,6 +784,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper,JarPackage> 
      * 提取部署成功信息
      */
     private String extractDeploySuccessInfo(String scriptResult) {
+        log.info("jar脚本部署：{}", scriptResult);
         StringBuilder info = new StringBuilder();
         String[] lines = scriptResult.split("\n");
         boolean inSuccessSection = false;
@@ -808,6 +809,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper,JarPackage> 
      * 提取重新部署成功信息
      */
     private String extractRedeploySuccessInfo(String scriptResult) {
+        log.info("jar脚本重新部署：{}", scriptResult);
         StringBuilder info = new StringBuilder();
         String[] lines = scriptResult.split("\n");
         boolean inSuccessSection = false;
@@ -832,6 +834,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper,JarPackage> 
      * 提取部署错误信息
      */
     private String extractDeployErrorInfo(String scriptResult) {
+        log.info("jar脚本部署错误：{}", scriptResult);
         StringBuilder errorInfo = new StringBuilder();
         String[] lines = scriptResult.split("\n");
 
