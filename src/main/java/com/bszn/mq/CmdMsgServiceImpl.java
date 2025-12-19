@@ -1,6 +1,8 @@
 package com.bszn.mq;
 
 import com.bszn.base.util.MyIdWorker;
+import com.bszn.monitor.msg.CmdCacheMsgService;
+import com.bszn.monitor.msg.IMsgService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.AmqpException;
 import org.springframework.amqp.core.Message;
@@ -11,20 +13,23 @@ import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
-public class SenderRabbitmqImpl implements ISenderMQ {
+public class CmdMsgServiceImpl implements IMsgService {
 
     @Autowired
     private RabbitTemplate rabbitTemplate;
 
+    @Autowired
+    CmdCacheMsgService cmdCacheMsgService;
+
     @Override
-    public void sendMsg(Long agentId, String msg) {
+    public String sendMsg(Long agentId, String msg) {
+        final String messageId = MyIdWorker.getId() + "";
         rabbitTemplate.convertAndSend(
                 "exchange." + MQConstants.MONITOR_CMD,
                 "routing." + MQConstants.MONITOR_CMD + ".key." + agentId,
                 msg, new MessagePostProcessor() {
                     @Override
                     public Message postProcessMessage(Message message) throws AmqpException {
-                        String messageId = MyIdWorker.getId() + "";
                         message.getMessageProperties().setMessageId(messageId);
                         message.getMessageProperties().setCorrelationId(messageId);
                         //message.getMessageProperties().setTimestamp(new Date());
@@ -37,6 +42,12 @@ public class SenderRabbitmqImpl implements ISenderMQ {
                     }
                 }
         );
+        return messageId;
     }
 
+    @Override
+    public String sendMsgAndResponse(Long agentId, String msg, Integer timeout) {
+        String messageId = sendMsg(agentId, msg);
+        return cmdCacheMsgService.getMsg(messageId, timeout);
+    }
 }

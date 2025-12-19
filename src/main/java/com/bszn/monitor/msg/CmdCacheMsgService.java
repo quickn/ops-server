@@ -1,6 +1,7 @@
 package com.bszn.monitor.msg;
 
 import com.bszn.base.cache.IRedisService;
+import com.bszn.system.common.exception.BusinessException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -8,7 +9,7 @@ import java.util.concurrent.*;
 
 
 @Service
-public class MonitorCmdMsgHandle {
+public class CmdCacheMsgService {
 
     @Autowired
     IRedisService iRedisService;
@@ -40,14 +41,13 @@ public class MonitorCmdMsgHandle {
             // 设置超时时间为2秒
             return future.get(timeout, TimeUnit.SECONDS);
         } catch (TimeoutException e) {
-            System.out.println("方法执行超时");
+            throw new BusinessException("方法执行超时");
         } catch (Exception e) {
-            System.out.println("执行出错: " + e.getMessage());
+            throw new BusinessException(e.getMessage());
         } finally {
             if (future != null) {
                 future.cancel(true);
             }
         }
-        return null;
     }
 }

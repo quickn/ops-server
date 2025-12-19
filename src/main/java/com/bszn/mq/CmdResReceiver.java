@@ -1,6 +1,6 @@
 package com.bszn.mq;
 
-import com.bszn.monitor.msg.MonitorCmdMsgHandle;
+import com.bszn.monitor.msg.CmdCacheMsgService;
 import com.rabbitmq.client.Channel;
 import jakarta.annotation.Resource;
 import org.springframework.amqp.core.*;
@@ -20,10 +20,10 @@ import java.nio.charset.StandardCharsets;
 @Configuration
 @ConfigurationProperties(prefix = "rabbitmq.cmd")
 @Order(0)
-public class MonitorCmdResReceiver {
+public class CmdResReceiver {
 
     @Resource
-    MonitorCmdMsgHandle monitorCmdMsgHandle;
+    CmdCacheMsgService monitorCmdMsgHandle;
 
 
     /**
