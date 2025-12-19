@@ -1,6 +1,6 @@
 server:
   port: 8989
-  host: 192.168.10.60
+  host: 192.168.10.11
 nacos:
   config:
     server-addr: bs-nacos:8848
