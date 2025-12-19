@@ -187,9 +187,9 @@ security:
 jar:
   upload:
     # linux
-    #    path: /home/jars  # JAR包存储路径
+    path: /home/jars  # JAR包存储路径
     # windows
-    path: C:\e\jars  # JAR包存储路径
+#    path: C:\e\jars  # JAR包存储路径
 
 
 docker:
