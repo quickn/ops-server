@@ -9,6 +9,7 @@ import com.bszn.monitor.agent.AgentConfigMapper;
 import com.bszn.monitor.agent.AgentConfigService;
 import com.bszn.monitor.docker.DockerContainer;
 import com.bszn.monitor.docker.DockerContainerMapper;
+import com.bszn.monitor.msg.IMsgService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -34,6 +35,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
     private final DockerContainerMapper dockerContainerMapper;
     private final JarDeployRecordMapper jarDeployRecordMapper;
     private final AgentConfigService agentConfigService;
+    private final IMsgService msgService;
 
     @Value("${jar.upload.path:/opt/jars}")
     private String uploadPath;
@@ -356,11 +358,13 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
             String jarDownloadPath = "/tmp/" + jarFileName;
 
             String downloadCmd = String.format("curl -L -o %s '%s'", jarDownloadPath, downloadUrl);
-            agentConfigService.sendCmd(agentId, downloadCmd);
+            msgService.sendCMDMsg(agentId, downloadCmd);
+
+            Thread.sleep(2000);
 
             // 检查下载是否成功
             String checkDownloadCmd = String.format("[ -f %s ] && echo 'exists' || echo 'not exists'", jarDownloadPath);
-            String checkResult = agentConfigService.sendCmdWithResult(agentId, checkDownloadCmd);
+            String checkResult = msgService.sendCMDMsgAndResponse(agentId, checkDownloadCmd);
 
             if (!"exists".equals(checkResult.trim())) {
                 updateDeployRecord(recordId, 3, "JAR文件下载失败");
@@ -371,11 +375,11 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
             updateDeployRecord(recordId, 1, "准备构建环境...");
             String buildDir = "/tmp/build-" + System.currentTimeMillis();
             String mkdirCmd = String.format("mkdir -p %s", buildDir);
-            agentConfigService.sendCmd(agentId, mkdirCmd);
+            msgService.sendCMDMsg(agentId, mkdirCmd);
 
             // 5. 移动JAR文件到构建目录并重命名为jarPackage.jar
             String moveJarCmd = String.format("mv %s %s/" + jarPackage.getFileName() + ".jar", jarDownloadPath, buildDir);
-            agentConfigService.sendCmd(agentId, moveJarCmd);
+            msgService.sendCMDMsg(agentId, moveJarCmd);
 
             // 6. 创建Dockerfile
             updateDeployRecord(recordId, 1, "创建Dockerfile...");
@@ -385,13 +389,13 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
             // 转义特殊字符
             dockerfileContent = dockerfileContent.replace("'", "'\"'\"'");
             String createDockerfileCmd = String.format("echo '%s' > %s", dockerfileContent, dockerfilePath);
-            agentConfigService.sendCmd(agentId, createDockerfileCmd);
+            msgService.sendCMDMsg(agentId, createDockerfileCmd);
 
             // 7. 构建Docker镜像
             updateDeployRecord(recordId, 1, "构建Docker镜像...");
             String imageName = jarPackage.getDockerImageName();
             String buildCmd = String.format("cd %s && docker build -t %s .", buildDir, imageName);
-            String buildResult = agentConfigService.sendCmdWithResult(agentId, buildCmd);
+            String buildResult = msgService.sendCMDMsgAndResponse(agentId, buildCmd);
 
             if (StringUtils.contains(buildResult, "error") || StringUtils.contains(buildResult, "ERROR")) {
                 updateDeployRecord(recordId, 3, "构建镜像失败: " + buildResult);
@@ -400,7 +404,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
 
             // 8. 清理构建目录
             String cleanupBuildCmd = String.format("rm -rf %s", buildDir);
-            agentConfigService.sendCmd(agentId, cleanupBuildCmd);
+            msgService.sendCMDMsg(agentId, cleanupBuildCmd);
 
             // 9. 解析Dockerfile获取端口等信息
             Map<String, String> dockerInfo = parseDockerfileInfo(jarPackage.getDockerfileContent());
@@ -409,7 +413,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
             // 10. 运行容器
             updateDeployRecord(recordId, 1, "启动容器...");
             String runCmd = buildDockerRunCommand(containerName, imageName, exposedPort, dockerInfo);
-            agentConfigService.sendCmd(agentId, runCmd);
+            msgService.sendCMDMsg(agentId, runCmd);
 
             // 11. 等待容器启动
             Thread.sleep(5000);
@@ -417,12 +421,12 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
             // 12. 检查容器状态
             updateDeployRecord(recordId, 1, "检查容器状态...");
             String statusCmd = String.format("docker inspect -f '{{.State.Status}}' %s", containerName);
-            String status = agentConfigService.sendCmdWithResult(agentId, statusCmd);
+            String status = msgService.sendCMDMsgAndResponse(agentId, statusCmd);
 
             if ("running".equals(status.trim())) {
                 // 获取容器日志
                 String logsCmd = String.format("docker logs --tail=10 %s", containerName);
-                String logs = agentConfigService.sendCmdWithResult(agentId, logsCmd);
+                String logs = msgService.sendCMDMsgAndResponse(agentId, logsCmd);
                 updateDeployRecord(recordId, 2, "部署成功！\n容器状态: running\n容器日志:\n" + logs);
 
                 // 更新容器信息到数据库
@@ -431,7 +435,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
             } else {
                 // 获取容器错误日志
                 String logsCmd = String.format("docker logs --tail=20 %s", containerName);
-                String logs = agentConfigService.sendCmdWithResult(agentId, logsCmd);
+                String logs = msgService.sendCMDMsgAndResponse(agentId, logsCmd);
                 updateDeployRecord(recordId, 3, "容器启动失败\n状态: " + status + "\n错误日志:\n" + logs);
                 return false;
             }
@@ -543,14 +547,14 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
 
             // 2. 检查容器是否在运行
             String statusCmd = String.format("docker inspect -f '{{.State.Status}}' %s", containerName);
-            String status = agentConfigService.sendCmdWithResult(agentId, statusCmd);
+            String status = msgService.sendCMDMsgAndResponse(agentId, statusCmd);
             boolean isRunning = "running".equals(status.trim());
 
             // 3. 停止容器（如果正在运行）
             if (isRunning) {
                 updateDeployRecord(recordId, 1, "停止容器...");
                 String stopCmd = String.format("docker stop %s", containerName);
-                agentConfigService.sendCmd(agentId, stopCmd);
+                msgService.sendCMDMsg(agentId, stopCmd);
                 Thread.sleep(2000);
             }
 
@@ -562,11 +566,11 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
             // 5. 在Agent端下载新JAR包
             updateDeployRecord(recordId, 1, "下载新JAR文件...");
             String downloadCmd = String.format("curl -L -o %s '%s'", jarDownloadPath, downloadUrl);
-            agentConfigService.sendCmd(agentId, downloadCmd);
+            msgService.sendCMDMsg(agentId, downloadCmd);
 
             // 检查下载是否成功
             String checkDownloadCmd = String.format("[ -f %s ] && echo 'exists' || echo 'not exists'", jarDownloadPath);
-            String checkResult = agentConfigService.sendCmdWithResult(agentId, checkDownloadCmd);
+            String checkResult = msgService.sendCMDMsgAndResponse(agentId, checkDownloadCmd);
 
             if (!"exists".equals(checkResult.trim())) {
                 updateDeployRecord(recordId, 3, "JAR文件下载失败");
@@ -576,34 +580,34 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
             // 6. 复制新JAR文件到容器内部
             updateDeployRecord(recordId, 1, "替换容器中的JAR文件...");
             String copyCmd = String.format("docker cp %s %s:/app/" + jarPackage.getFileName() + ".jar", jarDownloadPath, containerName);
-            agentConfigService.sendCmd(agentId, copyCmd);
+            msgService.sendCMDMsg(agentId, copyCmd);
 
             // 7. 清理临时文件
             String cleanupCmd = String.format("rm -f %s", jarDownloadPath);
-            agentConfigService.sendCmd(agentId, cleanupCmd);
+            msgService.sendCMDMsg(agentId, cleanupCmd);
 
             // 8. 启动容器
             updateDeployRecord(recordId, 1, "启动容器...");
             String startCmd = String.format("docker start %s", containerName);
-            agentConfigService.sendCmd(agentId, startCmd);
+            msgService.sendCMDMsg(agentId, startCmd);
 
             // 9. 等待容器启动
             Thread.sleep(5000);
 
             // 10. 检查容器状态
             updateDeployRecord(recordId, 1, "检查容器状态...");
-            status = agentConfigService.sendCmdWithResult(agentId, statusCmd);
+            status = msgService.sendCMDMsgAndResponse(agentId, statusCmd);
 
             if ("running".equals(status.trim())) {
                 // 获取容器日志
                 String logsCmd = String.format("docker logs --tail=10 %s", containerName);
-                String logs = agentConfigService.sendCmdWithResult(agentId, logsCmd);
+                String logs = msgService.sendCMDMsgAndResponse(agentId, logsCmd);
                 updateDeployRecord(recordId, 2, "重新部署成功！\n容器状态: running\n容器日志:\n" + logs);
                 return true;
             } else {
                 // 获取容器错误日志
                 String logsCmd = String.format("docker logs --tail=20 %s", containerName);
-                String logs = agentConfigService.sendCmdWithResult(agentId, logsCmd);
+                String logs = msgService.sendCMDMsgAndResponse(agentId, logsCmd);
                 updateDeployRecord(recordId, 3, "容器启动失败\n状态: " + status + "\n错误日志:\n" + logs);
                 return false;
             }
@@ -627,7 +631,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
 
             // 执行docker ps命令检查容器
             String checkCmd = String.format("docker ps -a --filter 'name=^%s$' --format '{{.Names}}'", containerName);
-            String result = agentConfigService.sendCmdWithResult(agentId, checkCmd);
+            String result = msgService.sendCMDMsgAndResponse(agentId, checkCmd);
 
             return StringUtils.isNotBlank(result) && result.trim().equals(containerName);
         } catch (Exception e) {
