@@ -182,6 +182,7 @@ security:
     - "/v3/api-docs/**"
     - "/swagger-ui/**"
     - "/ws/**"
+    - "/jar/download/*.jar"
 
 # JAR包上传配置
 jar:
