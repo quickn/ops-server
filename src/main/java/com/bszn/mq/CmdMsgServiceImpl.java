@@ -48,6 +48,8 @@ public class CmdMsgServiceImpl implements IMsgService {
     @Override
     public String sendMsgAndResponse(Long agentId, String msg, Integer timeout) {
         String messageId = sendMsg(agentId, msg);
-        return cmdCacheMsgService.getMsg(messageId, timeout);
+        String msg1 = cmdCacheMsgService.getMsg(messageId, timeout);
+        log.info("服务器发送消息返回：{}", msg1);
+        return msg1;
     }
 }
