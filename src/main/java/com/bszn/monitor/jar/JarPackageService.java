@@ -325,7 +325,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
     }
 
     /**
-     * 根据Dockerfile部署到Agent（使用脚本方式）
+     * 根据Dockerfile部署到Agent（使用精简版脚本）
      */
     private boolean deployWithDockerfile(JarPackage jarPackage, Long agentId,
                                          String containerName, Integer recordId) {
@@ -351,55 +351,50 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
                 return false;
             }
 
-            // 3. 解析Dockerfile获取配置信息
-            Map<String, String> dockerInfo = parseDockerfileInfo(jarPackage.getDockerfileContent());
-            String exposedPort = dockerInfo.getOrDefault("EXPOSE", "8080");
-
-            // 4. 生成部署脚本
-            String deployScript = generateEnhancedDeployScript(
+            // 3. 生成精简版部署脚本（跳过JAR测试）
+            String deployScript = generateSpringBootDeployScript(
                     jarPackage.getDownloadUrl(),
                     jarPackage.getFileName(),
                     jarPackage.getVersion(),
                     jarPackage.getDockerImageName(),
                     containerName,
-                    jarPackage.getDockerfileContent(),
-                    exposedPort,
-                    dockerInfo
+                    jarPackage.getDockerfileContent()
             );
 
-            // 5. 将脚本保存为可下载文件
-            String scriptFileName = "deploy_" + containerName + "_" + System.currentTimeMillis() + ".sh";
+            // 4. 将脚本保存为可下载文件
+            String scriptFileName = "deploy_" + containerName + "_simple_" + System.currentTimeMillis() + ".sh";
             String scriptPath = uploadPath + File.separator + scriptFileName;
             try (FileWriter writer = new FileWriter(scriptPath)) {
                 writer.write(deployScript);
             }
 
-            // 6. 生成脚本下载URL
+            // 5. 生成脚本下载URL
             String scriptDownloadUrl = String.format("http://%s:%s/jar/download/%s",
                     serverHost, serverPort, scriptFileName);
 
-            // 7. 在Agent端下载并执行脚本
-            updateDeployRecord(recordId, 1, "下载并执行部署脚本...");
+            // 6. 在Agent端执行脚本
+            updateDeployRecord(recordId, 1, "执行部署脚本...");
 
-            // 构建下载和执行命令
-            String remoteScriptPath = "/tmp/deploy_" + containerName + ".sh";
-            String downloadCmd = String.format("curl -L -o %s '%s'", remoteScriptPath, scriptDownloadUrl);
+            // 使用更可靠的执行方式
+            String remoteScriptPath = "/tmp/deploy_simple_" + containerName + ".sh";
+            String downloadCmd = String.format("curl -s -L -o %s '%s'", remoteScriptPath, scriptDownloadUrl);
             String chmodCmd = String.format("chmod +x %s", remoteScriptPath);
-            String executeCmd = String.format("bash %s 2>&1", remoteScriptPath);
+            String executeCmd = String.format("bash -c '%s 2>&1'", remoteScriptPath);
             String cleanupCmd = String.format("rm -f %s", remoteScriptPath);
 
-            // 组合命令一次性执行
-            String combinedCmd = String.format("%s && %s && %s && %s",
+            // 组合命令（添加超时控制）
+            String combinedCmd = String.format("timeout 300 %s && %s && %s && %s",
                     downloadCmd, chmodCmd, executeCmd, cleanupCmd);
 
             String scriptResult = msgService.sendCMDMsgAndResponse(agentId, combinedCmd);
 
-            // 8. 清理本地脚本文件
+            // 7. 清理本地脚本文件
             new File(scriptPath).delete();
 
-            // 9. 解析脚本执行结果
+            // 8. 解析脚本执行结果
             if (scriptResult.contains("DEPLOY_SUCCESS")) {
-                updateDeployRecord(recordId, 2, "部署成功！\n" + extractDeploySuccessInfo(scriptResult));
+                String successInfo = extractDeploySuccessInfo(scriptResult);
+                updateDeployRecord(recordId, 2, "部署成功！\n" + successInfo);
 
                 // 更新容器信息到数据库
                 updateContainerInfo(agentId, containerName, jarPackage.getDockerImageName());
@@ -411,7 +406,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
             }
 
         } catch (Exception e) {
-            log.error("根据Dockerfile部署失败", e);
+            log.error("部署失败", e);
             updateDeployRecord(recordId, 3, "部署失败: " + e.getMessage());
             return false;
         }
@@ -493,259 +488,6 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
     }
 
     /**
-     * 生成增强版部署脚本（正确处理用户Dockerfile）
-     */
-    private String generateEnhancedDeployScript(String downloadUrl, String fileName, String version,
-                                                String imageName, String containerName, String dockerfileContent,
-                                                String exposedPort, Map<String, String> dockerInfo) {
-        StringBuilder script = new StringBuilder();
-        script.append("#!/bin/bash\n\n");
-        script.append("# JAR包首次部署脚本（增强版）\n");
-        script.append("# 文件: ").append(fileName).append("-").append(version).append(".jar\n");
-        script.append("# 容器: ").append(containerName).append("\n");
-        script.append("# 镜像: ").append(imageName).append("\n\n");
-
-        script.append("set -e  # 遇到错误立即退出\n");
-        script.append("set -o pipefail  # 管道命令错误也退出\n\n");
-
-        script.append("# 定义函数\n");
-        script.append("log_info() {\n");
-        script.append("    echo \"[INFO] $(date '+%Y-%m-%d %H:%M:%S') - $1\"\n");
-        script.append("}\n\n");
-
-        script.append("log_error() {\n");
-        script.append("    echo \"[ERROR] $(date '+%Y-%m-%d %H:%M:%S') - $1\" >&2\n");
-        script.append("}\n\n");
-
-        script.append("log_debug() {\n");
-        script.append("    if [ \"$DEBUG\" = \"true\" ]; then\n");
-        script.append("        echo \"[DEBUG] $(date '+%Y-%m-%d %H:%M:%S') - $1\"\n");
-        script.append("    fi\n");
-        script.append("}\n\n");
-
-        script.append("cleanup() {\n");
-        script.append("    log_info \"清理临时文件...\"\n");
-        script.append("    rm -rf /tmp/build-* /tmp/*.jar 2>/dev/null || true\n");
-        script.append("}\n\n");
-
-        script.append("check_command() {\n");
-        script.append("    if ! command -v $1 &> /dev/null; then\n");
-        script.append("        log_error \"命令 $1 未安装\"\n");
-        script.append("        return 1\n");
-        script.append("    fi\n");
-        script.append("}\n\n");
-
-        script.append("# 设置trap，确保脚本退出时清理\n");
-        script.append("trap cleanup EXIT\n\n");
-
-        script.append("# 检查必要命令\n");
-        script.append("log_info \"检查系统命令...\"\n");
-        script.append("check_command curl\n");
-        script.append("check_command docker\n\n");
-
-        script.append("# 定义变量\n");
-        script.append("JAR_URL=\"").append(downloadUrl).append("\"\n");
-        script.append("JAR_NAME=\"").append(fileName).append("-").append(version).append(".jar\"\n");
-        script.append("JAR_PATH=\"/tmp/$JAR_NAME\"\n");
-        script.append("IMAGE_NAME=\"").append(imageName).append("\"\n");
-        script.append("CONTAINER_NAME=\"").append(containerName).append("\"\n");
-        script.append("BUILD_DIR=\"/tmp/build-${CONTAINER_NAME}-$(date +%s)\"\n\n");
-
-        script.append("# 检查容器是否已存在\n");
-        script.append("log_info \"检查容器是否已存在...\"\n");
-        script.append("if docker ps -a --filter \"name=^${CONTAINER_NAME}$\" --format '{{.Names}}' | grep -q \"${CONTAINER_NAME}\"; then\n");
-        script.append("    log_error \"容器 ${CONTAINER_NAME} 已存在\"\n");
-        script.append("    exit 1\n");
-        script.append("fi\n\n");
-
-        script.append("# 检查端口是否被占用\n");
-        script.append("log_info \"检查端口 ").append(exposedPort).append(" 是否可用...\"\n");
-        script.append("if ss -tln | grep -q :").append(exposedPort).append("; then\n");
-        script.append("    log_error \"端口 ").append(exposedPort).append(" 已被占用\"\n");
-        script.append("    exit 1\n");
-        script.append("fi\n\n");
-
-        script.append("# 下载JAR文件\n");
-        script.append("log_info \"下载JAR文件: $JAR_NAME\"\n");
-        script.append("if ! curl -L -o \"$JAR_PATH\" \"$JAR_URL\"; then\n");
-        script.append("    log_error \"JAR文件下载失败\"\n");
-        script.append("    exit 1\n");
-        script.append("fi\n\n");
-
-        script.append("# 检查文件是否下载成功\n");
-        script.append("if [ ! -f \"$JAR_PATH\" ]; then\n");
-        script.append("    log_error \"JAR文件不存在\"\n");
-        script.append("    exit 1\n");
-        script.append("fi\n\n");
-
-        script.append("# 创建构建目录\n");
-        script.append("log_info \"创建构建目录...\"\n");
-        script.append("mkdir -p \"$BUILD_DIR\"\n\n");
-
-        script.append("# 复制JAR文件到构建目录（使用正确的文件名）\n");
-        script.append("log_info \"准备构建文件...\"\n");
-        script.append("cp \"$JAR_PATH\" \"$BUILD_DIR/").append(fileName).append(".jar\"\n\n");
-
-        script.append("# 创建Dockerfile（完全使用用户提供的Dockerfile）\n");
-        script.append("log_info \"创建Dockerfile...\"\n");
-        script.append("cat > \"$BUILD_DIR/Dockerfile\" << 'EOF'\n");
-
-        // 完全使用用户提供的Dockerfile内容，不做修改
-        script.append(dockerfileContent).append("\n");
-
-        script.append("EOF\n\n");
-
-        script.append("# 构建Docker镜像\n");
-        script.append("log_info \"构建Docker镜像: $IMAGE_NAME\"\n");
-        script.append("cd \"$BUILD_DIR\"\n");
-        script.append("if ! docker build -t \"$IMAGE_NAME\" .; then\n");
-        script.append("    log_error \"Docker镜像构建失败\"\n");
-        script.append("    exit 1\n");
-        script.append("fi\n\n");
-
-        script.append("# 清理构建目录\n");
-        script.append("log_info \"清理构建目录...\"\n");
-        script.append("rm -rf \"$BUILD_DIR\"\n\n");
-
-        script.append("# 构建docker run命令（简化版，让Dockerfile决定配置）\n");
-        script.append("log_info \"启动容器: $CONTAINER_NAME\"\n");
-
-        // 简化docker run命令，主要设置容器名称、端口映射和重启策略
-        String runCmd = String.format("docker run -d --name %s --restart=always -p %s:%s",
-                containerName, exposedPort, exposedPort);
-
-        // 添加时区环境变量（与Dockerfile保持一致）
-        if (dockerfileContent.contains("Asia/Shanghai")) {
-            runCmd += " -e TZ=Asia/Shanghai";
-        }
-
-        // 添加内存限制（如果Dockerfile中有相关配置）
-        if (dockerfileContent.contains("-Xms") || dockerfileContent.contains("-Xmx")) {
-            runCmd += " --memory=2g --memory-swap=2g";
-        }
-
-        runCmd += " " + imageName;
-
-        script.append("log_info \"执行命令: ").append(runCmd).append("\"\n");
-        script.append("if ! ").append(runCmd).append("; then\n");
-        script.append("    log_error \"容器启动失败\"\n");
-        script.append("    exit 1\n");
-        script.append("fi\n\n");
-
-        script.append("# 等待容器启动\n");
-        script.append("log_info \"等待容器启动...\"\n");
-        script.append("sleep 8  # 给容器更多启动时间\n\n");
-
-        script.append("# 检查容器状态\n");
-        script.append("log_info \"检查容器状态...\"\n");
-        script.append("CONTAINER_STATUS=$(docker inspect -f '{{.State.Status}}' \"$CONTAINER_NAME\" 2>/dev/null || echo \"unknown\")\n");
-        script.append("CONTAINER_EXIT_CODE=$(docker inspect -f '{{.State.ExitCode}}' \"$CONTAINER_NAME\" 2>/dev/null || echo \"unknown\")\n");
-
-        script.append("if [ \"$CONTAINER_STATUS\" = \"running\" ]; then\n");
-        script.append("    log_info \"容器运行正常，状态: $CONTAINER_STATUS\"\n");
-        script.append("    \n");
-        script.append("    # 获取容器详细信息\n");
-        script.append("    CONTAINER_ID=$(docker inspect -f '{{.Id}}' \"$CONTAINER_NAME\" 2>/dev/null || echo \"unknown\")\n");
-        script.append("    CONTAINER_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' \"$CONTAINER_NAME\" 2>/dev/null || echo \"unknown\")\n");
-        script.append("    CONTAINER_IMAGE=$(docker inspect -f '{{.Config.Image}}' \"$CONTAINER_NAME\" 2>/dev/null || echo \"unknown\")\n");
-        script.append("    \n");
-        script.append("    # 检查应用健康状态\n");
-        script.append("    log_info \"检查应用健康状态...\"\n");
-        script.append("    sleep 3\n");
-        script.append("    \n");
-        script.append("    # 尝试获取容器日志（只取最后几行）\n");
-        script.append("    APP_LOG=$(docker logs --tail=10 \"$CONTAINER_NAME\" 2>/dev/null || echo \"无法获取日志\")\n");
-        script.append("    \n");
-        script.append("    # 输出成功信息\n");
-        script.append("    echo \"=== 部署成功信息 ===\"\n");
-        script.append("    echo \"容器名称: $CONTAINER_NAME\"\n");
-        script.append("    echo \"容器ID: $CONTAINER_ID\"\n");
-        script.append("    echo \"容器状态: $CONTAINER_STATUS\"\n");
-        script.append("    echo \"容器IP: $CONTAINER_IP\"\n");
-        script.append("    echo \"容器镜像: $CONTAINER_IMAGE\"\n");
-        script.append("    echo \"暴露端口: ").append(exposedPort).append("\"\n");
-        script.append("    echo \"JAR文件: ").append(fileName).append("-").append(version).append(".jar\"\n");
-        script.append("    echo \"应用日志（最后10行）:\"\n");
-        script.append("    echo \"$APP_LOG\"\n");
-        script.append("    echo \"部署时间: $(date '+%Y-%m-%d %H:%M:%S')\"\n");
-        script.append("    echo \"DEPLOY_SUCCESS\"\n");
-        script.append("    \n");
-        script.append("else\n");
-        script.append("    log_error \"容器状态异常: $CONTAINER_STATUS\"\n");
-        script.append("    log_error \"容器退出码: $CONTAINER_EXIT_CODE\"\n");
-        script.append("    \n");
-        script.append("    # 获取详细错误信息\n");
-        script.append("    log_error \"=== 错误诊断信息 ===\"\n");
-        script.append("    \n");
-        script.append("    # 获取完整容器日志\n");
-        script.append("    log_error \"容器完整日志:\"\n");
-        script.append("    docker logs \"$CONTAINER_NAME\" 2>/dev/null || echo \"无法获取日志\"\n");
-        script.append("    \n");
-        script.append("    # 获取容器详细信息\n");
-        script.append("    log_error \"容器详细信息:\"\n");
-        script.append("    docker inspect \"$CONTAINER_NAME\" 2>/dev/null || echo \"无法获取容器信息\"\n");
-        script.append("    \n");
-        script.append("    # 检查端口冲突\n");
-        script.append("    log_error \"端口检查:\"\n");
-        script.append("    ss -tln | grep :").append(exposedPort).append(" || echo \"端口 ").append(exposedPort).append(" 未被占用\"\n");
-        script.append("    \n");
-        script.append("    # 清理失败的容器\n");
-        script.append("    log_info \"清理失败的容器...\"\n");
-        script.append("    docker rm -f \"$CONTAINER_NAME\" 2>/dev/null || true\n");
-        script.append("    \n");
-        script.append("    exit 1\n");
-        script.append("fi\n");
-
-        return script.toString();
-    }
-
-    /**
-     * 提取增强版错误信息（包含详细诊断）
-     */
-    private String extractEnhancedErrorInfo(String scriptResult, Long agentId, String containerName) {
-        StringBuilder errorInfo = new StringBuilder();
-        String[] lines = scriptResult.split("\n");
-
-        // 提取关键错误信息
-        List<String> keyErrors = new ArrayList<>();
-
-        for (String line : lines) {
-            if (line.contains("[ERROR]")) {
-                keyErrors.add(line);
-            }
-
-            // 提取容器状态和退出码
-            if (line.contains("容器状态异常:") || line.contains("容器退出码:")) {
-                keyErrors.add(line);
-            }
-
-            // 提取错误诊断信息
-            if (line.contains("=== 错误诊断信息 ===")) {
-                keyErrors.add(line);
-            }
-        }
-
-        // 如果有关键错误信息，只显示关键信息
-        if (!keyErrors.isEmpty()) {
-            for (String error : keyErrors) {
-                errorInfo.append(error).append("\n");
-            }
-
-            // 添加最后20行日志作为上下文
-            errorInfo.append("\n=== 最后20行日志 ===\n");
-            int start = Math.max(0, lines.length - 20);
-            for (int i = start; i < lines.length; i++) {
-                errorInfo.append(lines[i]).append("\n");
-            }
-        } else {
-            // 如果没有关键错误信息，显示全部结果
-            errorInfo.append("完整输出:\n").append(scriptResult);
-        }
-
-        return errorInfo.toString().trim();
-    }
-
-    /**
      * 重新部署脚本（只替换JAR包）
      */
     private String generateRedeployScript(String downloadUrl, String fileName, String version,
@@ -792,9 +534,9 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
         // 获取容器当前使用的镜像，以便知道工作目录等配置
         script.append("# 获取容器当前配置\n");
         script.append("CONTAINER_IMAGE=$(docker inspect -f '{{.Config.Image}}' \"$CONTAINER_NAME\" 2>/dev/null || echo \"\")\n");
-        script.append("CONTAINER_WORKDIR=$(docker inspect -f '{{.Config.WorkingDir}}' \"$CONTAINER_NAME\" 2>/dev/null || echo \"/app\")\n");
+        script.append("CONTAINER_WORKDIR=$(docker inspect -f '{{.Config.WorkingDir}}' \"$CONTAINER_NAME\" 2>/dev/null || echo \"/home/park\")\n");
         script.append("if [ -z \"$CONTAINER_WORKDIR\" ]; then\n");
-        script.append("    CONTAINER_WORKDIR=\"/app\"  # 默认工作目录\n");
+        script.append("    CONTAINER_WORKDIR=\"/home/park\"  # 默认工作目录\n");
         script.append("fi\n");
         script.append("log_info \"容器工作目录: $CONTAINER_WORKDIR\"\n\n");
 
@@ -1250,5 +992,215 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
         } catch (Exception e) {
             return version + ".1";
         }
+    }
+
+    /**
+     * 生成Spring Boot启动检测修复版脚本
+     */
+    private String generateSpringBootDeployScript(String downloadUrl, String fileName, String version,
+                                                  String imageName, String containerName, String dockerfileContent) {
+
+        Map<String, String> stringStringMap = parseDockerfileInfo(dockerfileContent);
+        String port = stringStringMap.get("EXPOSE");
+        String workdir = stringStringMap.get("WORKDIR");
+
+        StringBuilder script = new StringBuilder();
+
+        script.append("#!/bin/bash\n\n");
+        script.append("# ======================================================\n");
+        script.append("# Spring Boot部署脚本\n");
+        script.append("# 修复启动检测问题\n");
+        script.append("# ======================================================\n\n");
+
+        script.append("set -e\n");
+        script.append("set -o pipefail\n\n");
+
+        // 基本变量
+        script.append("JAR_URL=\"").append(downloadUrl).append("\"\n");
+        script.append("JAR_NAME=\"").append(fileName).append("-").append(version).append(".jar\"\n");
+        script.append("JAR_PATH=\"/tmp/$JAR_NAME\"\n");
+        script.append("IMAGE_NAME=\"").append(imageName).append("\"\n");
+        script.append("CONTAINER_NAME=\"").append(containerName).append("\"\n");
+        script.append("PORT=\"").append(port).append("\"\n");
+        script.append("BUILD_DIR=\"/tmp/build-${CONTAINER_NAME}-$(date +%s)\"\n\n");
+
+        // 日志函数
+        script.append("log() { echo \"[$(date '+%Y-%m-%d %H:%M:%S')] $1\"; }\n");
+        script.append("log_success() { echo \"[$(date '+%Y-%m-%d %H:%M:%S')] ✓ $1\"; }\n");
+        script.append("log_error() { echo \"[$(date '+%Y-%m-%d %H:%M:%S')] ✗ $1\" >&2; }\n\n");
+
+        script.append("echo \"========================================\"\n");
+        script.append("echo \"          Spring Boot应用部署\"\n");
+        script.append("echo \"========================================\"\n\n");
+
+        // 步骤1: 清理环境
+        script.append("log \"1. 清理环境\"\n");
+        script.append("docker stop \"$CONTAINER_NAME\" 2>/dev/null || true\n");
+        script.append("docker rm -f \"$CONTAINER_NAME\" 2>/dev/null || true\n");
+        script.append("sleep 2\n");
+        script.append("log_success \"环境清理完成\"\n\n");
+
+        // 步骤2: 检查端口占用
+        script.append("log \"2. 检查端口占用\"\n");
+        script.append("if ss -tln | grep -q :${PORT}; then\n");
+        script.append("    log_error \"端口 ${PORT} 已被占用\"\n");
+        script.append("    ss -tln | grep :${PORT}\n");
+        script.append("    exit 1\n");
+        script.append("else\n");
+        script.append("    log_success \"端口 ${PORT} 可用\"\n");
+        script.append("fi\n");
+        script.append("echo \"\"\n");
+
+        // 步骤3: 下载JAR文件
+        script.append("log \"3. 下载JAR文件\"\n");
+        script.append("rm -f \"$JAR_PATH\"\n");
+        script.append("curl -s -L -o \"$JAR_PATH\" \"$JAR_URL\"\n");
+
+        script.append("if [ ! -f \"$JAR_PATH\" ]; then\n");
+        script.append("    log_error \"JAR文件不存在\"\n");
+        script.append("    exit 1\n");
+        script.append("fi\n");
+
+        script.append("JAR_SIZE=$(du -h \"$JAR_PATH\" | cut -f1)\n");
+        script.append("log_success \"下载完成，大小: $JAR_SIZE\"\n\n");
+
+        // 步骤4: 构建Docker镜像
+        script.append("log \"4. 构建Docker镜像\"\n");
+
+        script.append("mkdir -p \"$BUILD_DIR\"\n");
+        script.append("cp \"$JAR_PATH\" \"$BUILD_DIR/").append(fileName).append(".jar\"\n");
+        script.append("cd \"$BUILD_DIR\"\n\n");
+
+        script.append("cat > Dockerfile << 'EOF'\n");
+        script.append("FROM adoptopenjdk:8-jdk-hotspot\n");
+        script.append("\n");
+        script.append("WORKDIR /").append(workdir).append("\n");
+        script.append("\n");
+        script.append("# 设置时区\n");
+        script.append("ENV TZ=Asia/Shanghai\n");
+        script.append("RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone\n");
+        script.append("\n");
+        script.append("# 复制JAR文件\n");
+        script.append("COPY ").append(fileName).append(".jar /").append(workdir).append("/\n");
+        script.append("\n");
+        script.append("# 暴露端口\n");
+        script.append("EXPOSE ").append(port).append("\n");
+        script.append("\n");
+        script.append("# 启动命令\n");
+        script.append("ENTRYPOINT [\"java\", \"-jar\", \"").append(fileName).append(".jar\"]\n");
+        script.append("EOF\n\n");
+
+        script.append("if docker build -t \"$IMAGE_NAME\" .; then\n");
+        script.append("    log_success \"镜像构建成功\"\n");
+        script.append("else\n");
+        script.append("    log_error \"镜像构建失败\"\n");
+        script.append("    exit 1\n");
+        script.append("fi\n\n");
+
+        // 步骤5: 运行容器
+        script.append("log \"5. 运行容器\"\n");
+
+        script.append("CONTAINER_ID=$(docker run -d \\\n");
+        script.append("  --name \"$CONTAINER_NAME\" \\\n");
+        script.append("  --restart=always \\\n");
+        script.append("  -p ${PORT}:").append(port).append(" \\\n");
+        script.append("  -e TZ=Asia/Shanghai \\\n");
+        script.append("  -e JAVA_OPTS=\"-Xms256m -Xmx512m -Duser.timezone=Asia/Shanghai\" \\\n");
+        script.append("  --log-opt max-size=10m \\\n");
+        script.append("  --log-opt max-file=3 \\\n");
+        script.append("  \"$IMAGE_NAME\")\n\n");
+
+        script.append("if [ $? -eq 0 ] && [ -n \"$CONTAINER_ID\" ]; then\n");
+        script.append("    log_success \"容器启动成功，ID: ${CONTAINER_ID:0:12}\"\n");
+        script.append("else\n");
+        script.append("    log_error \"容器启动失败\"\n");
+        script.append("    exit 1\n");
+        script.append("fi\n\n");
+
+        // 步骤6: 等待Spring Boot启动完成（修复版）
+        script.append("log \"6. 等待Spring Boot启动完成（15秒）\"\n");
+
+        script.append("SUCCESS=false\n");
+        script.append("for i in {1..15}; do\n");
+        script.append("    sleep 1\n");
+        script.append("    \n");
+        script.append("    # 检查容器是否还在运行\n");
+        script.append("    if ! docker ps --filter \"name=$CONTAINER_NAME\" | grep -q \"$CONTAINER_NAME\"; then\n");
+        script.append("        log_error \"容器已停止运行\"\n");
+        script.append("        break\n");
+        script.append("    fi\n");
+        script.append("    \n");
+        script.append("    # 获取容器日志，检查Spring Boot启动关键词\n");
+        script.append("    if docker logs \"$CONTAINER_NAME\" 2>&1 | grep -q \"Tomcat started on port.*").append(port)
+                .append("\\|Started .*Application in\"; then\n");
+        script.append("        log_success \"检测到Spring Boot启动成功\"\n");
+        script.append("        SUCCESS=true\n");
+        script.append("        break\n");
+        script.append("    fi\n");
+        script.append("    \n");
+        script.append("    echo \"  [$i/15] 等待应用启动...\"\n");
+        script.append("done\n\n");
+
+        // 步骤7: 输出结果
+        script.append("log \"7. 部署结果\"\n");
+
+        script.append("if [ \"$SUCCESS\" = true ]; then\n");
+        script.append("    echo \"\"\n");
+        script.append("    echo \"========================================\"\n");
+        script.append("    echo \"           🎉 部署成功！🎉\"\n");
+        script.append("    echo \"========================================\"\n");
+        script.append("    \n");
+        script.append("    # 获取容器信息\n");
+        script.append("    CONTAINER_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' \"$CONTAINER_NAME\" 2>/dev/null || echo \"unknown\")\n");
+        script.append("    \n");
+        script.append("    echo \"🔹 容器名称: $CONTAINER_NAME\"\n");
+        script.append("    echo \"🔹 容器ID:   ${CONTAINER_ID:0:12}\"\n");
+        script.append("    echo \"🔹 容器IP:   $CONTAINER_IP\"\n");
+        script.append("    echo \"🔹 映射端口: $PORT -> ").append(port).append("\"\n");
+        script.append("    echo \"🔹 镜像版本: $IMAGE_NAME\"\n");
+        script.append("    echo \"🔹 JAR文件:  $JAR_NAME\"\n");
+        script.append("    echo \"🔹 启动时间: $(date '+%Y-%m-%d %H:%M:%S')\"\n");
+        script.append("    echo \"\"\n");
+        script.append("    echo \"📊 容器状态:\"\n");
+        script.append("    docker ps --filter \"name=^$CONTAINER_NAME$\" --format \"table {{.Names}}\\t{{.Status}}\\t{{.Ports}}\"\n");
+        script.append("    echo \"\"\n");
+        script.append("    echo \"📝 应用启动日志:\"\n");
+        script.append("    docker logs \"$CONTAINER_NAME\" 2>&1 | grep -E \"Starting|Tomcat started|Started .*Application\" | tail -5\n");
+        script.append("    echo \"\"\n");
+        script.append("    echo \"✅ DEPLOY_SUCCESS\"\n");
+        script.append("else\n");
+        script.append("    log_error \"❌ 部署失败或超时\"\n");
+        script.append("    echo \"\"\n");
+        script.append("    echo \"🔍 错误诊断:\"\n");
+        script.append("    \n");
+        script.append("    # 检查容器状态\n");
+        script.append("    echo \"容器状态:\"\n");
+        script.append("    docker inspect \"$CONTAINER_NAME\" 2>/dev/null | grep -E 'Status|ExitCode|Error|RestartCount' | head -6\n");
+        script.append("    \n");
+        script.append("    echo \"\"\n");
+        script.append("    echo \"容器日志（最后20行）:\"\n");
+        script.append("    docker logs \"$CONTAINER_NAME\" 2>&1 | tail -20\n");
+        script.append("    \n");
+        script.append("    # 检查端口是否被其他进程占用\n");
+        script.append("    echo \"\"\n");
+        script.append("    echo \"端口占用情况:\"\n");
+        script.append("    ss -tlnp | grep \":$PORT\" || echo \"端口 $PORT 未被其他进程占用\"\n");
+        script.append("    \n");
+        script.append("    # 检查容器内部进程\n");
+        script.append("    echo \"\"\n");
+        script.append("    echo \"容器进程:\"\n");
+        script.append("    docker exec \"$CONTAINER_NAME\" ps aux 2>/dev/null || echo \"无法进入容器\"\n");
+        script.append("    \n");
+        script.append("    # 清理失败的容器\n");
+        script.append("    docker rm -f \"$CONTAINER_NAME\" 2>/dev/null || true\n");
+        script.append("    \n");
+        script.append("    exit 1\n");
+        script.append("fi\n");
+
+        // 清理
+        script.append("\n# 清理临时文件\n");
+        script.append("rm -rf \"$BUILD_DIR\" /tmp/*.jar 2>/dev/null || true\n");
+
+        return script.toString();
     }
 }
