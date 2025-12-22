@@ -1,6 +1,7 @@
 package com.bszn.monitor.msg;
 
-import cn.hutool.json.JSONObject;
+
+import com.alibaba.fastjson.JSONObject;
 
 public interface IMsgService {
 
@@ -28,6 +29,7 @@ public interface IMsgService {
      * @return 结果
      */
     default String sendCMDMsgAndResponse(Long agentId, String msg) {
-        return sendMsgAndResponse(agentId, "{\"cmd\":\"" + msg + "\"}", 300);
+        String string = sendMsgAndResponse(agentId, "{\"cmd\":\"" + msg + "\"}", 300);
+        return JSONObject.parseObject(string).getString("data").replace("\n", "");
     }
 }
