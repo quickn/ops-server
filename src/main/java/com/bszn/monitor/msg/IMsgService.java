@@ -39,4 +39,18 @@ public interface IMsgService {
         String string = sendMsgAndResponse(agentId, "{\"cmd\":\"" + msg + "\",\"ip\":\"" + ip + "\"}", timeout);
         return JSONObject.parseObject(string).getString("data").replace("\n", "");
     }
+
+    /**
+     * 发送指令保留原始数据响应
+     *
+     * @param agentId
+     * @param msg
+     * @param timeout
+     * @return
+     */
+    default String sendCMDMsgAndRawResponse(Long agentId, String msg, Integer timeout) {
+        String ip = IpUtil.getIPv4Ip();
+        String string = sendMsgAndResponse(agentId, "{\"cmd\":\"" + msg + "\",\"ip\":\"" + ip + "\"}", timeout);
+        return JSONObject.parseObject(string).getString("data");
+    }
 }

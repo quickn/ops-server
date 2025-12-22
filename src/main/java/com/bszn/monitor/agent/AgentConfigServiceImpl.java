@@ -111,9 +111,9 @@ public class AgentConfigServiceImpl extends ServiceImpl<AgentConfigMapper, Agent
                     cmd.append("'" + logCmdForm.getKeyword() + "'");
                 }
                 logs.append(agentConfig.getHostname() + "\n");
-                logs.append(iMsgService.sendCMDMsgAndResponse(agentConfig.getId(), cmd.toString()));
+                logs.append(iMsgService.sendCMDMsgAndRawResponse(agentConfig.getId(), cmd.toString(), 20));
             } else {
-                logs.append(iMsgService.sendCMDMsgAndResponse(agentConfig.getId(), logCmdForm.getCmd()));
+                logs.append(iMsgService.sendCMDMsgAndRawResponse(agentConfig.getId(), logCmdForm.getCmd(), 20));
             }
         }
         return logs.toString();
