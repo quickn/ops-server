@@ -6,6 +6,7 @@ import com.bszn.monitor.agent.AgentConfigService;
 import com.bszn.monitor.docker.DockerContainer;
 import com.bszn.monitor.docker.DockerContainerMapper;
 import com.bszn.monitor.docker.DockerQueryPage;
+import com.bszn.monitor.msg.IMsgService;
 import com.bszn.system.common.result.Result;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
@@ -27,6 +28,9 @@ public class DockerContainerController {
 
     @Resource
     AgentConfigService agentConfigService;
+
+    @Resource
+    IMsgService iMsgService;
 
     @GetMapping(value = "/list")
     public Result<Page<DockerContainer>> list(@ParameterObject DockerQueryPage dockerQueryPage) {
@@ -52,7 +56,7 @@ public class DockerContainerController {
     public Result restart(@PathVariable Long id) {
         DockerContainer dockerContainer = dockerContainerMapper.selectById(id);
         AgentConfig agentConfig = agentConfigService.getByServiceIdAndHost(dockerContainer.getServiceId(), dockerContainer.getHostname());
-        agentConfigService.sendCmd(agentConfig.getId(), "docker restart " + dockerContainer.getNames());
+        iMsgService.sendMsg(agentConfig.getId(), "docker restart " + dockerContainer.getNames());
         return Result.success();
     }
 

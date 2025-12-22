@@ -14,22 +14,12 @@ public interface AgentConfigService extends IService<AgentConfig> {
 
     AgentConfig getServiceIdAndHostname(Integer serviceId, String hostname);
 
-    void sendCmd(Long agentId, String cmd);
-
-    String getCmdById(Long id);
-
-    void removeCmdById(Long id);
-
     AgentConfig getByServiceIdAndHost(Integer serviceId, String hostname);
 
-
     String getLogsByServiceId(LogCmdForm logCmdForm);
-
-    void cmdData(CmdDataForm cmdDataForm);
 
     void upgradeClientByServiceId(Integer serviceId);
 
     void receiveClientMsg(ClientMsgForm clientMsgForm);
 
-    String sendCmdWithResult(Long agentId, String checkCmd);
 }
