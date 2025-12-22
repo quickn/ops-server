@@ -92,11 +92,15 @@ public class AgentConfigServiceImpl extends ServiceImpl<AgentConfigMapper, Agent
                 cmd.append(" /home/park/logs/");
                 cmd.append(logCmdForm.getDockerName());
                 cmd.append("/");
+                if (StringUtils.isNotEmpty(logCmdForm.getCreateDate())) {
+                    cmd.append(logCmdForm.getLogLevel() + "/");
+                }
                 cmd.append(logCmdForm.getLogLevel());
                 if (StringUtils.isEmpty(logCmdForm.getCreateDate())) {
                     cmd.append(".log");
                 } else {
-                    cmd.append("-" + logCmdForm.getCreateDate() + ".*.log");
+                    String createDate = logCmdForm.getCreateDate().substring(0, 10);
+                    cmd.append("-" + createDate + ".*.log");
                 }
                 if (StringUtils.isNotEmpty(logCmdForm.getKeyword())) {
                     cmd.append("|grep ");
