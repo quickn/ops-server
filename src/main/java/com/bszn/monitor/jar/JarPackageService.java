@@ -465,7 +465,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
             String combinedCmd = String.format("%s && %s && %s && %s",
                     downloadCmd, chmodCmd, executeCmd, cleanupCmd);
 
-            String scriptResult = msgService.sendCMDMsgAndResponse(agentId, combinedCmd);
+            String scriptResult = msgService.sendCMDMsgAndResponse(agentId, combinedCmd, 300);
 
             // 6. 清理本地脚本文件
             new File(scriptPath).delete();

@@ -2,8 +2,6 @@ package com.bszn.monitor.cmd;
 
 import io.swagger.annotations.ApiModelProperty;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 /**
@@ -25,8 +23,6 @@ public class LogCmdForm {
     @ApiModelProperty("日志级别")
     @NotBlank(message = "日志级别不能为空")
     String logLevel = "info";
-
-    Long timeout = 9000L;
 
     String cmd;
     String grepPara;

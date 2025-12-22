@@ -83,23 +83,31 @@ public class AgentConfigServiceImpl extends ServiceImpl<AgentConfigMapper, Agent
         StringBuffer logs = new StringBuffer();
         for (AgentConfig agentConfig : agentConfigs) {
             if (StringUtils.isEmpty(logCmdForm.getCmd())) {
-                StringBuffer stringBuffer = new StringBuffer();
-                stringBuffer.append("cat /home/park/logs/");
-                stringBuffer.append(logCmdForm.getDockerName());
-                stringBuffer.append("/");
-                stringBuffer.append(logCmdForm.getLogLevel());
-                if (StringUtils.isEmpty(logCmdForm.getCreateDate())) {
-                    stringBuffer.append(".log");
+                StringBuilder cmd = new StringBuilder();
+                if (StringUtils.isNotEmpty(logCmdForm.getKeyword())) {
+                    cmd.append("cat");
                 } else {
-                    stringBuffer.append("-" + logCmdForm.getCreateDate() + ".*.log");
+                    cmd.append("tail -n200 ");
                 }
-                stringBuffer.append("|grep ");
-                if (StringUtils.isNotEmpty(logCmdForm.getGrepPara())) {
-                    stringBuffer.append(logCmdForm.getGrepPara());
-                    stringBuffer.append(" ");
+                cmd.append(" /home/park/logs/");
+                cmd.append(logCmdForm.getDockerName());
+                cmd.append("/");
+                cmd.append(logCmdForm.getLogLevel());
+                if (StringUtils.isEmpty(logCmdForm.getCreateDate())) {
+                    cmd.append(".log");
+                } else {
+                    cmd.append("-" + logCmdForm.getCreateDate() + ".*.log");
                 }
-                stringBuffer.append("'" + logCmdForm.getKeyword() + "'");
-                logs.append(iMsgService.sendCMDMsgAndResponse(agentConfig.getId(), stringBuffer.toString()));
+                if (StringUtils.isNotEmpty(logCmdForm.getKeyword())) {
+                    cmd.append("|grep ");
+                    if (StringUtils.isNotEmpty(logCmdForm.getGrepPara())) {
+                        cmd.append(logCmdForm.getGrepPara());
+                        cmd.append(" ");
+                    }
+                    cmd.append("'" + logCmdForm.getKeyword() + "'");
+                }
+                logs.append(agentConfig.getHostname() + "\n");
+                logs.append(iMsgService.sendCMDMsgAndResponse(agentConfig.getId(), cmd.toString()));
             } else {
                 logs.append(iMsgService.sendCMDMsgAndResponse(agentConfig.getId(), logCmdForm.getCmd()));
             }

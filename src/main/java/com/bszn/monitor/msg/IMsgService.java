@@ -2,6 +2,7 @@ package com.bszn.monitor.msg;
 
 
 import com.alibaba.fastjson.JSONObject;
+import com.bszn.utils.IpUtil;
 
 public interface IMsgService {
 
@@ -18,7 +19,8 @@ public interface IMsgService {
      * @return 消息id
      */
     default String sendCMDMsg(Long agentId, String msg) {
-        return sendMsg(agentId, "{\"cmd\":\"" + msg + "\"}");
+        String ip = IpUtil.getIPv4Ip();
+        return sendMsg(agentId, "{\"cmd\":\"" + msg + "\",\"ip\":\"" + ip + "\"}");
     }
 
     /**
@@ -29,7 +31,12 @@ public interface IMsgService {
      * @return 结果
      */
     default String sendCMDMsgAndResponse(Long agentId, String msg) {
-        String string = sendMsgAndResponse(agentId, "{\"cmd\":\"" + msg + "\"}", 300);
+        return sendCMDMsgAndResponse(agentId, msg, 30);
+    }
+
+    default String sendCMDMsgAndResponse(Long agentId, String msg, Integer timeout) {
+        String ip = IpUtil.getIPv4Ip();
+        String string = sendMsgAndResponse(agentId, "{\"cmd\":\"" + msg + "\",\"ip\":\"" + ip + "\"}", timeout);
         return JSONObject.parseObject(string).getString("data").replace("\n", "");
     }
 }
