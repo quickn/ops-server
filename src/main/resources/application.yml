@@ -185,12 +185,10 @@ security:
     - "/jar/download/**"
 
 # JAR包上传配置
-jar:
+file:
   upload:
-    # linux
-    path: /home/park/jars  # JAR包存储路径
-    # windows
-#    path: C:\e\jars  # JAR包存储路径
+    jar-path: /home/park/jars  # JAR包存储路径
+    file-path: /home/park/file  # 文件存储路径
 
 
 docker:

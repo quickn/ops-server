@@ -30,14 +30,25 @@ public interface IMsgService {
      * @param msg     消息
      * @return 结果
      */
+    default String sendCMDMsgAndResponseNon(Long agentId, String msg) {
+        return sendCMDMsgAndResponse(agentId, msg).replace("\n", "");
+    }
+
+    /**
+     * 发送cmd指定 默认5分钟
+     *
+     * @param agentId 服务id
+     * @param msg     消息
+     * @return 结果
+     */
     default String sendCMDMsgAndResponse(Long agentId, String msg) {
-        return sendCMDMsgAndResponse(agentId, msg, 30);
+        return sendCMDMsgAndResponse(agentId, msg, 300);
     }
 
     default String sendCMDMsgAndResponse(Long agentId, String msg, Integer timeout) {
         String ip = IpUtil.getIPv4Ip();
         String string = sendMsgAndResponse(agentId, "{\"cmd\":\"" + msg + "\",\"ip\":\"" + ip + "\"}", timeout);
-        return JSONObject.parseObject(string).getString("data").replace("\n", "");
+        return JSONObject.parseObject(string).getString("data");
     }
 
     /**
