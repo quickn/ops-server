@@ -1,4 +1,4 @@
-FROM adoptopenjdk:8-jdk-hotspot
+FROM openjdk:17-ea-oracle
 
 ARG profileActive
 ENV profileActive=${profileActive}
@@ -6,12 +6,14 @@ ENV profileActive=${profileActive}
 ARG contextPath
 ENV contextPath=${contextPath}
 
+ARG uid
+ENV uid=${uid}
+
 ENV TZ=Asia/Shanghai
 RUN ln -sf /usr/share/zoneinfo/$TZ /etc/localtime
 
-ARG os
-ENV os=${os}
-RUN if [[ '$os' == 'ubuntu' ]] ; then echo $TZ > /etc/timezone ; else echo $os ; fi
+RUN adduser park
+USER park
 
 RUN mkdir -p ${contextPath}
 WORKDIR ${contextPath}

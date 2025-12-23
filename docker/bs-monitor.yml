@@ -13,8 +13,7 @@ services:
       bs-nacos: ${bsNacos}
       bs-mysql: ${bsMysql}
       bs-redis: ${bsRedis}
-      bs-mongodb: ${bsMongodb}
-      bs-rabbitmq: ${bsRabbitmq}
+      bs-rabbitmq: ${monitorRabbitmq}
     container_name: ${bsMonitor}
     network_mode: "host"
     hostname: ${bsMonitor}
@@ -51,8 +50,7 @@ services:
       bs-nacos: ${bsNacos}
       bs-mysql: ${bsMysql}
       bs-redis: ${bsRedis}
-      bs-mongodb: ${bsMongodb}
-      bs-rabbitmq: ${bsRabbitmq}
+      bs-rabbitmq: ${monitorRabbitmq}
     container_name: monitor-collector
     network_mode: "host"
     hostname: monitor-collector
