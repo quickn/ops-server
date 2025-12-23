@@ -6,18 +6,21 @@ ENV profileActive=${profileActive}
 ARG contextPath
 ENV contextPath=${contextPath}
 
+ARG uid
+ENV uid=${uid}
+
 ENV TZ=Asia/Shanghai
 RUN ln -sf /usr/share/zoneinfo/$TZ /etc/localtime
 
-ARG os
-ENV os=${os}
-RUN if [[ '$os' == 'ubuntu' ]] ; then echo $TZ > /etc/timezone ; else echo $os ; fi
+RUN adduser park
+USER park
 
 RUN mkdir -p ${contextPath}
 WORKDIR ${contextPath}
 
-EXPOSE 8089
+EXPOSE 8989
 
 ADD ./bs-monitor.jar ./
 
-CMD java -jar bs-monitor.jar --spring.profiles.active=${profileActive:test}
+ENTRYPOINT ["sh","-c","java -Djava.security.egd=file:/dev/./urandom -jar ./bs-monitor.jar --spring.profiles.active=$profileActive"]
+
