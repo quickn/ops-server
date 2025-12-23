@@ -437,7 +437,8 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
                     jarPackage.getDownloadUrl(),
                     jarPackage.getFileName(),
                     jarPackage.getVersion(),
-                    containerName
+                    containerName,
+                    jarPackage.getDockerfileContent()
             );
 
             // 3. 将脚本保存为可下载文件
@@ -491,7 +492,9 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
      * 重新部署脚本（只替换JAR包）
      */
     private String generateRedeployScript(String downloadUrl, String fileName, String version,
-                                          String containerName) {
+                                          String containerName, String dockerfileContent) {
+        Map<String, String> stringStringMap = parseDockerfileInfo(dockerfileContent);
+        String workdir = stringStringMap.get(InstructionConstant.WORKDIR);
         StringBuilder script = new StringBuilder();
         script.append("#!/bin/bash\n\n");
         script.append("# JAR包重新部署脚本\n");
@@ -534,9 +537,9 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
         // 获取容器当前使用的镜像，以便知道工作目录等配置
         script.append("# 获取容器当前配置\n");
         script.append("CONTAINER_IMAGE=$(docker inspect -f '{{.Config.Image}}' \"$CONTAINER_NAME\" 2>/dev/null || echo \"\")\n");
-        script.append("CONTAINER_WORKDIR=$(docker inspect -f '{{.Config.WorkingDir}}' \"$CONTAINER_NAME\" 2>/dev/null || echo \"/home/park\")\n");
+        script.append("CONTAINER_WORKDIR=$(docker inspect -f '{{.Config.WorkingDir}}' \"$CONTAINER_NAME\" 2>/dev/null || echo \"").append(workdir).append("\")\n");
         script.append("if [ -z \"$CONTAINER_WORKDIR\" ]; then\n");
-        script.append("    CONTAINER_WORKDIR=\"/home/park\"  # 默认工作目录\n");
+        script.append("    CONTAINER_WORKDIR=\"").append(workdir).append("\"  # 默认工作目录\n");
         script.append("fi\n");
         script.append("log_info \"容器工作目录: $CONTAINER_WORKDIR\"\n\n");
 
@@ -701,41 +704,23 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
      */
     private Map<String, String> parseDockerfileInfo(String dockerfileContent) {
         Map<String, String> info = new HashMap<>();
-
         if (StringUtils.isBlank(dockerfileContent)) {
             return info;
         }
-
         String[] lines = dockerfileContent.split("\n");
+        String[] instructions = {InstructionConstant.FROM, InstructionConstant.EXPOSE, InstructionConstant.WORKDIR, InstructionConstant.ENTRYPOINT};
         for (String line : lines) {
-            line = line.trim().toUpperCase();
-
-            // 解析EXPOSE指令
-            if (line.startsWith("EXPOSE")) {
-                String[] parts = line.split("\\s+");
-                if (parts.length > 1) {
-                    info.put("EXPOSE", parts[1]);
-                }
-            }
-            // 解析ENV指令
-            else if (line.startsWith("ENV")) {
-                String envPart = line.substring(3).trim();
-                String[] envParts = envPart.split("\\s+");
-                if (envParts.length >= 2) {
-                    String key = envParts[0];
-                    String value = envParts[1].replace("\"", "").replace("'", "");
-                    info.put("ENV_" + key, value);
-                }
-            }
-            // 解析WORKDIR指令
-            else if (line.startsWith("WORKDIR")) {
-                String[] parts = line.split("\\s+");
-                if (parts.length > 1) {
-                    info.put("WORKDIR", parts[1]);
+            line = line.trim();
+            for (int i = 0; i < instructions.length; i++) {
+                // 解析指令
+                if (line.startsWith(instructions[i])) {
+                    String[] parts = line.split("\\s+");
+                    if (parts.length > 1) {
+                        info.put(instructions[i], parts[1]);
+                    }
                 }
             }
         }
-
         return info;
     }
 
@@ -1001,8 +986,10 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
                                                   String imageName, String containerName, String dockerfileContent) {
 
         Map<String, String> stringStringMap = parseDockerfileInfo(dockerfileContent);
-        String port = stringStringMap.get("EXPOSE");
-        String workdir = stringStringMap.get("WORKDIR");
+        String from = stringStringMap.get(InstructionConstant.FROM);
+        String port = stringStringMap.get(InstructionConstant.EXPOSE);
+        String workdir = stringStringMap.get(InstructionConstant.WORKDIR);
+        String entrypoint = stringStringMap.get(InstructionConstant.ENTRYPOINT);
 
         StringBuilder script = new StringBuilder();
 
@@ -1072,7 +1059,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
         script.append("cd \"$BUILD_DIR\"\n\n");
 
         script.append("cat > Dockerfile << 'EOF'\n");
-        script.append("FROM adoptopenjdk:8-jdk-hotspot\n");
+        script.append("FROM ").append(from).append("\n");
         script.append("\n");
         script.append("WORKDIR /").append(workdir).append("\n");
         script.append("\n");
@@ -1087,7 +1074,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
         script.append("EXPOSE ").append(port).append("\n");
         script.append("\n");
         script.append("# 启动命令\n");
-        script.append("ENTRYPOINT [\"java\", \"-jar\", \"").append(fileName).append(".jar\"]\n");
+        script.append("ENTRYPOINT ").append(entrypoint).append("\n");
         script.append("EOF\n\n");
 
         script.append("if docker build -t \"$IMAGE_NAME\" .; then\n");
@@ -1118,10 +1105,10 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
         script.append("fi\n\n");
 
         // 步骤6: 等待Spring Boot启动完成（修复版）
-        script.append("log \"6. 等待Spring Boot启动完成（15秒）\"\n");
+        script.append("log \"6. 等待Spring Boot启动完成（120秒）\"\n");
 
         script.append("SUCCESS=false\n");
-        script.append("for i in {1..15}; do\n");
+        script.append("for i in {1..120}; do\n");
         script.append("    sleep 1\n");
         script.append("    \n");
         script.append("    # 检查容器是否还在运行\n");
@@ -1138,7 +1125,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
         script.append("        break\n");
         script.append("    fi\n");
         script.append("    \n");
-        script.append("    echo \"  [$i/15] 等待应用启动...\"\n");
+        script.append("    echo \"  [$i/120] 等待应用启动...\"\n");
         script.append("done\n\n");
 
         // 步骤7: 输出结果
