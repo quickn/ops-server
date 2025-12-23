@@ -36,7 +36,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
     private final JarDeployRecordMapper jarDeployRecordMapper;
     private final IMsgService msgService;
 
-    @Value("${jar.upload.path:/opt/jars}")
+    @Value("${file.upload.jar-path:/home/park/jars}")
     private String uploadPath;
 
     @Value("${docker.base.image:openjdk:8-jre-slim}")
@@ -47,6 +47,9 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
 
     @Value("${server.port:8080}")
     private String serverPort;
+
+    @Value("${file.upload.file-path:/home/park/file}")
+    private String filePath;
 
     /**
      * 上传JAR包
@@ -524,6 +527,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
         script.append("# 定义变量\n");
         script.append("JAR_URL=\"").append(downloadUrl).append("\"\n");
         script.append("JAR_NAME=\"").append(fileName).append("-").append(version).append(".jar\"\n");
+        script.append("LOCAL_JAR_PATH=\"").append(filePath).append("/$JAR_NAME\"\n");  // 添加本地路径
         script.append("JAR_PATH=\"/tmp/$JAR_NAME\"\n");
         script.append("CONTAINER_NAME=\"").append(containerName).append("\"\n\n");
 
@@ -556,15 +560,21 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
         script.append("    sleep 2\n");
         script.append("fi\n\n");
 
-        script.append("# 下载新JAR文件\n");
-        script.append("log_info \"下载新JAR文件: $JAR_NAME\"\n");
-        script.append("if ! curl -L -o \"$JAR_PATH\" \"$JAR_URL\"; then\n");
-        script.append("    log_error \"JAR文件下载失败\"\n");
-        script.append("    # 尝试恢复容器状态\n");
-        script.append("    if [ \"$WAS_RUNNING\" = \"true\" ]; then\n");
-        script.append("        docker start \"$CONTAINER_NAME\" 2>/dev/null || true\n");
+        script.append("# 获取JAR文件（优先使用本地）\n");
+        script.append("log_info \"获取JAR文件: $JAR_NAME\"\n");
+        script.append("if [ -f \"$LOCAL_JAR_PATH\" ]; then\n");
+        script.append("    log_info \"找到本地JAR文件，使用本地文件\"\n");
+        script.append("    cp \"$LOCAL_JAR_PATH\" \"$JAR_PATH\"\n");
+        script.append("else\n");
+        script.append("    log_info \"本地文件不存在，从服务器下载\"\n");
+        script.append("    if ! curl -L -o \"$JAR_PATH\" \"$JAR_URL\"; then\n");
+        script.append("        log_error \"JAR文件下载失败\"\n");
+        script.append("        # 尝试恢复容器状态\n");
+        script.append("        if [ \"$WAS_RUNNING\" = \"true\" ]; then\n");
+        script.append("            docker start \"$CONTAINER_NAME\" 2>/dev/null || true\n");
+        script.append("        fi\n");
+        script.append("        exit 1\n");
         script.append("    fi\n");
-        script.append("    exit 1\n");
         script.append("fi\n\n");
 
         script.append("# 检查文件是否下载成功\n");
@@ -990,7 +1000,6 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
         String port = stringStringMap.get(InstructionConstant.EXPOSE);
         String workdir = stringStringMap.get(InstructionConstant.WORKDIR);
         String entrypoint = stringStringMap.get(InstructionConstant.ENTRYPOINT);
-
         StringBuilder script = new StringBuilder();
 
         script.append("#!/bin/bash\n\n");
@@ -1005,6 +1014,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
         // 基本变量
         script.append("JAR_URL=\"").append(downloadUrl).append("\"\n");
         script.append("JAR_NAME=\"").append(fileName).append("-").append(version).append(".jar\"\n");
+        script.append("LOCAL_JAR_PATH=\"").append(filePath).append("/$JAR_NAME\"\n");
         script.append("JAR_PATH=\"/tmp/$JAR_NAME\"\n");
         script.append("IMAGE_NAME=\"").append(imageName).append("\"\n");
         script.append("CONTAINER_NAME=\"").append(containerName).append("\"\n");
@@ -1038,18 +1048,28 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
         script.append("fi\n");
         script.append("echo \"\"\n");
 
-        // 步骤3: 下载JAR文件
-        script.append("log \"3. 下载JAR文件\"\n");
+        // 步骤3: 下载JAR文件（优先使用本地文件）
+        script.append("log \"3. 获取JAR文件\"\n");
         script.append("rm -f \"$JAR_PATH\"\n");
-        script.append("curl -s -L -o \"$JAR_PATH\" \"$JAR_URL\"\n");
 
-        script.append("if [ ! -f \"$JAR_PATH\" ]; then\n");
-        script.append("    log_error \"JAR文件不存在\"\n");
-        script.append("    exit 1\n");
+        // 检查本地文件是否存在
+        script.append("if [ -f \"$LOCAL_JAR_PATH\" ]; then\n");
+        script.append("    log \"找到本地JAR文件: $LOCAL_JAR_PATH\"\n");
+        script.append("    cp \"$LOCAL_JAR_PATH\" \"$JAR_PATH\"\n");
+        script.append("    log_success \"使用本地JAR文件\"\n");
+        script.append("else\n");
+        script.append("    log \"本地文件不存在，从服务器下载\"\n");
+        script.append("    curl -s -L -o \"$JAR_PATH\" \"$JAR_URL\"\n");
+        script.append("    \n");
+        script.append("    if [ ! -f \"$JAR_PATH\" ]; then\n");
+        script.append("        log_error \"JAR文件不存在\"\n");
+        script.append("        exit 1\n");
+        script.append("    fi\n");
+        script.append("    log_success \"下载完成\"\n");
         script.append("fi\n");
 
         script.append("JAR_SIZE=$(du -h \"$JAR_PATH\" | cut -f1)\n");
-        script.append("log_success \"下载完成，大小: $JAR_SIZE\"\n\n");
+        script.append("log_success \"JAR文件就绪，大小: $JAR_SIZE\"\n\n");
 
         // 步骤4: 构建Docker镜像
         script.append("log \"4. 构建Docker镜像\"\n");
