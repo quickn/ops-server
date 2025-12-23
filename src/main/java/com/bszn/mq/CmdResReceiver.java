@@ -1,6 +1,7 @@
 package com.bszn.mq;
 
 import com.bszn.monitor.msg.CmdCacheMsgService;
+import com.bszn.utils.IpUtil;
 import com.rabbitmq.client.Channel;
 import jakarta.annotation.Resource;
 import org.springframework.amqp.core.*;
@@ -34,7 +35,8 @@ public class CmdResReceiver {
 
     @Bean
     public Queue monitorCmdDirectQueue() {
-        return new Queue("queue.monitor.cmd.server", true);
+        String dynamicQueueName = "queue.monitor.cmd.server." + IpUtil.getIPv4Ip();
+        return new Queue(dynamicQueueName, true);
     }
 
     @Bean
@@ -44,8 +46,9 @@ public class CmdResReceiver {
 
     @Bean
     Binding bindingSyncDirectQueue(Queue monitorCmdDirectQueue, DirectExchange monitorCmdDirectExchange) {
+        String routingKey = "routingKey.monitor.cmd.server." + IpUtil.getIPv4Ip();
         return BindingBuilder.bind(monitorCmdDirectQueue).to(monitorCmdDirectExchange)
-                .with("routingKey.monitor.cmd.server");
+                .with(routingKey);
     }
 
     @RabbitListener(queues = "#{monitorCmdDirectQueue.name}", concurrency = "${rabbitmq.cmd.concurrency}")

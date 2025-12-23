@@ -8,14 +8,11 @@ import com.bszn.monitor.agent.AgentConfigMapper;
 import com.bszn.monitor.agent.AgentConfigQuery;
 import com.bszn.monitor.agent.AgentConfigService;
 import com.bszn.monitor.cmd.ClientMsgForm;
-import com.bszn.monitor.cmd.CmdDataForm;
-import com.bszn.monitor.cmd.HeartCmdForm;
 import com.bszn.monitor.cmd.LogCmdForm;
 import com.bszn.system.common.result.Result;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
-import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.web.bind.annotation.*;
@@ -57,46 +54,6 @@ public class AgentController {
             return null;
         }
         return JSONUtil.parseObj(agentConfig);
-    }
-
-    @PostMapping(value = "/sendCmd")
-    public String sendCmd(Long agentId, String cmd) {
-        iAgentConfigService.sendCmd(agentId, cmd);
-        return cmd;
-    }
-
-    @PostMapping(value = "/heart")
-    @Operation(summary = "心跳")
-    public String heart(@RequestBody HeartCmdForm heartCmdForm) {
-        Integer serviceId = heartCmdForm.getServiceId();
-        String hostname = heartCmdForm.getHostname();
-        if (serviceId == null) {
-            return null;
-        }
-        JSONObject jsonObject = new JSONObject();
-        AgentConfig agentConfig = iAgentConfigService.getServiceIdAndHostname(serviceId, hostname);
-        if (agentConfig == null) {
-            return null;
-        }
-        String cmd = iAgentConfigService.getCmdById(agentConfig.getId());
-        if (cmd != null) {
-            if (cmd.startsWith("{")) {
-                jsonObject.put("data", cmd);
-            } else {
-                jsonObject.put("cmd", cmd);
-            }
-            iAgentConfigService.removeCmdById(agentConfig.getId());
-        }
-        jsonObject.put("result", "success");
-        return jsonObject.toString();
-    }
-
-    @ResponseBody
-    @PostMapping("/cmdData")
-    @Operation(summary = "接收指令执行数据")
-    public Result cmdData(@RequestBody CmdDataForm cmdDataForm) {
-        iAgentConfigService.cmdData(cmdDataForm);
-        return Result.success();
     }
 
 

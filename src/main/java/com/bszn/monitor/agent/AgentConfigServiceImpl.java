@@ -6,18 +6,16 @@ import cn.hutool.json.JSONObject;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.bszn.monitor.cmd.ClientMsgForm;
-import com.bszn.monitor.cmd.CmdDataForm;
 import com.bszn.monitor.cmd.LogCmdForm;
 import com.bszn.monitor.constant.MonitorCmdC;
+import com.bszn.monitor.msg.IMsgService;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Created by Liuyun on 2023-07-26 11:16
@@ -29,11 +27,12 @@ public class AgentConfigServiceImpl extends ServiceImpl<AgentConfigMapper, Agent
 
     private final CopyOptions copyOption = CopyOptions.create(null, true);
 
-    static Map<Long, String> cmdMap = new HashMap<>();
-
 
     @Value("${upgradeClient.url}")
     String upgradeClientUrl;
+
+    @Resource
+    IMsgService iMsgService;
 
     @Override
     public AgentConfig getByMac(String mac, String hostname) {
@@ -73,92 +72,51 @@ public class AgentConfigServiceImpl extends ServiceImpl<AgentConfigMapper, Agent
     }
 
     @Override
-    public void sendCmd(Long agentId, String cmd) {
-        cmdMap.put(agentId, cmd);
-    }
-
-    @Override
-    public String sendCmdWithResult(Long agentId, String checkCmd) {
-        cmdMap.put(agentId, checkCmd);
-        return "running";
-    }
-
-    @Override
-    public String getCmdById(Long id) {
-        return cmdMap.get(id);
-    }
-
-    @Override
-    public void removeCmdById(Long id) {
-        cmdMap.remove(id);
-    }
-
-    @Override
     public AgentConfig getByServiceIdAndHost(Integer serviceId, String hostname) {
         return this.baseMapper.getByServiceIdAndHost(serviceId, hostname);
     }
 
-    private Map<Long, String> cmdData = new HashMap();
 
     @Override
     public String getLogsByServiceId(LogCmdForm logCmdForm) {
         List<AgentConfig> agentConfigs = this.baseMapper.getByServiceId(logCmdForm.getServiceId(), logCmdForm.getDockerName());
+        StringBuffer logs = new StringBuffer();
         for (AgentConfig agentConfig : agentConfigs) {
             if (StringUtils.isEmpty(logCmdForm.getCmd())) {
-                StringBuffer stringBuffer = new StringBuffer();
-                stringBuffer.append("cat /home/park/logs/");
-                stringBuffer.append(logCmdForm.getDockerName());
-                stringBuffer.append("/");
-                stringBuffer.append(logCmdForm.getLogLevel());
-                if (StringUtils.isEmpty(logCmdForm.getCreateDate())) {
-                    stringBuffer.append(".log");
+                StringBuilder cmd = new StringBuilder();
+                if (StringUtils.isNotEmpty(logCmdForm.getKeyword())) {
+                    cmd.append("cat");
                 } else {
-                    stringBuffer.append("-" + logCmdForm.getCreateDate() + ".*.log");
+                    cmd.append("tail -n200 ");
                 }
-                stringBuffer.append("|grep ");
-                if (StringUtils.isNotEmpty(logCmdForm.getGrepPara())) {
-                    stringBuffer.append(logCmdForm.getGrepPara());
-                    stringBuffer.append(" ");
+                cmd.append(" /home/park/logs/");
+                cmd.append(logCmdForm.getDockerName());
+                cmd.append("/");
+                if (StringUtils.isNotEmpty(logCmdForm.getCreateDate())) {
+                    cmd.append(logCmdForm.getLogLevel() + "/");
                 }
-                stringBuffer.append("'" + logCmdForm.getKeyword() + "'");
-                cmdMap.put(agentConfig.getId(), stringBuffer.toString());
+                cmd.append(logCmdForm.getLogLevel());
+                if (StringUtils.isEmpty(logCmdForm.getCreateDate())) {
+                    cmd.append(".log");
+                } else {
+                    String createDate = logCmdForm.getCreateDate().substring(0, 10);
+                    cmd.append("-" + createDate + ".*.log");
+                }
+                if (StringUtils.isNotEmpty(logCmdForm.getKeyword())) {
+                    cmd.append("|grep ");
+                    if (StringUtils.isNotEmpty(logCmdForm.getGrepPara())) {
+                        cmd.append(logCmdForm.getGrepPara());
+                        cmd.append(" ");
+                    }
+                    cmd.append("'" + logCmdForm.getKeyword() + "'");
+                }
+                logs.append(agentConfig.getHostname() + "\n");
+                logs.append(iMsgService.sendCMDMsgAndRawResponse(agentConfig.getId(), cmd.toString(), 20));
             } else {
-                cmdMap.put(agentConfig.getId(), logCmdForm.getCmd());
+                logs.append(iMsgService.sendCMDMsgAndRawResponse(agentConfig.getId(), logCmdForm.getCmd(), 20));
             }
         }
-        StringBuffer stringBuffer = new StringBuffer();
-        long startTime = System.currentTimeMillis(); // 记录开始时间
-        while (true) {
-            // 检查是否已经超时
-            long elapsedTime = System.currentTimeMillis() - startTime;
-            if (elapsedTime >= logCmdForm.getTimeout()) {
-                break; // 超时退出循环
-            }
-            Iterator<AgentConfig> iterator = agentConfigs.iterator();
-            while (iterator.hasNext()) {
-                AgentConfig agentConfig = iterator.next();
-                if (cmdData.get(agentConfig.getId()) != null) {
-                    stringBuffer.append(cmdData.get(agentConfig.getId()));
-                    cmdData.remove(agentConfig.getId());
-                    iterator.remove();
-                }
-            }
-            if (agentConfigs.size() == 0) {
-                break;
-            }
-            // 可选择性让线程暂停一段时间，防止CPU全速运行
-            try {
-                Thread.sleep(100); // 暂停100毫秒
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt(); // 重新设置线程的中断状态
-            }
-        }
-        return stringBuffer.toString();
-    }
-
-    @Override
-    public void cmdData(CmdDataForm cmdDataForm) {
-        cmdData.put(cmdDataForm.getAgentId(), cmdDataForm.getData());
+        return logs.toString();
     }
 
     @Override
@@ -172,7 +130,6 @@ public class AgentConfigServiceImpl extends ServiceImpl<AgentConfigMapper, Agent
             } else {
                 jsonObject.putOnce("url", upgradeClientUrl);
             }
-            cmdMap.put(agentConfig.getId(), jsonObject.toString());
         }
     }
 
