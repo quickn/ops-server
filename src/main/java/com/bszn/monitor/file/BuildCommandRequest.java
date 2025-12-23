@@ -15,4 +15,5 @@ public class BuildCommandRequest {
     private List<Long> targetServers;
     private String sourcePath;
     private String targetPath = "/home/park";
+    private String user = "park";
 }
