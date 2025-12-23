@@ -469,7 +469,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
             String combinedCmd = String.format("%s && %s && %s && %s",
                     downloadCmd, chmodCmd, executeCmd, cleanupCmd);
 
-            String scriptResult = msgService.sendCMDMsgAndResponse(agentId, combinedCmd, 300);
+            String scriptResult = msgService.sendCMDMsgAndResponse(agentId, combinedCmd);
 
             // 6. 清理本地脚本文件
             new File(scriptPath).delete();
@@ -746,7 +746,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
 
             // 执行docker ps命令检查容器
             String checkCmd = String.format("docker ps -a --filter 'name=^%s$' --format '{{.Names}}'", containerName);
-            String result = msgService.sendCMDMsgAndResponse(agentId, checkCmd);
+            String result = msgService.sendCMDMsgAndResponseNon(agentId, checkCmd);
 
             return StringUtils.isNotBlank(result) && result.trim().equals(containerName);
         } catch (Exception e) {

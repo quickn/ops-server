@@ -40,6 +40,9 @@ public class AgentConfig extends ServiceBaseEntity {
     @ApiModelProperty("终端版本")
     private String clientVersion;
 
+    @ApiModelProperty("是否跳板机")
+    private Boolean isJumpServer;
+
     @TableField(fill = FieldFill.UPDATE)
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
