@@ -7,6 +7,7 @@ services:
       args:
         contextPath: ${contextPath}
         profileActive: ${profileActive}
+        uid: ${uid}
     ports:
       - 8989:8989
     extra_hosts:
@@ -44,6 +45,7 @@ services:
       args:
         contextPath: ${contextPath}
         profileActive: ${profileActive}
+        uid: ${uid}
     ports:
       - 9999:9999
     extra_hosts:

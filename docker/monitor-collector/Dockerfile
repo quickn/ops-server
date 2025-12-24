@@ -12,7 +12,7 @@ ENV uid=${uid}
 ENV TZ=Asia/Shanghai
 RUN ln -sf /usr/share/zoneinfo/$TZ /etc/localtime
 
-RUN adduser park
+RUN adduser park --uid ${uid}
 USER park
 
 RUN mkdir -p ${contextPath}
