@@ -35,6 +35,13 @@ public class MQController {
         return Result.success(response);
     }
 
+    @ResponseBody
+    @PostMapping("/sendCMDMsgAndResponseNon")
+    public Result sendCMDMsgAndResponseNon(@RequestParam Long agentId, @RequestParam String cmd) {
+        String response = iMsgService.sendCMDMsgAndResponseNon(agentId, cmd);
+        return Result.success(response);
+    }
+
     @GetMapping("/getMsg")
     public Result getMsg(@RequestParam String msgId) {
         String msg = cmdCacheMsgService.getMsg(msgId);
