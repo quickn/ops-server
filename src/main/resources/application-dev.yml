@@ -31,3 +31,9 @@ xxl:
       port: 9999
       logpath: /data/applogs/xxl-job/jobhandler
       logretentiondays: 30
+
+# 文件配置
+file:
+  upload:
+    file-path: /home/park/web/static
+    down-path: http://192.168.10.11:90

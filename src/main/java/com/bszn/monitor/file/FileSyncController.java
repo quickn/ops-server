@@ -9,9 +9,11 @@ import com.bszn.monitor.msg.IMsgService;
 import com.bszn.system.common.result.Result;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,6 +26,13 @@ public class FileSyncController {
     private final IMsgService msgService;
 
     private final AgentConfigService agentConfigService;
+
+    @Value("${file.upload.file-path}")
+    private String filePath;
+
+    @Value("${file.upload.down-path}")
+    private String downPath;
+
 
     /**
      * 获取所有跳板机列表
@@ -101,22 +110,48 @@ public class FileSyncController {
             if (jumpServer == null || !jumpServer.getIsJumpServer()) {
                 return Result.failed("指定的服务器不是跳板机");
             }
+            // 创建上传目录
+            File uploadDir = new File(filePath);
+            if (!uploadDir.exists()) {
+                uploadDir.mkdirs();
+            }
+            // 保存文件
+            String saveFileName = file.getOriginalFilename();
+            String filePath = this.filePath + File.separator + saveFileName;
+            file.transferTo(new File(filePath));
+            // 生成下载URL
+            String downloadUrl = String.format(downPath + "/%s", saveFileName);
 
-            // 这里根据您的实际文件传输方式实现
-            String fileName = file.getOriginalFilename();
+            // 构建上传命令 - 使用curl下载文件
+            String uploadCmd = buildUploadCommand(downloadUrl, destPath, saveFileName);
 
-            // 构建上传命令
-            String uploadCmd = String.format(
-                    "echo 'File %s uploaded to %s on server %s'",
-                    fileName, destPath, jumpServer.getHostname()
-            );
-
-            String result = msgService.sendCMDMsgAndResponse(agentId, uploadCmd, 60);
-            return Result.success("文件上传成功: " + fileName);
+            log.info("执行上传命令到跳板机 {}: {}", jumpServer.getHostname(), uploadCmd);
+            String result = msgService.sendCMDMsgAndResponse(agentId, uploadCmd, 120);
+            // 上传完成后删除临时文件
+            try {
+                File uploadedFile = new File(filePath);
+                if (uploadedFile.exists()) {
+                    uploadedFile.delete();
+                }
+            } catch (Exception e) {
+                log.warn("删除临时文件失败: {}", filePath, e);
+            }
+            return Result.success("文件上传成功: " + saveFileName + "\n跳板机响应: " + result);
         } catch (Exception e) {
             log.error("文件上传失败", e);
             return Result.failed("文件上传失败: " + e.getMessage());
         }
+    }
+
+    /**
+     * 构建上传命令（使用curl下载文件） - 简洁版
+     */
+    private String buildUploadCommand(String downloadUrl, String destPath, String fileName) {
+        // 使用 -p 参数确保目录存在，-p 参数在目录已存在时不会报错
+        return String.format(
+                "mkdir -p %s && curl -f -o %s/%s \"%s\" && echo '文件 %s 已上传到 %s'",
+                destPath, destPath, fileName, downloadUrl, fileName, destPath
+        );
     }
 
     /**
