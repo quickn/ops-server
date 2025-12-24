@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.bszn.monitor.agent.AgentConfig;
 import com.bszn.monitor.agent.AgentConfigMapper;
+import com.bszn.monitor.agent.AgentConfigService;
 import com.bszn.monitor.docker.DockerContainer;
 import com.bszn.monitor.docker.DockerContainerMapper;
 import com.bszn.monitor.msg.IMsgService;
@@ -20,6 +21,8 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -35,21 +38,13 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
     private final DockerContainerMapper dockerContainerMapper;
     private final JarDeployRecordMapper jarDeployRecordMapper;
     private final IMsgService msgService;
+    private final AgentConfigService agentConfigService;
 
-    @Value("${file.upload.jar-path:/home/park/jars}")
-    private String uploadPath;
-
-    @Value("${docker.base.image:openjdk:8-jre-slim}")
-    private String dockerBaseImage;
-
-    @Value("${server.host:localhost}")
-    private String serverHost;
-
-    @Value("${server.port:8080}")
-    private String serverPort;
-
-    @Value("${file.upload.file-path:/home/park/file}")
+    @Value("${file.upload.file-path}")
     private String filePath;
+
+    @Value("${file.upload.down-path}")
+    private String downPath;
 
     /**
      * 上传JAR包
@@ -70,19 +65,18 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
         }
 
         // 创建上传目录
-        File uploadDir = new File(uploadPath);
+        File uploadDir = new File(filePath);
         if (!uploadDir.exists()) {
             uploadDir.mkdirs();
         }
 
         // 保存文件
         String saveFileName = fileName + "-" + newVersion + ".jar";
-        String filePath = uploadPath + File.separator + saveFileName;
+        String filePath = this.filePath + File.separator + saveFileName;
         file.transferTo(new File(filePath));
 
         // 生成下载URL
-        String downloadUrl = String.format("http://%s:%s/jar/download/%s",
-                serverHost, serverPort, saveFileName);
+        String downloadUrl = String.format(downPath + "/%s", saveFileName);
 
         // 生成默认Docker镜像名称
         String dockerImageName = fileName.toLowerCase() + ":" + newVersion;
@@ -91,7 +85,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
         // 保存记录
         JarPackage jarPackage = new JarPackage();
         jarPackage.setFileName(fileName);
-        jarPackage.setOriginalName(originalName);
+        jarPackage.setOriginalName(saveFileName);
         jarPackage.setVersion(newVersion);
         jarPackage.setRemark(remark);
         jarPackage.setJarPath(filePath);
@@ -328,6 +322,156 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
     }
 
     /**
+     * 智能部署：自动判断使用首次部署还是重新部署
+     */
+    @Async
+    public CompletableFuture<Boolean> deployWithAutoStrategy(Integer jarPackageId,
+                                                             List<Long> agentIds,
+                                                             List<String> containerNames) {
+        JarPackage jarPackage = jarPackageMapper.selectById(jarPackageId);
+        if (jarPackage == null) {
+            log.error("JAR包不存在: id={}", jarPackageId);
+            return CompletableFuture.completedFuture(false);
+        }
+
+        // 检查哪些容器已存在
+        boolean allExist = true;
+        boolean allNotExist = true;
+
+        for (int i = 0; i < agentIds.size(); i++) {
+            Long agentId = agentIds.get(i);
+            String containerName = containerNames.get(i);
+
+            boolean exists = checkContainerExists(agentId, containerName);
+            if (exists) {
+                allNotExist = false;
+            } else {
+                allExist = false;
+            }
+        }
+
+        // 智能选择策略
+        if (allNotExist) {
+            // 所有容器都不存在，使用首次部署
+            log.info("所有容器都不存在，使用首次部署策略");
+            return deploy(jarPackageId, agentIds, containerNames);
+        } else if (allExist) {
+            // 所有容器都存在，使用重新部署
+            log.info("所有容器都已存在，使用重新部署策略");
+            return redeploy(jarPackageId, agentIds, containerNames);
+        } else {
+            // 混合情况：部分存在，部分不存在
+            log.info("容器状态混合，采用混合部署策略");
+            return deployMixed(jarPackageId, agentIds, containerNames);
+        }
+    }
+
+    /**
+     * 混合部署策略：对已存在的容器重新部署，对新容器首次部署
+     */
+    private CompletableFuture<Boolean> deployMixed(Integer jarPackageId,
+                                                   List<Long> agentIds,
+                                                   List<String> containerNames) {
+        JarPackage jarPackage = jarPackageMapper.selectById(jarPackageId);
+        if (jarPackage == null) {
+            return CompletableFuture.completedFuture(false);
+        }
+
+        // 保存部署目标
+        saveDeploymentTargets(jarPackage, agentIds, containerNames);
+
+        // 更新状态为部署中
+        jarPackage.setStatus(1);
+        jarPackage.setUpdateTime(new Date());
+        jarPackageMapper.updateById(jarPackage);
+
+        List<CompletableFuture<Boolean>> futures = new ArrayList<>();
+
+        // 为每个部署目标创建任务
+        for (int i = 0; i < agentIds.size(); i++) {
+            Long agentId = agentIds.get(i);
+            String containerName = containerNames.get(i);
+
+            // 检查容器是否存在
+            boolean containerExists = checkContainerExists(agentId, containerName);
+
+            // 创建部署记录
+            JarDeployRecord record = createDeployRecord(jarPackageId, agentId, containerName);
+
+            CompletableFuture<Boolean> future;
+
+            if (containerExists) {
+                // 容器已存在，使用重新部署
+                future = CompletableFuture.supplyAsync(() -> redeployJarOnly(jarPackage, agentId, containerName, record.getId()));
+            } else {
+                // 容器不存在，使用首次部署
+                future = CompletableFuture.supplyAsync(() -> deployWithDockerfile(jarPackage, agentId, containerName, record.getId()));
+            }
+            futures.add(future);
+        }
+
+        // 等待所有部署完成
+        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+                .thenApply(v -> {
+                    boolean allSuccess = true;
+                    for (CompletableFuture<Boolean> future : futures) {
+                        try {
+                            if (!future.get()) {
+                                allSuccess = false;
+                            }
+                        } catch (Exception e) {
+                            log.error("获取部署结果失败", e);
+                            allSuccess = false;
+                        }
+                    }
+                    // 更新JAR包状态
+                    jarPackage.setStatus(allSuccess ? 2 : 3);
+                    jarPackage.setUpdateTime(new Date());
+                    jarPackageMapper.updateById(jarPackage);
+                    log.info("混合部署完成: id={}, success={}", jarPackageId, allSuccess);
+                    return allSuccess;
+                });
+    }
+
+    /**
+     * 简化版替换JAR包文件
+     */
+    public JarPackage replaceJarFile(Integer id, MultipartFile file) throws IOException {
+        JarPackage jarPackage = jarPackageMapper.selectById(id);
+        if (jarPackage == null) {
+            throw new IllegalArgumentException("JAR包不存在");
+        }
+
+        String originalName = file.getOriginalFilename();
+        if (originalName == null || !originalName.endsWith(".jar")) {
+            throw new IllegalArgumentException("文件必须是JAR格式");
+        }
+
+        // 备份原文件
+        File originalFile = new File(jarPackage.getJarPath());
+        if (originalFile.exists()) {
+            File backupFile = new File(jarPackage.getJarPath() + ".backup_" + System.currentTimeMillis());
+            try {
+                Files.copy(originalFile.toPath(), backupFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                log.info("原文件已备份: {}", backupFile.getAbsolutePath());
+            } catch (Exception e) {
+                log.warn("文件备份失败: {}", e.getMessage());
+            }
+        }
+
+        // 替换文件（直接覆盖）
+        file.transferTo(originalFile);
+        log.info("JAR包文件替换成功: {}", jarPackage.getOriginalName());
+
+        // 更新记录
+        jarPackage.setUpdateTime(new Date());
+        jarPackageMapper.updateById(jarPackage);
+
+        return jarPackage;
+    }
+
+
+    /**
      * 根据Dockerfile部署到Agent（使用精简版脚本）
      */
     private boolean deployWithDockerfile(JarPackage jarPackage, Long agentId,
@@ -366,14 +510,13 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
 
             // 4. 将脚本保存为可下载文件
             String scriptFileName = "deploy_" + containerName + "_simple_" + System.currentTimeMillis() + ".sh";
-            String scriptPath = uploadPath + File.separator + scriptFileName;
+            String scriptPath = filePath + File.separator + scriptFileName;
             try (FileWriter writer = new FileWriter(scriptPath)) {
                 writer.write(deployScript);
             }
 
             // 5. 生成脚本下载URL
-            String scriptDownloadUrl = String.format("http://%s:%s/jar/download/%s",
-                    serverHost, serverPort, scriptFileName);
+            String scriptDownloadUrl = String.format(downPath + "/%s", scriptFileName);
 
             // 6. 在Agent端执行脚本
             updateDeployRecord(recordId, 1, "执行部署脚本...");
@@ -446,14 +589,13 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
 
             // 3. 将脚本保存为可下载文件
             String scriptFileName = "redeploy_" + containerName + "_" + System.currentTimeMillis() + ".sh";
-            String scriptPath = uploadPath + File.separator + scriptFileName;
+            String scriptPath = filePath + File.separator + scriptFileName;
             try (FileWriter writer = new FileWriter(scriptPath)) {
                 writer.write(redeployScript);
             }
 
             // 4. 生成脚本下载URL
-            String scriptDownloadUrl = String.format("http://%s:%s/jar/download/%s",
-                    serverHost, serverPort, scriptFileName);
+            String scriptDownloadUrl = String.format(downPath + "/%s", scriptFileName);
 
             // 5. 在Agent端下载并执行脚本
             updateDeployRecord(recordId, 1, "下载并执行重新部署脚本...");
@@ -828,9 +970,11 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
      * 创建部署记录
      */
     private JarDeployRecord createDeployRecord(Integer jarPackageId, Long agentId, String containerName) {
+        AgentConfig byId = agentConfigService.getById(agentId);
         JarDeployRecord record = new JarDeployRecord();
         record.setJarPackageId(jarPackageId);
         record.setAgentId(agentId);
+        record.setAgentIp(byId.getHostname());
         record.setContainerName(containerName);
         record.setStatus(0); // 待部署
         record.setCreateTime(new Date());
@@ -862,7 +1006,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
      * 获取JAR包下载文件
      */
     public File getJarFileForDownload(String fileName) {
-        File jarFile = new File(uploadPath + File.separator + fileName);
+        File jarFile = new File(filePath + File.separator + fileName);
         if (!jarFile.exists()) {
             throw new IllegalArgumentException("文件不存在: " + fileName);
         }

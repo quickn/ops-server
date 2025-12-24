@@ -1,6 +1,5 @@
 server:
   port: 8989
-  host: 192.168.10.11
 nacos:
   config:
     server-addr: bs-nacos:8848
@@ -183,13 +182,6 @@ security:
     - "/swagger-ui/**"
     - "/ws/**"
     - "/jar/download/**"
-
-# JAR包上传配置
-file:
-  upload:
-    jar-path: /home/park/jars  # JAR包存储路径
-    file-path: /home/park/file  # 文件存储路径
-
 
 docker:
   base:

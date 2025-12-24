@@ -27,14 +27,11 @@ public class FileSyncController {
 
     private final AgentConfigService agentConfigService;
 
-    @Value("${file.upload.jar-path:/home/park/jars}")
-    private String uploadPath;
+    @Value("${file.upload.file-path}")
+    private String filePath;
 
-    @Value("${server.host:localhost}")
-    private String serverHost;
-
-    @Value("${server.port:8080}")
-    private String serverPort;
+    @Value("${file.upload.down-path}")
+    private String downPath;
 
 
     /**
@@ -114,17 +111,16 @@ public class FileSyncController {
                 return Result.failed("指定的服务器不是跳板机");
             }
             // 创建上传目录
-            File uploadDir = new File(uploadPath);
+            File uploadDir = new File(filePath);
             if (!uploadDir.exists()) {
                 uploadDir.mkdirs();
             }
             // 保存文件
             String saveFileName = file.getOriginalFilename();
-            String filePath = uploadPath + File.separator + saveFileName;
+            String filePath = this.filePath + File.separator + saveFileName;
             file.transferTo(new File(filePath));
             // 生成下载URL
-            String downloadUrl = String.format("http://%s:%s/jar/download/%s",
-                    serverHost, serverPort, saveFileName);
+            String downloadUrl = String.format(downPath + "/%s", saveFileName);
 
             // 构建上传命令 - 使用curl下载文件
             String uploadCmd = buildUploadCommand(downloadUrl, destPath, saveFileName);
