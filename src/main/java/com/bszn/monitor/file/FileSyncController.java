@@ -149,7 +149,7 @@ public class FileSyncController {
     private String buildUploadCommand(String downloadUrl, String destPath, String fileName) {
         // 使用 -p 参数确保目录存在，-p 参数在目录已存在时不会报错
         return String.format(
-                "mkdir -p %s && curl -f -o %s/%s \"%s\" && echo '文件 %s 已上传到 %s'",
+                "mkdir -p %s && curl -f -o %s/%s '%s' && echo '文件 %s 已上传到 %s'",
                 destPath, destPath, fileName, downloadUrl, fileName, destPath
         );
     }
