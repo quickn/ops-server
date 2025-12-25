@@ -3,6 +3,7 @@ package com.bszn.mq;
 import com.bszn.base.util.MyIdWorker;
 import com.bszn.monitor.msg.CmdCacheMsgService;
 import com.bszn.monitor.msg.IMsgService;
+import com.bszn.utils.IpUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.AmqpException;
 import org.springframework.amqp.core.Message;
@@ -22,7 +23,8 @@ public class CmdMsgServiceImpl implements IMsgService {
     CmdCacheMsgService cmdCacheMsgService;
 
     @Override
-    public String sendMsg(Long agentId, String msg) {
+    public String sendMsg(Long agentId, String msg, String msgType) {
+        String ip = IpUtil.getIPv4Ip();
         final String messageId = MyIdWorker.getId() + "";
         rabbitTemplate.convertAndSend(
                 "exchange." + MQConstants.MONITOR_CMD,
@@ -31,12 +33,13 @@ public class CmdMsgServiceImpl implements IMsgService {
                     @Override
                     public Message postProcessMessage(Message message) throws AmqpException {
                         message.getMessageProperties().setMessageId(messageId);
-                        message.getMessageProperties().setCorrelationId(messageId);
+                        // message.getMessageProperties().setCorrelationId(messageId);
                         //message.getMessageProperties().setTimestamp(new Date());
                         message.getMessageProperties().setContentType("application/json");
                         message.getMessageProperties().setContentEncoding("UTF-8");
                         // 添加自定义头部
-                        // message.getMessageProperties().setHeader("business-id", "ORDER-123");
+                        message.getMessageProperties().setHeader("serverIp", ip);
+                        message.getMessageProperties().setHeader("msgType", msgType);
                         // message.getMessageProperties().setHeader("source-system", "order-service");
                         return message;
                     }
@@ -46,10 +49,8 @@ public class CmdMsgServiceImpl implements IMsgService {
     }
 
     @Override
-    public String sendMsgAndResponse(Long agentId, String msg, Integer timeout) {
-        String messageId = sendMsg(agentId, msg);
-        String msg1 = cmdCacheMsgService.getMsg(messageId, timeout);
-        log.info("服务器发送消息返回：{}", msg1);
-        return msg1;
+    public MsgResult sendMsgAndResponse(Long agentId, String msg, String msgType, Integer timeout) {
+        String messageId = sendMsg(agentId, msg, msgType);
+        return cmdCacheMsgService.getMsgResult(messageId, timeout);
     }
 }

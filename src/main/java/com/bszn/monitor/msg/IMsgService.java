@@ -1,14 +1,14 @@
 package com.bszn.monitor.msg;
 
 
-import com.alibaba.fastjson.JSONObject;
-import com.bszn.utils.IpUtil;
+import com.bszn.constant.MonitorMsgType;
+import com.bszn.mq.MsgResult;
 
 public interface IMsgService {
 
-    String sendMsg(Long agentId, String msg);
+    String sendMsg(Long agentId, String msg, String msgType);
 
-    String sendMsgAndResponse(Long agentId, String msg, Integer timeout);
+    MsgResult sendMsgAndResponse(Long agentId, String msg, String msgType, Integer timeout);
 
 
     /**
@@ -19,8 +19,7 @@ public interface IMsgService {
      * @return 消息id
      */
     default String sendCMDMsg(Long agentId, String msg) {
-        String ip = IpUtil.getIPv4Ip();
-        return sendMsg(agentId, "{\"cmd\":\"" + msg + "\",\"ip\":\"" + ip + "\"}");
+        return sendMsg(agentId, msg, MonitorMsgType.CMD);
     }
 
     /**
@@ -45,23 +44,19 @@ public interface IMsgService {
         return sendCMDMsgAndResponse(agentId, msg, 300);
     }
 
-    default String sendCMDMsgAndResponse(Long agentId, String msg, Integer timeout) {
-        String ip = IpUtil.getIPv4Ip();
-        String string = sendMsgAndResponse(agentId, "{\"cmd\":\"" + msg + "\",\"ip\":\"" + ip + "\"}", timeout);
-        return JSONObject.parseObject(string).getString("data");
+    default String sendCMDMsgAndResponse(Long agentId, String cmd, Integer timeout) {
+        return sendMsgAndResponse(agentId, cmd, MonitorMsgType.CMD, timeout).getData();
     }
 
     /**
      * 发送指令保留原始数据响应
      *
      * @param agentId
-     * @param msg
+     * @param cmd
      * @param timeout
      * @return
      */
-    default String sendCMDMsgAndRawResponse(Long agentId, String msg, Integer timeout) {
-        String ip = IpUtil.getIPv4Ip();
-        String string = sendMsgAndResponse(agentId, "{\"cmd\":\"" + msg + "\",\"ip\":\"" + ip + "\"}", timeout);
-        return JSONObject.parseObject(string).getString("data");
+    default MsgResult sendCMDMsgAndRawResponse(Long agentId, String cmd, Integer timeout) {
+        return sendMsgAndResponse(agentId, cmd, MonitorMsgType.CMD, timeout);
     }
 }

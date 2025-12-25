@@ -2,6 +2,7 @@ package com.bszn.monitor;
 
 import com.bszn.monitor.msg.CmdCacheMsgService;
 import com.bszn.monitor.msg.IMsgService;
+import com.bszn.mq.MsgResult;
 import com.bszn.system.common.result.Result;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
@@ -22,17 +23,16 @@ public class MQController {
 
     @ResponseBody
     @PostMapping("/sendMsg")
-    public Result sendMsg(@RequestParam Long agentId, @RequestParam String msg) {
-        iMsgService.sendMsg(agentId, msg);
+    public Result sendMsg(@RequestParam Long agentId, @RequestParam String msg, @RequestParam String msgType) {
+        iMsgService.sendMsg(agentId, msg, msgType);
         return Result.success();
     }
 
 
     @ResponseBody
     @PostMapping("/sendMsgAndResponse")
-    public Result sendMsgAndResponse(@RequestParam Long agentId, @RequestParam String msg) {
-        String response = iMsgService.sendMsgAndResponse(agentId, msg, 10);
-        return Result.success(response);
+    public MsgResult sendMsgAndResponse(@RequestParam Long agentId, @RequestParam String msg, @RequestParam String msgType) {
+        return iMsgService.sendMsgAndResponse(agentId, msg, msgType, 10);
     }
 
     @ResponseBody
@@ -43,8 +43,7 @@ public class MQController {
     }
 
     @GetMapping("/getMsg")
-    public Result getMsg(@RequestParam String msgId) {
-        String msg = cmdCacheMsgService.getMsg(msgId);
-        return Result.success(msg);
+    public MsgResult getMsg(@RequestParam String msgId) {
+        return cmdCacheMsgService.getMsgResult(msgId, 10);
     }
 }

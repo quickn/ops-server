@@ -1,6 +1,9 @@
 package com.bszn.monitor.msg;
 
+import cn.hutool.json.JSONObject;
+import cn.hutool.json.JSONUtil;
 import com.bszn.base.cache.IRedisService;
+import com.bszn.mq.MsgResult;
 import com.bszn.system.common.exception.BusinessException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -24,6 +27,19 @@ public class CmdCacheMsgService {
 
     public String getMsg(String messageId) {
         return getMsg(messageId, 3);
+    }
+
+    public MsgResult getMsgResult(String messageId, Integer timeout) {
+        String msg = getMsg(messageId, timeout);
+        if (msg != null) {
+            JSONObject jsonObject = JSONUtil.parseObj(msg);
+            MsgResult msgResult = jsonObject.toBean(MsgResult.class);
+            if (msgResult.getCode() == 1) {
+                throw new BusinessException(msgResult.getData());
+            }
+            return msgResult;
+        }
+        return null;
     }
 
     public String getMsg(String messageId, Integer timeout) {
