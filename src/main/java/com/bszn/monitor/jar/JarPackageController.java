@@ -22,7 +22,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @RestController
@@ -35,12 +34,15 @@ public class JarPackageController {
 
     @PostMapping("/upload")
     @Operation(summary = "上传JAR包")
-    public Result<JarPackage> uploadJar(@RequestParam("file") MultipartFile file, @RequestParam(value = "remark", required = false) String remark) {
+    public Result<JarPackage> uploadJar(@RequestParam("file") MultipartFile file,
+                                        @RequestParam("serviceId") Integer serviceId,
+                                        @RequestParam("serviceName") String serviceName,
+                                        @RequestParam(value = "remark", required = false) String remark) {
         try {
             if (file.isEmpty()) {
                 return Result.failed("请选择要上传的文件");
             }
-            JarPackage jarPackage = jarPackageService.uploadJar(file, remark);
+            JarPackage jarPackage = jarPackageService.uploadJar(file, serviceId, serviceName, remark);
             return Result.success(jarPackage);
         } catch (IllegalArgumentException e) {
             return Result.failed(e.getMessage());
@@ -118,43 +120,7 @@ public class JarPackageController {
             return Result.failed("获取Agent列表失败");
         }
     }
-//
-//    @PostMapping("/deploy/{id}")
-//    @Operation(summary = "首次部署JAR包（根据Dockerfile创建容器）")
-//    public Result<String> deploy(@PathVariable Integer id, @RequestBody DeployRequest request) {
-//        try {
-//            if (request.getAgentIds() == null || request.getAgentIds().isEmpty()) {
-//                return Result.failed("请选择Agent");
-//            }
-//            if (request.getContainerNames() == null || request.getContainerNames().isEmpty()) {
-//                return Result.failed("请输入容器名称");
-//            }
-//            if (request.getAgentIds().size() != request.getContainerNames().size()) {
-//                return Result.failed("Agent数量与容器数量必须一致");
-//            }
-//            // 检查容器名称是否重复
-//            Set<String> containerNameSet = new HashSet<>(request.getContainerNames());
-//            if (containerNameSet.size() != request.getContainerNames().size()) {
-//                return Result.failed("容器名称不能重复");
-//            }
-//            // 检查JAR包是否存在
-//            JarPackage jarPackage = jarPackageService.getJarPackageById(id);
-//            if (jarPackage == null) {
-//                return Result.failed("JAR包不存在");
-//            }
-//            // 检查Dockerfile是否已设置
-//            if (StringUtils.isBlank(jarPackage.getDockerfileContent())) {
-//                return Result.failed("首次部署需要先设置Dockerfile");
-//            }
-//            jarPackageService.deploy(id, request.getAgentIds(), request.getContainerNames());
-//            return Result.success("开始部署，系统将根据Dockerfile自动创建容器");
-//
-//        } catch (Exception e) {
-//            log.error("部署异常", e);
-//            return Result.failed("部署异常: " + e.getMessage());
-//        }
-//    }
-//
+
     @PostMapping("/redeploy/{id}")
     @Operation(summary = "重新部署（只替换JAR包）")
     public Result<String> redeploy(@PathVariable Integer id, @RequestBody(required = false) DeployRequest request) {
