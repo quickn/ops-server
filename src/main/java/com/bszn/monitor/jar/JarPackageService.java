@@ -10,6 +10,7 @@ import com.bszn.monitor.agent.AgentConfigService;
 import com.bszn.monitor.docker.DockerContainer;
 import com.bszn.monitor.docker.DockerContainerMapper;
 import com.bszn.monitor.msg.IMsgService;
+import com.bszn.monitor.service.ServiceInfoMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -37,6 +38,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
     private final AgentConfigMapper agentConfigMapper;
     private final DockerContainerMapper dockerContainerMapper;
     private final JarDeployRecordMapper jarDeployRecordMapper;
+    private final ServiceInfoMapper serviceInfoMapper;
     private final IMsgService msgService;
     private final AgentConfigService agentConfigService;
 
@@ -49,7 +51,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
     /**
      * 上传JAR包
      */
-    public JarPackage uploadJar(MultipartFile file, String remark) throws IOException {
+    public JarPackage uploadJar(MultipartFile file, Integer serviceId, String serviceName, String remark) throws IOException {
         String originalName = file.getOriginalFilename();
         if (originalName == null || !originalName.endsWith(".jar")) {
             throw new IllegalArgumentException("文件必须是JAR格式");
@@ -96,6 +98,8 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
         jarPackage.setStatus(0); // 未部署
         jarPackage.setCreateTime(new Date());
         jarPackage.setUpdateTime(new Date());
+        jarPackage.setServiceId(serviceId);
+        jarPackage.setServiceName(serviceName);
 
         jarPackageMapper.insert(jarPackage);
         return jarPackage;
@@ -1035,6 +1039,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
 
         return script.toString();
     }
+
     /**
      * 提取部署成功信息
      */
