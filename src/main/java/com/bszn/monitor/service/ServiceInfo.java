@@ -25,4 +25,10 @@ public class ServiceInfo {
      */
     private Integer sort;
 
+
+    /**
+     * 是否开启监控
+     */
+    private Boolean isMonitor;
+
 }

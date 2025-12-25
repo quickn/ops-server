@@ -9,6 +9,8 @@ import com.bszn.monitor.agent.AgentConfigQuery;
 import com.bszn.monitor.agent.AgentConfigService;
 import com.bszn.monitor.cmd.ClientMsgForm;
 import com.bszn.monitor.cmd.LogCmdForm;
+import com.bszn.monitor.service.ServiceInfo;
+import com.bszn.monitor.service.ServiceInfoService;
 import com.bszn.system.common.result.Result;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -27,6 +29,8 @@ public class AgentController {
     AgentConfigService iAgentConfigService;
     @Resource
     AgentConfigMapper agentConfigMapper;
+    @Resource
+    ServiceInfoService serviceInfoService;
 
     @ResponseBody
     @GetMapping("/listPage")
@@ -38,6 +42,10 @@ public class AgentController {
     @ResponseBody
     @PostMapping("/save")
     public Result save(@RequestBody AgentConfig agentConfig) {
+        if (agentConfig.getServiceId() != null) {
+            ServiceInfo serviceInfo = serviceInfoService.getById(agentConfig.getServiceId());
+            agentConfig.setServiceName(serviceInfo.getName());
+        }
         iAgentConfigService.saveOrUpdate(agentConfig);
         return Result.success();
     }
@@ -77,6 +85,13 @@ public class AgentController {
     @GetMapping("/upgradeClientByServiceId/{serviceId}")
     public Result upgradeClientByServiceId(@PathVariable Integer serviceId) {
         iAgentConfigService.upgradeClientByServiceId(serviceId);
+        return Result.success();
+    }
+
+    @DeleteMapping("/delete/{ids}")
+    @ResponseBody
+    public Result delete(@PathVariable Integer ids) {
+        iAgentConfigService.removeById(ids);
         return Result.success();
     }
 }
