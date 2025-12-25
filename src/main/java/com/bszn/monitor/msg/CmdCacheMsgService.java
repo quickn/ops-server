@@ -5,6 +5,7 @@ import cn.hutool.json.JSONUtil;
 import com.bszn.base.cache.IRedisService;
 import com.bszn.mq.MsgResult;
 import com.bszn.system.common.exception.BusinessException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -12,6 +13,7 @@ import java.util.concurrent.*;
 
 
 @Service
+@Slf4j
 public class CmdCacheMsgService {
 
     @Autowired
@@ -35,6 +37,7 @@ public class CmdCacheMsgService {
             JSONObject jsonObject = JSONUtil.parseObj(msg);
             MsgResult msgResult = jsonObject.toBean(MsgResult.class);
             if (msgResult.getCode() == 1) {
+                log.warn("执行指令异常 {}", msgResult.getData());
                 throw new BusinessException(msgResult.getData());
             }
             return msgResult;
