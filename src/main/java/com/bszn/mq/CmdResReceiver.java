@@ -4,6 +4,7 @@ import com.bszn.monitor.msg.CmdCacheMsgService;
 import com.bszn.utils.IpUtil;
 import com.rabbitmq.client.Channel;
 import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -20,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 
 @Configuration
 @ConfigurationProperties(prefix = "rabbitmq.cmd")
+@Slf4j
 @Order(0)
 public class CmdResReceiver {
 
@@ -56,6 +58,7 @@ public class CmdResReceiver {
         String message = new String(msg.getBody(), StandardCharsets.UTF_8);
         String messageId = msg.getMessageProperties().getMessageId();
         Long tag = msg.getMessageProperties().getDeliveryTag();
+        log.info("指令响应 {}", message);
         monitorCmdMsgHandle.handle(messageId, message);
         channel.basicAck(tag, false);
     }
