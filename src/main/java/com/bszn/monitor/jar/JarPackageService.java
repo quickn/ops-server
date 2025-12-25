@@ -96,7 +96,6 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
         jarPackage.setDockerContainerName(dockerContainerName);
         jarPackage.setDockerfilePath("");
         jarPackage.setStatus(0); // 未部署
-        jarPackage.setCreateTime(new Date());
         jarPackage.setUpdateTime(new Date());
         jarPackage.setServiceId(serviceId);
         jarPackage.setServiceName(serviceName);
