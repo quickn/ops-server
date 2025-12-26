@@ -1,23 +1,17 @@
 package com.bszn.monitor.jar;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.bszn.system.common.result.Result;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.core.io.FileSystemResource;
-import org.springframework.core.io.Resource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -226,10 +220,10 @@ public class JarPackageController {
 
     @GetMapping("/page")
     @Operation(summary = "获取JAR包列表（分页）")
-    public Result<Page<JarPackage>> page(JarQueryPage jarQueryPage) {
+    public Result<IPage<JarPackage>> page(JarQueryPage jarQueryPage) {
         try {
             return Result.success(jarPackageService.getJarPackagePage(jarQueryPage.getPage(),
-                    jarQueryPage.buildLambda()
+                    jarQueryPage.build()
             ));
         } catch (Exception e) {
             log.error("获取JAR包列表异常", e);

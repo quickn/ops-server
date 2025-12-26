@@ -2,6 +2,7 @@ package com.bszn.monitor.jar;
 
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.bszn.base.sql.IQuery;
@@ -38,6 +39,16 @@ public class JarQueryPage extends PageForm implements IQuery {
                 .like(StrUtil.isNotEmpty(fileName), JarPackage::getFileName, fileName)
                 .eq(Objects.nonNull(serviceId), JarPackage::getServiceId, serviceId)
                 .eq(Objects.nonNull(status), JarPackage::getStatus, status);
+    }
+
+    /**
+     * 链式wrapper构建
+     */
+    public QueryWrapper<JarPackage> build() {
+        return Wrappers.<JarPackage>query()
+                .like(StrUtil.isNotEmpty(fileName), "jp1.file_name", fileName)
+                .eq(Objects.nonNull(serviceId), "jp1.service_id", serviceId)
+                .eq(Objects.nonNull(status), "jp1.service_name", status);
     }
 
 }

@@ -2,6 +2,7 @@ package com.bszn.monitor.jar;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.bszn.monitor.agent.AgentConfig;
@@ -10,7 +11,6 @@ import com.bszn.monitor.agent.AgentConfigService;
 import com.bszn.monitor.docker.DockerContainer;
 import com.bszn.monitor.docker.DockerContainerMapper;
 import com.bszn.monitor.msg.IMsgService;
-import com.bszn.monitor.service.ServiceInfoMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -38,7 +38,6 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
     private final AgentConfigMapper agentConfigMapper;
     private final DockerContainerMapper dockerContainerMapper;
     private final JarDeployRecordMapper jarDeployRecordMapper;
-    private final ServiceInfoMapper serviceInfoMapper;
     private final IMsgService msgService;
     private final AgentConfigService agentConfigService;
 
@@ -1272,8 +1271,8 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
     /**
      * 获取JAR包列表（带分页）
      */
-    public Page<JarPackage> getJarPackagePage(Page<JarPackage> page, LambdaQueryWrapper<JarPackage> wrapper) {
-        return jarPackageMapper.selectPage(page, wrapper);
+    public IPage<JarPackage> getJarPackagePage(Page<JarPackage> page, QueryWrapper<JarPackage> wrapper) {
+        return jarPackageMapper.selectLatestVersionByPage(page, wrapper);
     }
 
     /**
