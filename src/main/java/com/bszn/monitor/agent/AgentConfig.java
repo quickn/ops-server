@@ -1,16 +1,10 @@
 package com.bszn.monitor.agent;
 
-import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.bszn.base.ServiceBaseEntity;
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
-
-import java.time.LocalDateTime;
 
 /**
  * Created by Liuyun on 2023-07-28 11:16
@@ -43,10 +37,7 @@ public class AgentConfig extends ServiceBaseEntity {
     @ApiModelProperty("是否跳板机")
     private Boolean isJumpServer;
 
-    @TableField(fill = FieldFill.UPDATE)
-    @JsonInclude(value = JsonInclude.Include.NON_NULL)
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime updateTime;
+    @ApiModelProperty("是否在线")
+    private Boolean online;
 
-    Integer serviceId;
 }

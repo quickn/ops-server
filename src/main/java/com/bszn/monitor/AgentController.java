@@ -82,11 +82,20 @@ public class AgentController {
     }
 
     @ResponseBody
-    @GetMapping("/upgradeClientByServiceId/{serviceId}")
-    public Result upgradeClientByServiceId(@PathVariable Integer serviceId) {
-        iAgentConfigService.upgradeClientByServiceId(serviceId);
+    @GetMapping("/handleAgentByServiceId/{serviceId}")
+    public Result handleAgentByServiceId(@PathVariable Integer serviceId, @RequestParam String cmd) {
+        iAgentConfigService.handleAgentByServiceId(serviceId, cmd);
         return Result.success();
     }
+
+
+    @ResponseBody
+    @GetMapping("/handleAgent/{agentId}")
+    public Result handleAgent(@PathVariable Long agentId, @RequestParam String cmd) {
+        iAgentConfigService.handleAgent(agentId, cmd);
+        return Result.success();
+    }
+
 
     @DeleteMapping("/delete/{ids}")
     @ResponseBody
