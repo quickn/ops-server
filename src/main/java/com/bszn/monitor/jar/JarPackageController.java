@@ -113,9 +113,9 @@ public class JarPackageController {
         }
     }
 
-    @GetMapping("/versions/{fileName}")
+    @GetMapping("/versions")
     @Operation(summary = "获取文件的所有版本")
-    public Result<List<JarPackage>> getAllVersions(@PathVariable String fileName) {
+    public Result<List<JarPackage>> getAllVersions(@RequestParam String fileName) {
         try {
             List<JarPackage> versions = jarPackageService.getAllVersionsByFileName(fileName);
             return Result.success(versions);
