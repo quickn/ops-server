@@ -5,6 +5,7 @@ import cn.hutool.core.bean.copier.CopyOptions;
 import cn.hutool.json.JSONObject;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.bszn.constant.MonitorMsgType;
 import com.bszn.monitor.cmd.ClientMsgForm;
 import com.bszn.monitor.cmd.LogCmdForm;
 import com.bszn.monitor.constant.MonitorCmdC;
@@ -120,20 +121,6 @@ public class AgentConfigServiceImpl extends ServiceImpl<AgentConfigMapper, Agent
     }
 
     @Override
-    public void upgradeClientByServiceId(Integer serviceId) {
-        List<AgentConfig> agentConfigs = this.baseMapper.getListByServiceId(serviceId);
-        for (AgentConfig agentConfig : agentConfigs) {
-            JSONObject jsonObject = new JSONObject();
-            jsonObject.putOnce("handle", "upgradeClient");
-            if (serviceId == 1) {
-                jsonObject.putOnce("url", "http://192.168.10.10:82/client/bs-agent-release.jar");
-            } else {
-                jsonObject.putOnce("url", upgradeClientUrl);
-            }
-        }
-    }
-
-    @Override
     public void receiveClientMsg(ClientMsgForm clientMsgForm) {
         if (MonitorCmdC.updateClientVersion.equals(clientMsgForm.getCmd())) {
             AgentConfig agentConfig = new AgentConfig();
@@ -142,4 +129,26 @@ public class AgentConfigServiceImpl extends ServiceImpl<AgentConfigMapper, Agent
             this.baseMapper.updateById(agentConfig);
         }
     }
+
+    @Override
+    public void handleAgentByServiceId(Integer serviceId, String cmd) {
+        List<AgentConfig> agentConfigs = this.baseMapper.getListByServiceId(serviceId);
+        for (AgentConfig agentConfig : agentConfigs) {
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.putOnce("handle", "agentManagerHandle");
+            jsonObject.putOnce("url", upgradeClientUrl);
+            jsonObject.putOnce("cmd", cmd);
+            iMsgService.sendMsg(agentConfig.getId(), jsonObject.toString(), MonitorMsgType.TASK);
+        }
+    }
+
+    @Override
+    public void handleAgent(Long agentId, String cmd) {
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.putOnce("handle", "agentManagerHandle");
+        jsonObject.putOnce("cmd", cmd);
+        jsonObject.putOnce("url", upgradeClientUrl);
+        iMsgService.sendMsgAndResponse(agentId, jsonObject.toString(), MonitorMsgType.TASK, 30);
+    }
+
 }

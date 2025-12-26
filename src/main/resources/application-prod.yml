@@ -30,3 +30,7 @@ file:
   upload:
     file-path: /home/park/logs/monitor
     down-path: http://192.168.10.11:90/monitor/static
+
+upgradeClient:
+  url: http://monitor.bisenpark.com:90/monitor/static/monitor-agent.jar
+  version: 1.0.0

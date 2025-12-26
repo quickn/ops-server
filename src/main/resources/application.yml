@@ -164,7 +164,7 @@ system:
     # WebSocket 开关
     websocket-enabled: true
 upgradeClient:
-  url: http://local.bisenpark.com:1082/client/bs-agent-release.jar
+  url: http://192.168.10.11:90/monitor/static/monitor-agent.jar
   version: 1.0.0
 logging:
   config: classpath:logback-nacos.xml
