@@ -13,7 +13,7 @@ import java.util.Date;
 public class JarPackage extends ServiceBaseEntity {
 
     @TableId(type = IdType.AUTO)
-    private Integer id;
+    private Long id;
 
     private String fileName;
     private String originalName;
@@ -31,6 +31,5 @@ public class JarPackage extends ServiceBaseEntity {
     private String targetContainerNames;
 
     private Integer status; // 0-未部署 1-部署中 2-部署成功 3-部署失败
-    private Date createTime;
-    private Date updateTime;
+
 }

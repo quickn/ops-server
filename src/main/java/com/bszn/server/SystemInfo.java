@@ -1,13 +1,9 @@
 package com.bszn.server;
 
-import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.bszn.base.ServiceBaseEntity;
 import lombok.Data;
-
-import java.util.Date;
 
 /**
  * @version v2.3
@@ -77,11 +73,5 @@ public class SystemInfo extends ServiceBaseEntity {
      * 主机备注
      */
     private String remark;
-
-    /**
-     * 创建时间
-     */
-    @TableField(fill = FieldFill.UPDATE)
-    private Date updateTime;
 
 }

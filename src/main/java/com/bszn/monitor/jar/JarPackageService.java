@@ -96,8 +96,6 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
         jarPackage.setDockerContainerName(dockerContainerName);
         jarPackage.setDockerfilePath("");
         jarPackage.setStatus(0); // 未部署
-        jarPackage.setCreateTime(new Date());
-        jarPackage.setUpdateTime(new Date());
         jarPackage.setServiceId(serviceId);
         jarPackage.setServiceName(serviceName);
 
@@ -120,7 +118,6 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
             }
 
             jarPackage.setDockerfileContent(dockerfileContent);
-            jarPackage.setUpdateTime(new Date());
             jarPackageMapper.updateById(jarPackage);
             return true;
         } catch (Exception e) {
@@ -202,7 +199,6 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
 
         // 更新状态为部署中
         jarPackage.setStatus(1);
-        jarPackage.setUpdateTime(new Date());
         jarPackageMapper.updateById(jarPackage);
 
         List<CompletableFuture<Boolean>> futures = new ArrayList<>();
@@ -240,7 +236,6 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
 
                     // 更新JAR包状态
                     jarPackage.setStatus(allSuccess ? 2 : 3);
-                    jarPackage.setUpdateTime(new Date());
                     jarPackageMapper.updateById(jarPackage);
 
                     log.info("JAR包首次部署完成: id={}, success={}", jarPackageId, allSuccess);
@@ -279,7 +274,6 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
 
         // 更新状态为部署中
         jarPackage.setStatus(1);
-        jarPackage.setUpdateTime(new Date());
         jarPackageMapper.updateById(jarPackage);
 
         List<CompletableFuture<Boolean>> futures = new ArrayList<>();
@@ -317,7 +311,6 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
 
                     // 更新JAR包状态
                     jarPackage.setStatus(allSuccess ? 2 : 3);
-                    jarPackage.setUpdateTime(new Date());
                     jarPackageMapper.updateById(jarPackage);
 
                     log.info("JAR包重新部署完成: id={}, success={}", jarPackageId, allSuccess);
@@ -386,7 +379,6 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
 
         // 更新状态为部署中
         jarPackage.setStatus(1);
-        jarPackage.setUpdateTime(new Date());
         jarPackageMapper.updateById(jarPackage);
 
         List<CompletableFuture<Boolean>> futures = new ArrayList<>();
@@ -430,7 +422,6 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
                     }
                     // 更新JAR包状态
                     jarPackage.setStatus(allSuccess ? 2 : 3);
-                    jarPackage.setUpdateTime(new Date());
                     jarPackageMapper.updateById(jarPackage);
                     log.info("混合部署完成: id={}, success={}", jarPackageId, allSuccess);
                     return allSuccess;
@@ -468,7 +459,6 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
         log.info("JAR包文件替换成功: {}", jarPackage.getOriginalName());
 
         // 更新记录
-        jarPackage.setUpdateTime(new Date());
         jarPackageMapper.updateById(jarPackage);
 
         return jarPackage;
@@ -1188,7 +1178,6 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
                 // 更新现有记录
                 existing.setImage(imageName);
                 existing.setStatus("running");
-                existing.setUpdateTime(new Date());
                 dockerContainerMapper.updateById(existing);
             }
 
@@ -1218,7 +1207,6 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
             jarPackage.setAgentNames(String.join(",", agentNameList));
             jarPackage.setTargetContainerNames(String.join(",", containerNames));
             jarPackage.setDockerContainerName(String.join(",", containerNames));
-            jarPackage.setUpdateTime(new Date());
 
             jarPackageMapper.updateById(jarPackage);
 
