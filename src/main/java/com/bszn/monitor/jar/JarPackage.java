@@ -12,9 +12,6 @@ import java.util.Date;
 @TableName("jar_package")
 public class JarPackage extends ServiceBaseEntity {
 
-    @TableId(type = IdType.AUTO)
-    private Long id;
-
     private String fileName;
     private String originalName;
     private String version;
