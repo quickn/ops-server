@@ -87,25 +87,41 @@ public class JarPackageController {
         }
     }
 
-    @GetMapping("/download/{fileName}")
-    @Operation(summary = "下载JAR包")
-    public ResponseEntity<Resource> downloadJar(@PathVariable String fileName,
-                                                HttpServletRequest request) {
+
+    @PostMapping("/rebuild/{id}")
+    @Operation(summary = "重新构建容器（使用Dockerfile重新构建）")
+    public Result<String> rebuildContainer(@PathVariable Integer id, @RequestBody(required = false) DeployRequest request) {
         try {
-            File file = jarPackageService.getJarFileForDownload(fileName);
-            Resource resource = new FileSystemResource(file);
-            String contentType = request.getServletContext().getMimeType(file.getAbsolutePath());
-            if (contentType == null) {
-                contentType = "application/octet-stream";
+            List<Long> agentIds = null;
+            List<String> containerNames = null;
+            if (request != null) {
+                agentIds = request.getAgentIds();
+                containerNames = request.getContainerNames();
+
+                if (agentIds != null && containerNames != null &&
+                        !agentIds.isEmpty() && !containerNames.isEmpty()) {
+                    if (agentIds.size() != containerNames.size()) {
+                        return Result.failed("Agent数量与容器数量必须一致");
+                    }
+                }
             }
-            return ResponseEntity.ok()
-                    .contentType(MediaType.parseMediaType(contentType))
-                    .header(HttpHeaders.CONTENT_DISPOSITION,
-                            "attachment; filename=\"" + file.getName() + "\"")
-                    .body(resource);
+            jarPackageService.rebuildContainer(id, agentIds, containerNames);
+            return Result.success("开始重新构建容器，请稍后查看状态");
         } catch (Exception e) {
-            log.error("下载JAR包异常", e);
-            return ResponseEntity.notFound().build();
+            log.error("重新构建容器异常", e);
+            return Result.failed("重新构建容器异常: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/versions/{fileName}")
+    @Operation(summary = "获取文件的所有版本")
+    public Result<List<JarPackage>> getAllVersions(@PathVariable String fileName) {
+        try {
+            List<JarPackage> versions = jarPackageService.getAllVersionsByFileName(fileName);
+            return Result.success(versions);
+        } catch (Exception e) {
+            log.error("获取版本列表异常", e);
+            return Result.failed("获取版本列表失败");
         }
     }
 
@@ -212,8 +228,7 @@ public class JarPackageController {
     @Operation(summary = "获取JAR包列表（分页）")
     public Result<Page<JarPackage>> page(JarQueryPage jarQueryPage) {
         try {
-            return Result.success(jarPackageService.getJarPackagePage(
-                    jarQueryPage.getPage(),
+            return Result.success(jarPackageService.getJarPackagePage(jarQueryPage.getPage(),
                     jarQueryPage.buildLambda()
             ));
         } catch (Exception e) {

@@ -1383,6 +1383,366 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
     }
 
     /**
+     * 获取所有版本（按文件名）
+     */
+    public List<JarPackage> getAllVersionsByFileName(String fileName) {
+        return lambdaQuery().eq(JarPackage::getFileName,fileName).orderByDesc(JarPackage::getId).list();
+    }
+
+    /**
+     * 重新构建容器（使用Dockerfile重新构建镜像并部署）
+     */
+    @Async
+    public CompletableFuture<Boolean> rebuildContainer(Integer jarPackageId, List<Long> agentIds, List<String> containerNames) {
+        JarPackage jarPackage = jarPackageMapper.selectById(jarPackageId);
+        if (jarPackage == null) {
+            log.error("JAR包不存在: id={}", jarPackageId);
+            return CompletableFuture.completedFuture(false);
+        }
+
+        // 如果提供了新的部署目标，则更新目标
+        if (agentIds != null && !agentIds.isEmpty() && containerNames != null && !containerNames.isEmpty()) {
+            if (agentIds.size() != containerNames.size()) {
+                log.error("Agent数量与容器数量不匹配");
+                return CompletableFuture.completedFuture(false);
+            }
+            saveDeploymentTargets(jarPackage, agentIds, containerNames);
+        } else {
+            // 使用原来的部署目标
+            agentIds = getAgentIdList(jarPackage.getAgentIds());
+            containerNames = getContainerNameList(jarPackage.getTargetContainerNames());
+        }
+
+        if (agentIds.isEmpty() || containerNames.isEmpty()) {
+            log.error("没有部署目标");
+            return CompletableFuture.completedFuture(false);
+        }
+
+        // 更新状态为部署中
+        jarPackage.setStatus(1);
+        jarPackageMapper.updateById(jarPackage);
+
+        List<CompletableFuture<Boolean>> futures = new ArrayList<>();
+
+        // 为每个Agent创建重新构建任务
+        for (int i = 0; i < agentIds.size(); i++) {
+            Long agentId = agentIds.get(i);
+            String containerName = containerNames.get(i);
+
+            // 创建部署记录
+            JarDeployRecord record = createDeployRecord(jarPackageId, agentId, containerName);
+
+            // 异步执行重新构建
+            CompletableFuture<Boolean> future = CompletableFuture.supplyAsync(() -> {
+                return rebuildWithDockerfile(jarPackage, agentId, containerName, record.getId());
+            });
+
+            futures.add(future);
+        }
+
+        // 等待所有部署完成
+        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+                .thenApply(v -> {
+                    boolean allSuccess = true;
+                    for (CompletableFuture<Boolean> future : futures) {
+                        try {
+                            if (!future.get()) {
+                                allSuccess = false;
+                            }
+                        } catch (Exception e) {
+                            log.error("获取重新构建结果失败", e);
+                            allSuccess = false;
+                        }
+                    }
+
+                    // 更新JAR包状态
+                    jarPackage.setStatus(allSuccess ? 2 : 3);
+                    jarPackageMapper.updateById(jarPackage);
+
+                    log.info("容器重新构建完成: id={}, success={}", jarPackageId, allSuccess);
+                    return allSuccess;
+                });
+    }
+
+    /**
+     * 使用Dockerfile重新构建容器
+     */
+    private boolean rebuildWithDockerfile(JarPackage jarPackage, Long agentId,
+                                          String containerName, Integer recordId) {
+        try {
+            AgentConfig agentConfig = agentConfigMapper.selectById(agentId);
+            if (agentConfig == null) {
+                updateDeployRecord(recordId, 3, "Agent不存在");
+                return false;
+            }
+
+            // 1. 检查Dockerfile是否已设置
+            if (StringUtils.isBlank(jarPackage.getDockerfileContent())) {
+                updateDeployRecord(recordId, 3, "Dockerfile未设置");
+                return false;
+            }
+
+            // 2. 生成重新构建脚本（使用Dockerfile重新构建镜像）
+            String rebuildScript = generateRebuildScript(
+                    jarPackage.getDownloadUrl(),
+                    jarPackage.getFileName(),
+                    jarPackage.getVersion(),
+                    jarPackage.getDockerImageName(),
+                    containerName,
+                    jarPackage.getDockerfileContent()
+            );
+
+            // 3. 将脚本保存为可下载文件
+            String scriptFileName = "rebuild_" + containerName + "_" + System.currentTimeMillis() + ".sh";
+            String scriptPath = filePath + File.separator + scriptFileName;
+            try (FileWriter writer = new FileWriter(scriptPath)) {
+                writer.write(rebuildScript);
+            }
+
+            // 4. 生成脚本下载URL
+            String scriptDownloadUrl = String.format(downPath + "/%s", scriptFileName);
+
+            // 5. 在Agent端下载并执行脚本
+            updateDeployRecord(recordId, 1, "下载并执行重新构建脚本...");
+
+            // 构建下载和执行命令
+            String remoteScriptPath = "/tmp/rebuild_" + containerName + ".sh";
+            String downloadCmd = String.format("curl -L -o %s '%s'", remoteScriptPath, scriptDownloadUrl);
+            String chmodCmd = String.format("chmod +x %s", remoteScriptPath);
+            String executeCmd = String.format("bash %s 2>&1", remoteScriptPath);
+            String cleanupCmd = String.format("rm -f %s", remoteScriptPath);
+
+            // 组合命令一次性执行
+            String combinedCmd = String.format("%s && %s && %s && %s",
+                    downloadCmd, chmodCmd, executeCmd, cleanupCmd);
+
+            String scriptResult = msgService.sendCMDMsgAndResponse(agentId, combinedCmd);
+
+            // 6. 清理本地脚本文件
+            new File(scriptPath).delete();
+
+            // 7. 解析脚本执行结果
+            if (scriptResult.contains("REBUILD_SUCCESS")) {
+                updateDeployRecord(recordId, 2, "重新构建成功！\n" + extractRebuildSuccessInfo(scriptResult));
+                return true;
+            } else {
+                String errorInfo = extractDeployErrorInfo(scriptResult);
+                updateDeployRecord(recordId, 3, "重新构建失败:\n" + errorInfo);
+                return false;
+            }
+
+        } catch (Exception e) {
+            log.error("重新构建失败", e);
+            updateDeployRecord(recordId, 3, "重新构建失败: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 生成重新构建脚本（使用Dockerfile重新构建镜像）
+     */
+    private String generateRebuildScript(String downloadUrl, String fileName, String version,
+                                         String imageName, String containerName, String dockerfileContent) {
+        Map<String, String> stringStringMap = parseDockerfileInfo(dockerfileContent);
+        String from = stringStringMap.get(InstructionConstant.FROM);
+        String port = stringStringMap.get(InstructionConstant.EXPOSE);
+        String workdir = stringStringMap.get(InstructionConstant.WORKDIR);
+        String entrypoint = stringStringMap.get(InstructionConstant.ENTRYPOINT);
+
+        StringBuilder script = new StringBuilder();
+        script.append("#!/bin/bash\n\n");
+        script.append("# ======================================================\n");
+        script.append("# 容器重新构建脚本\n");
+        script.append("# 使用Dockerfile重新构建镜像并部署\n");
+        script.append("# ======================================================\n\n");
+
+        script.append("set -e\n");
+        script.append("set -o pipefail\n\n");
+
+        // 基本变量
+        script.append("JAR_URL=\"").append(downloadUrl).append("\"\n");
+        script.append("JAR_NAME=\"").append(fileName).append("-").append(version).append(".jar\"\n");
+        script.append("LOCAL_JAR_PATH=\"").append(filePath).append("/$JAR_NAME\"\n");
+        script.append("JAR_PATH=\"/tmp/$JAR_NAME\"\n");
+        script.append("IMAGE_NAME=\"").append(imageName).append("\"\n");
+        script.append("CONTAINER_NAME=\"").append(containerName).append("\"\n");
+        script.append("BUILD_DIR=\"/tmp/rebuild-${CONTAINER_NAME}-$(date +%s)\"\n\n");
+
+        // 日志函数
+        script.append("log() { echo \"[$(date '+%Y-%m-%d %H:%M:%S')] $1\"; }\n");
+        script.append("log_success() { echo \"[$(date '+%Y-%m-%d %H:%M:%S')] ✓ $1\"; }\n");
+        script.append("log_error() { echo \"[$(date '+%Y-%m-%d %H:%M:%S')] ✗ $1\" >&2; }\n\n");
+
+        script.append("echo \"========================================\"\n");
+        script.append("echo \"          容器重新构建\"\n");
+        script.append("echo \"========================================\"\n\n");
+
+        // 步骤1: 清理旧容器和镜像
+        script.append("log \"1. 清理旧容器和镜像\"\n");
+        script.append("docker stop \"$CONTAINER_NAME\" 2>/dev/null || true\n");
+        script.append("docker rm -f \"$CONTAINER_NAME\" 2>/dev/null || true\n");
+        script.append("sleep 2\n");
+        script.append("log_success \"旧容器清理完成\"\n\n");
+
+        // 步骤2: 获取JAR文件
+        script.append("log \"2. 获取JAR文件\"\n");
+        script.append("rm -f \"$JAR_PATH\"\n");
+
+        // 检查本地文件是否存在
+        script.append("if [ -f \"$LOCAL_JAR_PATH\" ]; then\n");
+        script.append("    log \"找到本地JAR文件: $LOCAL_JAR_PATH\"\n");
+        script.append("    cp \"$LOCAL_JAR_PATH\" \"$JAR_PATH\"\n");
+        script.append("    log_success \"使用本地JAR文件\"\n");
+        script.append("else\n");
+        script.append("    log \"本地文件不存在，从服务器下载\"\n");
+        script.append("    curl -s -L -o \"$JAR_PATH\" \"$JAR_URL\"\n");
+        script.append("    \n");
+        script.append("    if [ ! -f \"$JAR_PATH\" ]; then\n");
+        script.append("        log_error \"JAR文件不存在\"\n");
+        script.append("        exit 1\n");
+        script.append("    fi\n");
+        script.append("    log_success \"下载完成\"\n");
+        script.append("fi\n");
+
+        script.append("JAR_SIZE=$(du -h \"$JAR_PATH\" | cut -f1)\n");
+        script.append("log_success \"JAR文件就绪，大小: $JAR_SIZE\"\n\n");
+
+        // 步骤3: 构建Docker镜像
+        script.append("log \"3. 重新构建Docker镜像\"\n");
+
+        script.append("mkdir -p \"$BUILD_DIR\"\n");
+        script.append("cp \"$JAR_PATH\" \"$BUILD_DIR/").append(fileName).append(".jar\"\n");
+        script.append("cd \"$BUILD_DIR\"\n\n");
+
+        script.append("cat > Dockerfile << 'EOF'\n");
+        script.append(dockerfileContent).append("\n");
+        script.append("EOF\n\n");
+
+        script.append("if docker build -t \"$IMAGE_NAME\" .; then\n");
+        script.append("    log_success \"镜像构建成功\"\n");
+        script.append("else\n");
+        script.append("    log_error \"镜像构建失败\"\n");
+        script.append("    exit 1\n");
+        script.append("fi\n\n");
+
+        // 步骤4: 运行容器
+        script.append("log \"4. 运行容器\"\n");
+
+        script.append("CONTAINER_ID=$(docker run -d \\\n");
+        script.append("  --name \"$CONTAINER_NAME\" \\\n");
+        script.append("  --restart=always \\\n");
+        script.append("  -p ").append(port != null ? port : "8080").append(":").append(port != null ? port : "8080").append(" \\\n");
+        script.append("  -e TZ=Asia/Shanghai \\\n");
+        script.append("  -e JAVA_OPTS=\"-Xms256m -Xmx512m -Duser.timezone=Asia/Shanghai\" \\\n");
+        script.append("  --log-opt max-size=10m \\\n");
+        script.append("  --log-opt max-file=3 \\\n");
+        script.append("  \"$IMAGE_NAME\")\n\n");
+
+        script.append("if [ $? -eq 0 ] && [ -n \"$CONTAINER_ID\" ]; then\n");
+        script.append("    log_success \"容器启动成功，ID: ${CONTAINER_ID:0:12}\"\n");
+        script.append("else\n");
+        script.append("    log_error \"容器启动失败\"\n");
+        script.append("    exit 1\n");
+        script.append("fi\n\n");
+
+        // 步骤5: 等待启动完成
+        script.append("log \"5. 等待应用启动完成（120秒）\"\n");
+
+        script.append("SUCCESS=false\n");
+        script.append("for i in {1..120}; do\n");
+        script.append("    sleep 1\n");
+        script.append("    \n");
+        script.append("    # 检查容器是否还在运行\n");
+        script.append("    if ! docker ps --filter \"name=$CONTAINER_NAME\" | grep -q \"$CONTAINER_NAME\"; then\n");
+        script.append("        log_error \"容器已停止运行\"\n");
+        script.append("        break\n");
+        script.append("    fi\n");
+        script.append("    \n");
+        script.append("    # 获取容器日志，检查启动关键词\n");
+        script.append("    if docker logs \"$CONTAINER_NAME\" 2>&1 | grep -q \"Tomcat started\\|Started .*Application in\"; then\n");
+        script.append("        log_success \"检测到应用启动成功\"\n");
+        script.append("        SUCCESS=true\n");
+        script.append("        break\n");
+        script.append("    fi\n");
+        script.append("    \n");
+        script.append("    echo \"  [$i/120] 等待应用启动...\"\n");
+        script.append("done\n\n");
+
+        // 步骤6: 输出结果
+        script.append("log \"6. 重新构建结果\"\n");
+
+        script.append("if [ \"$SUCCESS\" = true ]; then\n");
+        script.append("    echo \"\"\n");
+        script.append("    echo \"========================================\"\n");
+        script.append("    echo \"        🎉 重新构建成功！🎉\"\n");
+        script.append("    echo \"========================================\"\n");
+        script.append("    \n");
+        script.append("    # 获取容器信息\n");
+        script.append("    CONTAINER_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' \"$CONTAINER_NAME\" 2>/dev/null || echo \"unknown\")\n");
+        script.append("    \n");
+        script.append("    echo \"🔹 容器名称: $CONTAINER_NAME\"\n");
+        script.append("    echo \"🔹 容器ID:   ${CONTAINER_ID:0:12}\"\n");
+        script.append("    echo \"🔹 容器IP:   $CONTAINER_IP\"\n");
+        script.append("    echo \"🔹 镜像版本: $IMAGE_NAME\"\n");
+        script.append("    echo \"🔹 JAR文件:  $JAR_NAME\"\n");
+        script.append("    echo \"🔹 构建时间: $(date '+%Y-%m-%d %H:%M:%S')\"\n");
+        script.append("    echo \"\"\n");
+        script.append("    echo \"📊 容器状态:\"\n");
+        script.append("    docker ps --filter \"name=^$CONTAINER_NAME$\" --format \"table {{.Names}}\\t{{.Status}}\\t{{.Ports}}\"\n");
+        script.append("    echo \"\"\n");
+        script.append("    echo \"📝 应用启动日志:\"\n");
+        script.append("    docker logs \"$CONTAINER_NAME\" 2>&1 | grep -E \"Starting|Tomcat started|Started .*Application\" | tail -5\n");
+        script.append("    echo \"\"\n");
+        script.append("    echo \"✅ REBUILD_SUCCESS\"\n");
+        script.append("else\n");
+        script.append("    log_error \"❌ 重新构建失败或超时\"\n");
+        script.append("    echo \"\"\n");
+        script.append("    echo \"🔍 错误诊断:\"\n");
+        script.append("    \n");
+        script.append("    # 检查容器状态\n");
+        script.append("    echo \"容器状态:\"\n");
+        script.append("    docker inspect \"$CONTAINER_NAME\" 2>/dev/null | grep -E 'Status|ExitCode|Error|RestartCount' | head -6\n");
+        script.append("    \n");
+        script.append("    echo \"\"\n");
+        script.append("    echo \"容器日志（最后20行）:\"\n");
+        script.append("    docker logs \"$CONTAINER_NAME\" 2>&1 | tail -20\n");
+        script.append("    \n");
+        script.append("    exit 1\n");
+        script.append("fi\n");
+
+        // 清理
+        script.append("\n# 清理临时文件\n");
+        script.append("rm -rf \"$BUILD_DIR\" /tmp/*.jar 2>/dev/null || true\n");
+
+        return script.toString();
+    }
+
+    /**
+     * 提取重新构建成功信息
+     */
+    private String extractRebuildSuccessInfo(String scriptResult) {
+        StringBuilder info = new StringBuilder();
+        String[] lines = scriptResult.split("\n");
+        boolean inSuccessSection = false;
+
+        for (String line : lines) {
+            if (line.contains("=== 重新构建成功信息 ===")) {
+                inSuccessSection = true;
+                continue;
+            }
+            if (inSuccessSection && line.contains("REBUILD_SUCCESS")) {
+                break;
+            }
+            if (inSuccessSection) {
+                info.append(line).append("\n");
+            }
+        }
+
+        return info.toString().trim();
+    }
+
+
+    /**
      * 生成Spring Boot启动检测修复版脚本
      */
     private String generateSpringBootDeployScript(String downloadUrl, String fileName, String version,

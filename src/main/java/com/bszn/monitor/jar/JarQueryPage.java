@@ -23,7 +23,7 @@ public class JarQueryPage extends PageForm implements IQuery {
 
     private Integer status; // 0-未部署 1-部署中 2-部署成功 3-部署失败
 
-    private Integer serviceId; // 0-未部署 1-部署中 2-部署成功 3-部署失败
+    private Integer serviceId;
 
 
     public Page<JarPackage> getPage() {
