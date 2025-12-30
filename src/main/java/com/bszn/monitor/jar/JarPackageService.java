@@ -1543,10 +1543,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
     private String generateRebuildScript(String downloadUrl, String fileName, String version,
                                          String imageName, String containerName, String dockerfileContent) {
         Map<String, String> stringStringMap = parseDockerfileInfo(dockerfileContent);
-        String from = stringStringMap.get(InstructionConstant.FROM);
         String port = stringStringMap.get(InstructionConstant.EXPOSE);
-        String workdir = stringStringMap.get(InstructionConstant.WORKDIR);
-        String entrypoint = stringStringMap.get(InstructionConstant.ENTRYPOINT);
 
         StringBuilder script = new StringBuilder();
         script.append("#!/bin/bash\n\n");
@@ -1576,12 +1573,82 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
         script.append("echo \"          容器重新构建\"\n");
         script.append("echo \"========================================\"\n\n");
 
-        // 步骤1: 清理旧容器和镜像
-        script.append("log \"1. 清理旧容器和镜像\"\n");
-        script.append("docker stop \"$CONTAINER_NAME\" 2>/dev/null || true\n");
-        script.append("docker rm -f \"$CONTAINER_NAME\" 2>/dev/null || true\n");
-        script.append("sleep 2\n");
-        script.append("log_success \"旧容器清理完成\"\n\n");
+        // 步骤1: 强制清理旧容器并确保端口释放
+        script.append("log \"1. 强制清理旧容器并释放端口\"\n");
+
+        // 1.1 检查容器是否存在
+        script.append("CONTAINER_EXISTS=$(docker ps -a --filter \"name=^${CONTAINER_NAME}$\" --format \"{{.Names}}\")\n");
+        script.append("if [ -n \"$CONTAINER_EXISTS\" ]; then\n");
+        script.append("    log \"发现容器: $CONTAINER_NAME\"\n");
+
+        // 1.2 获取容器状态和端口信息
+        script.append("    # 获取容器状态和端口\n");
+        script.append("    CONTAINER_STATUS=$(docker inspect -f '{{.State.Status}}' \"$CONTAINER_NAME\" 2>/dev/null || echo \"unknown\")\n");
+        script.append("    CONTAINER_PORTS=$(docker inspect -f '{{range $p, $conf := .NetworkSettings.Ports}}{{$p}} {{end}}' \"$CONTAINER_NAME\" 2>/dev/null || echo \"\")\n");
+        script.append("    log \"容器状态: $CONTAINER_STATUS, 占用端口: $CONTAINER_PORTS\"\n\n");
+
+        // 1.3 强制停止容器（如果正在运行）
+        script.append("    if [ \"$CONTAINER_STATUS\" = \"running\" ] || [ \"$CONTAINER_STATUS\" = \"restarting\" ]; then\n");
+        script.append("        log \"强制停止容器...\"\n");
+        script.append("        docker stop \"$CONTAINER_NAME\" 2>/dev/null || docker kill \"$CONTAINER_NAME\" 2>/dev/null || true\n");
+        script.append("        \n");
+        script.append("        # 等待容器完全停止\n");
+        script.append("        for i in {1..10}; do\n");
+        script.append("            sleep 1\n");
+        script.append("            CURRENT_STATUS=$(docker inspect -f '{{.State.Status}}' \"$CONTAINER_NAME\" 2>/dev/null || echo \"stopped\")\n");
+        script.append("            if [ \"$CURRENT_STATUS\" = \"exited\" ] || [ \"$CURRENT_STATUS\" = \"stopped\" ]; then\n");
+        script.append("                log \"容器已停止\"\n");
+        script.append("                break\n");
+        script.append("            fi\n");
+        script.append("            echo \"  等待容器停止... ($i/10)\"\n");
+        script.append("        done\n");
+        script.append("    fi\n");
+        script.append("\n");
+
+        // 1.4 强制删除容器
+        script.append("    log \"删除容器...\"\n");
+        script.append("    docker rm -f \"$CONTAINER_NAME\" 2>/dev/null || true\n");
+
+        // 1.5 验证容器已删除
+        script.append("    sleep 2  # 等待端口释放\n");
+        script.append("    if docker ps -a --filter \"name=^${CONTAINER_NAME}$\" | grep -q \"${CONTAINER_NAME}\"; then\n");
+        script.append("        log_error \"容器删除失败，尝试强制清理...\"\n");
+        script.append("        # 尝试更强制的方法\n");
+        script.append("        docker rm -f \"$CONTAINER_NAME\" 2>/dev/null || true\n");
+        script.append("        sleep 3\n");
+        script.append("    fi\n");
+        script.append("    \n");
+        script.append("    # 最终验证\n");
+        script.append("    if docker ps -a --filter \"name=^${CONTAINER_NAME}$\" | grep -q \"${CONTAINER_NAME}\"; then\n");
+        script.append("        log_error \"无法删除容器 $CONTAINER_NAME，请手动清理\"\n");
+        script.append("        exit 1\n");
+        script.append("    else\n");
+        script.append("        log_success \"容器 $CONTAINER_NAME 已成功删除\"\n");
+        script.append("    fi\n");
+        script.append("    \n");
+        script.append("    # 等待端口释放\n");
+        script.append("    log \"等待端口 $PORT 释放...\"\n");
+        script.append("    for i in {1..10}; do\n");
+        script.append("        if ! ss -tln 2>/dev/null | grep -q \":$PORT\"; then\n");
+        script.append("            log_success \"端口 $PORT 已释放\"\n");
+        script.append("            break\n");
+        script.append("        fi\n");
+        script.append("        if [ $i -eq 10 ]; then\n");
+        script.append("            log_warn \"端口 $PORT 可能仍被占用，继续执行...\"\n");
+        script.append("        else\n");
+        script.append("            sleep 1\n");
+        script.append("            echo \"  等待端口释放... ($i/10)\"\n");
+        script.append("        fi\n");
+        script.append("    done\n");
+        script.append("else\n");
+        script.append("    log \"容器 $CONTAINER_NAME 不存在\"\n");
+        script.append("fi\n");
+        script.append("\n");
+
+        // 1.6 清理旧镜像（可选）
+        script.append("log \"清理旧镜像...\"\n");
+        script.append("docker rmi -f \"$IMAGE_NAME\" 2>/dev/null | grep -v \"No such image\" || true\n");
+        script.append("log_success \"环境清理完成\"\n\n");
 
         // 步骤2: 获取JAR文件
         script.append("log \"2. 获取JAR文件\"\n");
