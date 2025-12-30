@@ -26,6 +26,7 @@ public class CmdMsgServiceImpl implements IMsgService {
     public String sendMsg(Long agentId, String msg, String msgType) {
         String ip = IpUtil.getIPv4Ip();
         final String messageId = MyIdWorker.getId() + "";
+        log.info("发送指令 {} ", msg);
         rabbitTemplate.convertAndSend(
                 "exchange." + MQConstants.MONITOR_CMD,
                 "routing." + MQConstants.MONITOR_CMD + ".key." + agentId,
