@@ -83,7 +83,7 @@ public class FileSyncController {
                 return Result.failed("服务器不存在");
             }
             // 构建查看目录的命令
-            String cmd = String.format("ls -la %s", path);
+            String cmd = String.format("ls -l %s", path);
             // 发送命令获取文件列表
             String result = msgService.sendCMDMsgAndResponse(agentId, cmd, 30);
             // 解析结果
