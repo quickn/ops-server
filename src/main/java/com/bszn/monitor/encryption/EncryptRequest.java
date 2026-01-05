@@ -1,6 +1,7 @@
 package com.bszn.monitor.encryption;
 
 import jakarta.validation.constraints.NotBlank;
+import lombok.Builder;
 import lombok.Data;
 
 /**
@@ -9,6 +10,7 @@ import lombok.Data;
  * @description: dto
  */
 @Data
+@Builder
 public class EncryptRequest {
 
     @NotBlank(message = "用户ID不能为空")
