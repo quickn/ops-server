@@ -3,6 +3,7 @@ package com.bszn.monitor.encryption;
 import com.alibaba.nacos.common.utils.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,8 +22,8 @@ public class CryptoServiceImpl implements CryptoService {
 
     private final UserKeyMapper userKeyMapper;
 
-    // 固定密码，实际项目应该从配置或数据库读取
-    private static final String DEFAULT_PASSWORD = "your_secure_password";
+    @Value("${decrypt.password}")
+    private String DEFAULT_PASSWORD;
 
     @Override
     @Transactional
