@@ -23,7 +23,10 @@ public class CryptoServiceImpl implements CryptoService {
     private final UserKeyMapper userKeyMapper;
 
     @Value("${decrypt.password}")
-    private String DEFAULT_PASSWORD;
+    private String defaultPassword;
+
+    @Value("${decrypt.public-key}")
+    private String publicKey;
 
     @Override
     @Transactional
@@ -39,7 +42,7 @@ public class CryptoServiceImpl implements CryptoService {
         String privateKey = RSAUtil.getPrivateKey(keyPair);
 
         // 加密私钥存储
-        String encryptedPrivateKey = RSAUtil.encryptPrivateKey(privateKey, DEFAULT_PASSWORD);
+        String encryptedPrivateKey = RSAUtil.encryptPrivateKey(privateKey, defaultPassword);
 
         UserKey userKey = new UserKey();
         userKey.setUserId(userId);
@@ -88,7 +91,7 @@ public class CryptoServiceImpl implements CryptoService {
         }
 
         // 解密私钥
-        String privateKey = RSAUtil.decryptPrivateKey(userKey.getPrivateKey(), DEFAULT_PASSWORD);
+        String privateKey = RSAUtil.decryptPrivateKey(userKey.getPrivateKey(), defaultPassword);
 
         // 解密数据
         return RSAUtil.decrypt(cipherText, privateKey);
@@ -97,16 +100,7 @@ public class CryptoServiceImpl implements CryptoService {
     @Override
     public String getPublicKey(Long userId) {
         UserKey userKey = userKeyMapper.selectByUserId(userId);
-
-        return userKey != null ? userKey.getPublicKey() : "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5zYObvo5b+AqXFjvVytZqClFaFwPxn+SnF5Z15ue/Pwl8SZMwPqJdBtHhR08QVGoK83eh72WKRAnkQ8ceMiiiD3DEEp6XWCIuOI4Wtvj0o2g/ub8F6EYLb6kLKo+5Ekb+DpN8vJ/dpBXCRuhFZNY1cqiwYJWg3g6SRAcPpmTgs1REH/MMImF4J0qoBHUVXMOjmi0happxtfGk9HS/4MPd7eUbdPDM+6tECRmxw3e0UwhwoJR0ATs+K40hegkTpwR3q/dMNiLvVk5eTPE4lKutpvDEwUoFcxYD9kUbcDe5syOZ9eA2vc5d1RqjQTy3ahJgbtDuZspdiIK9M88GvZRXQIDAQAB";
+        return userKey != null ? userKey.getPublicKey() : publicKey;
     }
 
-    /**
-     * 快速生成密钥对并返回公钥（一步到位）
-     */
-    public String quickGenerateKeyPair(Long userId) throws Exception {
-        KeyPairRequest request = new KeyPairRequest();
-        request.setUserId(userId);
-        return generateKeyPair(request);
-    }
 }
