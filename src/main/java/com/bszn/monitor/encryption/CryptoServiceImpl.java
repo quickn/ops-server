@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.security.KeyPair;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 /**
  * @author wzh
@@ -99,6 +100,9 @@ public class CryptoServiceImpl implements CryptoService {
 
     @Override
     public String getPublicKey(Long userId) {
+        if (Objects.isNull(userId)) {
+            return publicKey;
+        }
         UserKey userKey = userKeyMapper.selectByUserId(userId);
         return userKey != null ? userKey.getPublicKey() : publicKey;
     }

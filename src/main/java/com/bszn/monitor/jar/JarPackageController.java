@@ -1,8 +1,8 @@
 package com.bszn.monitor.jar;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.bszn.system.common.result.Result;
+import com.bszn.system.common.util.SecurityUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.Data;
@@ -86,6 +86,7 @@ public class JarPackageController {
     @Operation(summary = "重新构建容器（使用Dockerfile重新构建）")
     public Result<String> rebuildContainer(@PathVariable Integer id, @RequestBody(required = false) DeployRequest request) {
         try {
+            Long userId = SecurityUtils.getUserId();
             List<Long> agentIds = null;
             List<String> containerNames = null;
             if (request != null) {
@@ -99,7 +100,7 @@ public class JarPackageController {
                     }
                 }
             }
-            jarPackageService.rebuildContainer(id, agentIds, containerNames);
+            jarPackageService.rebuildContainer(id, agentIds, containerNames, userId);
             return Result.success("开始重新构建容器，请稍后查看状态");
         } catch (Exception e) {
             log.error("重新构建容器异常", e);
@@ -135,6 +136,7 @@ public class JarPackageController {
     @Operation(summary = "重新部署（只替换JAR包）")
     public Result<String> redeploy(@PathVariable Integer id, @RequestBody(required = false) DeployRequest request) {
         try {
+            Long userId = SecurityUtils.getUserId();
             List<Long> agentIds = null;
             List<String> containerNames = null;
             if (request != null) {
@@ -148,7 +150,7 @@ public class JarPackageController {
                     }
                 }
             }
-            jarPackageService.redeploy(id, agentIds, containerNames);
+            jarPackageService.redeploy(id, agentIds, containerNames, userId);
             return Result.success("开始重新部署，请稍后查看状态");
         } catch (Exception e) {
             log.error("重新部署异常", e);
@@ -160,6 +162,7 @@ public class JarPackageController {
     @Operation(summary = "部署JAR包（智能判断）")
     public Result<String> deploy(@PathVariable Integer id, @RequestBody DeployRequest request) {
         try {
+            Long userId = SecurityUtils.getUserId();
             if (request.getAgentIds() == null || request.getAgentIds().isEmpty()) {
                 return Result.failed("请选择Agent");
             }
@@ -187,7 +190,7 @@ public class JarPackageController {
                 return Result.failed("首次部署需要先设置Dockerfile");
             }
             // 智能判断：如果容器已存在，自动使用重新部署逻辑
-            jarPackageService.deployWithAutoStrategy(id, request.getAgentIds(), request.getContainerNames());
+            jarPackageService.deployWithAutoStrategy(id, request.getAgentIds(), request.getContainerNames(), userId);
             String message;
             if (jarPackage.getStatus() == 0) {
                 message = "首次部署，将根据Dockerfile创建容器";

@@ -1,6 +1,5 @@
 package com.bszn.monitor.jar;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -162,7 +161,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
      * 首次部署 - 根据Dockerfile自动创建容器
      */
     @Async
-    public CompletableFuture<Boolean> deploy(Integer jarPackageId, List<Long> agentIds, List<String> containerNames) {
+    public CompletableFuture<Boolean> deploy(Integer jarPackageId, List<Long> agentIds, List<String> containerNames, Long userId) {
         JarPackage jarPackage = jarPackageMapper.selectById(jarPackageId);
         if (jarPackage == null) {
             log.error("JAR包不存在: id={}", jarPackageId);
@@ -212,7 +211,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
 
             // 异步执行首次部署（根据Dockerfile创建容器）
             CompletableFuture<Boolean> future = CompletableFuture.supplyAsync(() -> {
-                return deployWithDockerfile(jarPackage, agentId, containerName, record.getId());
+                return deployWithDockerfile(jarPackage, agentId, containerName, record.getId(), userId);
             });
 
             futures.add(future);
@@ -246,7 +245,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
      * 重新部署 - 只替换JAR包
      */
     @Async
-    public CompletableFuture<Boolean> redeploy(Integer jarPackageId, List<Long> agentIds, List<String> containerNames) {
+    public CompletableFuture<Boolean> redeploy(Integer jarPackageId, List<Long> agentIds, List<String> containerNames, Long userId) {
         JarPackage jarPackage = jarPackageMapper.selectById(jarPackageId);
         if (jarPackage == null) {
             log.error("JAR包不存在: id={}", jarPackageId);
@@ -287,7 +286,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
 
             // 异步执行重新部署（只替换JAR包）
             CompletableFuture<Boolean> future = CompletableFuture.supplyAsync(() -> {
-                return redeployJarOnly(jarPackage, agentId, containerName, record.getId());
+                return redeployJarOnly(jarPackage, agentId, containerName, record.getId(), userId);
             });
 
             futures.add(future);
@@ -323,7 +322,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
     @Async
     public CompletableFuture<Boolean> deployWithAutoStrategy(Integer jarPackageId,
                                                              List<Long> agentIds,
-                                                             List<String> containerNames) {
+                                                             List<String> containerNames, Long userId) {
         JarPackage jarPackage = jarPackageMapper.selectById(jarPackageId);
         if (jarPackage == null) {
             log.error("JAR包不存在: id={}", jarPackageId);
@@ -338,7 +337,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
             Long agentId = agentIds.get(i);
             String containerName = containerNames.get(i);
 
-            boolean exists = checkContainerExists(agentId, containerName);
+            boolean exists = checkContainerExists(agentId, containerName, userId);
             if (exists) {
                 allNotExist = false;
             } else {
@@ -350,15 +349,15 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
         if (allNotExist) {
             // 所有容器都不存在，使用首次部署
             log.info("所有容器都不存在，使用首次部署策略");
-            return deploy(jarPackageId, agentIds, containerNames);
+            return deploy(jarPackageId, agentIds, containerNames, userId);
         } else if (allExist) {
             // 所有容器都存在，使用重新部署
             log.info("所有容器都已存在，使用重新部署策略");
-            return redeploy(jarPackageId, agentIds, containerNames);
+            return redeploy(jarPackageId, agentIds, containerNames, userId);
         } else {
             // 混合情况：部分存在，部分不存在
             log.info("容器状态混合，采用混合部署策略");
-            return deployMixed(jarPackageId, agentIds, containerNames);
+            return deployMixed(jarPackageId, agentIds, containerNames, userId);
         }
     }
 
@@ -367,7 +366,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
      */
     private CompletableFuture<Boolean> deployMixed(Integer jarPackageId,
                                                    List<Long> agentIds,
-                                                   List<String> containerNames) {
+                                                   List<String> containerNames, Long userId) {
         JarPackage jarPackage = jarPackageMapper.selectById(jarPackageId);
         if (jarPackage == null) {
             return CompletableFuture.completedFuture(false);
@@ -388,7 +387,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
             String containerName = containerNames.get(i);
 
             // 检查容器是否存在
-            boolean containerExists = checkContainerExists(agentId, containerName);
+            boolean containerExists = checkContainerExists(agentId, containerName, userId);
 
             // 创建部署记录
             JarDeployRecord record = createDeployRecord(jarPackageId, agentId, containerName);
@@ -397,10 +396,10 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
 
             if (containerExists) {
                 // 容器已存在，使用重新部署
-                future = CompletableFuture.supplyAsync(() -> redeployJarOnly(jarPackage, agentId, containerName, record.getId()));
+                future = CompletableFuture.supplyAsync(() -> redeployJarOnly(jarPackage, agentId, containerName, record.getId(), userId));
             } else {
                 // 容器不存在，使用首次部署
-                future = CompletableFuture.supplyAsync(() -> deployWithDockerfile(jarPackage, agentId, containerName, record.getId()));
+                future = CompletableFuture.supplyAsync(() -> deployWithDockerfile(jarPackage, agentId, containerName, record.getId(), userId));
             }
             futures.add(future);
         }
@@ -468,7 +467,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
      * 根据Dockerfile部署到Agent（使用精简版脚本）
      */
     private boolean deployWithDockerfile(JarPackage jarPackage, Long agentId,
-                                         String containerName, Integer recordId) {
+                                         String containerName, Integer recordId, Long userId) {
         try {
             AgentConfig agentConfig = agentConfigMapper.selectById(agentId);
             if (agentConfig == null) {
@@ -484,7 +483,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
 
             // 2. 检查容器名称是否已存在
             updateDeployRecord(recordId, 1, "检查容器状态...");
-            boolean containerExists = checkContainerExists(agentId, containerName);
+            boolean containerExists = checkContainerExists(agentId, containerName, userId);
 
             if (containerExists) {
                 updateDeployRecord(recordId, 3, "容器名称已存在: " + containerName);
@@ -525,7 +524,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
             String combinedCmd = String.format("timeout 300 %s && %s && %s && %s",
                     downloadCmd, chmodCmd, executeCmd, cleanupCmd);
 
-            String scriptResult = msgService.sendCMDMsgAndResponse(agentId, combinedCmd);
+            String scriptResult = msgService.sendCMDMsgAndResponse(userId, agentId, combinedCmd);
 
             // 7. 清理本地脚本文件
             new File(scriptPath).delete();
@@ -554,7 +553,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
     /**
      * 重新部署：只替换JAR包（使用脚本方式）
      */
-    private boolean redeployJarOnly(JarPackage jarPackage, Long agentId, String containerName, Integer recordId) {
+    private boolean redeployJarOnly(JarPackage jarPackage, Long agentId, String containerName, Integer recordId, Long userId) {
         try {
             AgentConfig agentConfig = agentConfigMapper.selectById(agentId);
             if (agentConfig == null) {
@@ -564,7 +563,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
 
             // 1. 检查容器是否存在
             updateDeployRecord(recordId, 1, "检查容器状态...");
-            boolean containerExists = checkContainerExists(agentId, containerName);
+            boolean containerExists = checkContainerExists(agentId, containerName, userId);
 
             if (!containerExists) {
                 updateDeployRecord(recordId, 3, "容器不存在，请先部署");
@@ -604,7 +603,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
             String combinedCmd = String.format("%s && %s && %s && %s",
                     downloadCmd, chmodCmd, executeCmd, cleanupCmd);
 
-            String scriptResult = msgService.sendCMDMsgAndResponse(agentId, combinedCmd);
+            String scriptResult = msgService.sendCMDMsgAndResponse(userId,agentId, combinedCmd);
 
             // 6. 清理本地脚本文件
             new File(scriptPath).delete();
@@ -1129,7 +1128,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
     /**
      * 检查容器是否存在
      */
-    private boolean checkContainerExists(Long agentId, String containerName) {
+    private boolean checkContainerExists(Long agentId, String containerName, Long userId) {
         try {
             AgentConfig agent = agentConfigMapper.selectById(agentId);
             if (agent == null) {
@@ -1138,7 +1137,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
 
             // 执行docker ps命令检查容器
             String checkCmd = String.format("docker ps -a --filter 'name=^%s$' --format '{{.Names}}'", containerName);
-            String result = msgService.sendCMDMsgAndResponseNon(agentId, checkCmd);
+            String result = msgService.sendCMDMsgAndResponseNon(userId, agentId, checkCmd);
 
             return StringUtils.isNotBlank(result) && result.trim().equals(containerName);
         } catch (Exception e) {
@@ -1385,14 +1384,14 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
      * 获取所有版本（按文件名）
      */
     public List<JarPackage> getAllVersionsByFileName(String fileName) {
-        return lambdaQuery().eq(JarPackage::getFileName,fileName).orderByDesc(JarPackage::getId).list();
+        return lambdaQuery().eq(JarPackage::getFileName, fileName).orderByDesc(JarPackage::getId).list();
     }
 
     /**
      * 重新构建容器（使用Dockerfile重新构建镜像并部署）
      */
     @Async
-    public CompletableFuture<Boolean> rebuildContainer(Integer jarPackageId, List<Long> agentIds, List<String> containerNames) {
+    public CompletableFuture<Boolean> rebuildContainer(Integer jarPackageId, List<Long> agentIds, List<String> containerNames, Long userId) {
         JarPackage jarPackage = jarPackageMapper.selectById(jarPackageId);
         if (jarPackage == null) {
             log.error("JAR包不存在: id={}", jarPackageId);
@@ -1433,7 +1432,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
 
             // 异步执行重新构建
             CompletableFuture<Boolean> future = CompletableFuture.supplyAsync(() -> {
-                return rebuildWithDockerfile(jarPackage, agentId, containerName, record.getId());
+                return rebuildWithDockerfile(jarPackage, agentId, containerName, record.getId(), userId);
             });
 
             futures.add(future);
@@ -1467,7 +1466,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
      * 使用Dockerfile重新构建容器
      */
     private boolean rebuildWithDockerfile(JarPackage jarPackage, Long agentId,
-                                          String containerName, Integer recordId) {
+                                          String containerName, Integer recordId, Long userId) {
         try {
             AgentConfig agentConfig = agentConfigMapper.selectById(agentId);
             if (agentConfig == null) {
@@ -1515,7 +1514,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
             String combinedCmd = String.format("%s && %s && %s && %s",
                     downloadCmd, chmodCmd, executeCmd, cleanupCmd);
 
-            String scriptResult = msgService.sendCMDMsgAndResponse(agentId, combinedCmd);
+            String scriptResult = msgService.sendCMDMsgAndResponse(userId, agentId, combinedCmd);
 
             // 6. 清理本地脚本文件
             new File(scriptPath).delete();

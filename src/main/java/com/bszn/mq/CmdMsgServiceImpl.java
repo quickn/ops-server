@@ -5,7 +5,6 @@ import com.bszn.monitor.encryption.CryptoService;
 import com.bszn.monitor.encryption.EncryptRequest;
 import com.bszn.monitor.msg.CmdCacheMsgService;
 import com.bszn.monitor.msg.IMsgService;
-import com.bszn.system.common.util.SecurityUtils;
 import com.bszn.utils.IpUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -27,13 +26,13 @@ public class CmdMsgServiceImpl implements IMsgService {
 
 
     @Override
-    public String sendMsg(Long agentId, String msg, String msgType) {
+    public String sendMsg(Long userId, Long agentId, String msg, String msgType) {
         String ip = IpUtil.getIPv4Ip();
         final String messageId = MyIdWorker.getId() + "";
         log.info("发送指令 {} ", msg);
         try {
             // 加密
-            msg = cryptoService.encrypt(EncryptRequest.builder().userId(SecurityUtils.getUserId()).plainText(msg).build());
+            msg = cryptoService.encrypt(EncryptRequest.builder().userId(userId).plainText(msg).build());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -57,8 +56,8 @@ public class CmdMsgServiceImpl implements IMsgService {
     }
 
     @Override
-    public MsgResult sendMsgAndResponse(Long agentId, String msg, String msgType, Integer timeout) {
-        String messageId = sendMsg(agentId, msg, msgType);
+    public MsgResult sendMsgAndResponse(Long userId, Long agentId, String msg, String msgType, Integer timeout) {
+        String messageId = sendMsg(userId, agentId, msg, msgType);
         return cmdCacheMsgService.getMsgResult(messageId, timeout);
     }
 }

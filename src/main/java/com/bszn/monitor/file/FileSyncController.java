@@ -7,6 +7,7 @@ import com.bszn.monitor.agent.AgentConfig;
 import com.bszn.monitor.agent.AgentConfigService;
 import com.bszn.monitor.msg.IMsgService;
 import com.bszn.system.common.result.Result;
+import com.bszn.system.common.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -78,6 +79,7 @@ public class FileSyncController {
     public Result<List<FileInfo>> listFiles(@RequestParam("agentId") Long agentId,
                                             @RequestParam(value = "path", defaultValue = "/home/park") String path) {
         try {
+            Long userId = SecurityUtils.getUserId();
             AgentConfig server = agentConfigService.getById(agentId);
             if (server == null) {
                 return Result.failed("服务器不存在");
@@ -85,7 +87,7 @@ public class FileSyncController {
             // 构建查看目录的命令
             String cmd = String.format("ls -l %s", path);
             // 发送命令获取文件列表
-            String result = msgService.sendCMDMsgAndResponse(agentId, cmd, 30);
+            String result = msgService.sendCMDMsgAndResponse(userId, agentId, cmd, 30);
             // 解析结果
             List<FileInfo> fileList = parseLsResult(result);
             return Result.success(fileList);
@@ -103,6 +105,7 @@ public class FileSyncController {
                                              @RequestParam("agentId") Long agentId,
                                              @RequestParam("destPath") String destPath) {
         try {
+            Long userId = SecurityUtils.getUserId();
             if (file.isEmpty()) {
                 return Result.failed("文件不能为空");
             }
@@ -126,7 +129,7 @@ public class FileSyncController {
             String uploadCmd = buildUploadCommand(downloadUrl, destPath, saveFileName);
 
             log.info("执行上传命令到跳板机 {}: {}", jumpServer.getHostname(), uploadCmd);
-            String result = msgService.sendCMDMsgAndResponse(agentId, uploadCmd, 120);
+            String result = msgService.sendCMDMsgAndResponse(userId,agentId, uploadCmd, 120);
             // 上传完成后删除临时文件
             try {
                 File uploadedFile = new File(filePath);
@@ -165,8 +168,9 @@ public class FileSyncController {
             if (jumpServer == null || !jumpServer.getIsJumpServer()) {
                 return Result.failed("指定的服务器不是跳板机");
             }
+            Long userId = SecurityUtils.getUserId();
             // 直接在跳板机上执行rsync命令
-            String result = msgService.sendCMDMsgAndResponse(agentId, command, 300);
+            String result = msgService.sendCMDMsgAndResponse(userId,agentId, command, 300);
             return Result.success(result);
         } catch (Exception e) {
             log.error("同步命令执行失败", e);

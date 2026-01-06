@@ -24,7 +24,7 @@ public class MQController {
     @ResponseBody
     @PostMapping("/sendMsg")
     public Result sendMsg(@RequestParam Long agentId, @RequestParam String msg, @RequestParam String msgType) {
-        iMsgService.sendMsg(agentId, msg, msgType);
+        iMsgService.sendMsg(null, agentId, msg, msgType);
         return Result.success();
     }
 
@@ -32,13 +32,13 @@ public class MQController {
     @ResponseBody
     @PostMapping("/sendMsgAndResponse")
     public MsgResult sendMsgAndResponse(@RequestParam Long agentId, @RequestParam String msg, @RequestParam String msgType) {
-        return iMsgService.sendMsgAndResponse(agentId, msg, msgType, 10);
+        return iMsgService.sendMsgAndResponse(null, agentId, msg, msgType, 10);
     }
 
     @ResponseBody
     @PostMapping("/sendCMDMsgAndResponseNon")
     public Result sendCMDMsgAndResponseNon(@RequestParam Long agentId, @RequestParam String cmd) {
-        String response = iMsgService.sendCMDMsgAndResponseNon(agentId, cmd);
+        String response = iMsgService.sendCMDMsgAndResponseNon(null, agentId, cmd);
         return Result.success(response);
     }
 

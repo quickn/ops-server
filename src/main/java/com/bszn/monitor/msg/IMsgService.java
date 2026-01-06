@@ -6,20 +6,20 @@ import com.bszn.mq.MsgResult;
 
 public interface IMsgService {
 
-    String sendMsg(Long agentId, String msg, String msgType);
+    String sendMsg(Long userId, Long agentId, String msg, String msgType);
 
-    MsgResult sendMsgAndResponse(Long agentId, String msg, String msgType, Integer timeout);
+    MsgResult sendMsgAndResponse(Long userId, Long agentId, String msg, String msgType, Integer timeout);
 
 
     /**
-     * 发送cmd消息
+     * 发送cmd指定 默认5分钟
      *
      * @param agentId 服务id
      * @param msg     消息
-     * @return 消息id
+     * @return 结果
      */
-    default String sendCMDMsg(Long agentId, String msg) {
-        return sendMsg(agentId, msg, MonitorMsgType.CMD);
+    default String sendCMDMsgAndResponseNon(Long userId, Long agentId, String msg) {
+        return sendCMDMsgAndResponse(userId, agentId, msg).replace("\n", "");
     }
 
     /**
@@ -29,23 +29,12 @@ public interface IMsgService {
      * @param msg     消息
      * @return 结果
      */
-    default String sendCMDMsgAndResponseNon(Long agentId, String msg) {
-        return sendCMDMsgAndResponse(agentId, msg).replace("\n", "");
+    default String sendCMDMsgAndResponse(Long userId, Long agentId, String msg) {
+        return sendCMDMsgAndResponse(userId, agentId, msg, 300);
     }
 
-    /**
-     * 发送cmd指定 默认5分钟
-     *
-     * @param agentId 服务id
-     * @param msg     消息
-     * @return 结果
-     */
-    default String sendCMDMsgAndResponse(Long agentId, String msg) {
-        return sendCMDMsgAndResponse(agentId, msg, 300);
-    }
-
-    default String sendCMDMsgAndResponse(Long agentId, String cmd, Integer timeout) {
-        return sendMsgAndResponse(agentId, cmd, MonitorMsgType.CMD, timeout).getData();
+    default String sendCMDMsgAndResponse(Long userId, Long agentId, String cmd, Integer timeout) {
+        return sendMsgAndResponse(userId, agentId, cmd, MonitorMsgType.CMD, timeout).getData();
     }
 
     /**
@@ -56,7 +45,7 @@ public interface IMsgService {
      * @param timeout
      * @return
      */
-    default MsgResult sendCMDMsgAndRawResponse(Long agentId, String cmd, Integer timeout) {
-        return sendMsgAndResponse(agentId, cmd, MonitorMsgType.CMD, timeout);
+    default MsgResult sendCMDMsgAndRawResponse(Long userId, Long agentId, String cmd, Integer timeout) {
+        return sendMsgAndResponse(userId, agentId, cmd, MonitorMsgType.CMD, timeout);
     }
 }
