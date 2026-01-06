@@ -1,5 +1,6 @@
 package com.bszn.monitor.encryption;
 
+import com.bszn.system.common.result.Result;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
@@ -23,12 +24,12 @@ public class CryptoController {
      * 生成密钥对
      */
     @PostMapping("/generate")
-    public String generateKeyPair(@Validated @RequestBody KeyPairRequest request) {
+    public Result<String> generateKeyPair(@Validated @RequestBody KeyPairRequest request) {
         try {
-            return cryptoService.generateKeyPair(request);
+            return Result.success(cryptoService.generateKeyPair(request));
         } catch (Exception e) {
             log.error("生成密钥对失败", e);
-            return "生成密钥对失败: " + e.getMessage();
+            return Result.failed("生成密钥对失败: " + e.getMessage());
         }
     }
 
@@ -36,12 +37,12 @@ public class CryptoController {
      * 加密
      */
     @PostMapping("/encrypt")
-    public String encrypt(@Validated @RequestBody EncryptRequest request) {
+    public Result<String> encrypt(@Validated @RequestBody EncryptRequest request) {
         try {
-            return cryptoService.encrypt(request);
+            return Result.success(cryptoService.encrypt(request));
         } catch (Exception e) {
             log.error("加密失败", e);
-            return "加密失败: " + e.getMessage();
+            return Result.failed("加密失败: " + e.getMessage());
         }
     }
 
@@ -49,12 +50,12 @@ public class CryptoController {
      * 解密
      */
     @PostMapping("/decrypt")
-    public String decrypt(@Validated @RequestBody DecryptRequest request) {
+    public Result<String> decrypt(@Validated @RequestBody DecryptRequest request) {
         try {
-            return cryptoService.decrypt(request);
+            return Result.success(cryptoService.decrypt(request));
         } catch (Exception e) {
             log.error("解密失败", e);
-            return "解密失败: " + e.getMessage();
+            return Result.failed("解密失败: " + e.getMessage());
         }
     }
 
@@ -62,13 +63,13 @@ public class CryptoController {
      * 获取公钥
      */
     @GetMapping("/publicKey/{userId}")
-    public String getPublicKey(@PathVariable Long userId) {
+    public Result<String> getPublicKey(@PathVariable Long userId) {
         try {
             String publicKey = cryptoService.getPublicKey(userId);
-            return publicKey != null ? publicKey : "用户未生成密钥对";
+            return Result.success(publicKey != null ? publicKey : "用户未生成密钥对");
         } catch (Exception e) {
             log.error("获取公钥失败", e);
-            return "获取公钥失败: " + e.getMessage();
+            return Result.failed("获取公钥失败: " + e.getMessage());
         }
     }
 
@@ -76,7 +77,7 @@ public class CryptoController {
      * 快速使用示例
      */
     @GetMapping("/quick/{userId}")
-    public String quickDemo(@PathVariable Long userId) {
+    public Result<String> quickDemo(@PathVariable Long userId) {
         try {
             // 1. 生成密钥对
             KeyPairRequest request = new KeyPairRequest();
@@ -95,13 +96,13 @@ public class CryptoController {
             decryptRequest.setCipherText(encrypted);
             String decrypted = cryptoService.decrypt(decryptRequest);
 
-            return String.format("公钥: %s\n加密后: %s\n解密后: %s",
+            return Result.success(String.format("公钥: %s\n加密后: %s\n解密后: %s",
                     publicKey.substring(0, 50) + "...",
                     encrypted,
-                    decrypted);
+                    decrypted));
 
         } catch (Exception e) {
-            return "操作失败: " + e.getMessage();
+            return Result.failed("操作失败: " + e.getMessage());
         }
     }
 }
