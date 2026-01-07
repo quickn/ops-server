@@ -6,7 +6,7 @@ import com.bszn.mq.MsgResult;
 
 public interface IMsgService {
 
-    String sendMsg(Long userId, Long agentId, String msg, String msgType);
+    String sendMsg(Long userId, Long agentId, String msg, String msgType, Integer timeout);
 
     MsgResult sendMsgAndResponse(Long userId, Long agentId, String msg, String msgType, Integer timeout);
 

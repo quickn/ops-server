@@ -8,6 +8,8 @@ spring:
   data:
     redis:
       password: baisheng123
+  rabbitmq:
+    port: 25672
 # xxl-job 定时任务配置
 xxl:
   job:

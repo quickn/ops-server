@@ -24,7 +24,7 @@ public class MQController {
     @ResponseBody
     @PostMapping("/sendMsg")
     public Result sendMsg(@RequestParam Long agentId, @RequestParam String msg, @RequestParam String msgType) {
-        iMsgService.sendMsg(null, agentId, msg, msgType);
+        iMsgService.sendMsg(null, agentId, msg, msgType, null);
         return Result.success();
     }
 

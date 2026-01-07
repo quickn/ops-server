@@ -24,7 +24,7 @@ public class CmdCacheMsgService {
 
 
     public void handle(String messageId, String message) {
-        iRedisService.expire("monitor:cmd:" + messageId, message, 60);
+        iRedisService.expire("monitor:cmd:" + messageId, message, 300);
     }
 
     public String getMsg(String messageId) {
