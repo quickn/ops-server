@@ -26,7 +26,7 @@ public class CmdMsgServiceImpl implements IMsgService {
 
 
     @Override
-    public String sendMsg(Long userId, Long agentId, String msg, String msgType) {
+    public String sendMsg(Long userId, Long agentId, String msg, String msgType, Integer timeout) {
         String ip = IpUtil.getIPv4Ip();
         final String messageId = MyIdWorker.getId() + "";
         log.info("发送指令 {} ", msg);
@@ -36,28 +36,26 @@ public class CmdMsgServiceImpl implements IMsgService {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        rabbitTemplate.convertAndSend(
-                "exchange." + MQConstants.MONITOR_CMD,
-                "routing." + MQConstants.MONITOR_CMD + ".key." + agentId,
-                msg, message -> {
-                    message.getMessageProperties().setMessageId(messageId);
-                    // message.getMessageProperties().setCorrelationId(messageId);
-                    //message.getMessageProperties().setTimestamp(new Date());
-                    message.getMessageProperties().setContentType("application/json");
-                    message.getMessageProperties().setContentEncoding("UTF-8");
-                    // 添加自定义头部
-                    message.getMessageProperties().setHeader("serverIp", ip);
-                    message.getMessageProperties().setHeader("msgType", msgType);
-                    // message.getMessageProperties().setHeader("source-system", "order-service");
-                    return message;
-                }
-        );
+        rabbitTemplate.convertAndSend("exchange." + MQConstants.MONITOR_CMD, "routing." + MQConstants.MONITOR_CMD + ".key." + agentId, msg, message -> {
+            message.getMessageProperties().setMessageId(messageId);
+            // message.getMessageProperties().setCorrelationId(messageId);
+            //message.getMessageProperties().setTimestamp(new Date());
+            message.getMessageProperties().setContentType("application/json");
+            message.getMessageProperties().setContentEncoding("UTF-8");
+            // 添加自定义头部
+            message.getMessageProperties().setHeader("serverIp", ip);
+            message.getMessageProperties().setHeader("msgType", msgType);
+            if (timeout != null) {
+                message.getMessageProperties().setHeader("timeout", timeout);
+            }
+            return message;
+        });
         return messageId;
     }
 
     @Override
     public MsgResult sendMsgAndResponse(Long userId, Long agentId, String msg, String msgType, Integer timeout) {
-        String messageId = sendMsg(userId, agentId, msg, msgType);
+        String messageId = sendMsg(userId, agentId, msg, msgType, timeout);
         return cmdCacheMsgService.getMsgResult(messageId, timeout);
     }
 }

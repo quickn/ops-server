@@ -112,9 +112,9 @@ public class AgentConfigServiceImpl extends ServiceImpl<AgentConfigMapper, Agent
                     cmd.append("'" + logCmdForm.getKeyword() + "'");
                 }
                 logs.append(agentConfig.getHostname() + "\n");
-                logs.append(iMsgService.sendCMDMsgAndRawResponse(null,agentConfig.getId(), cmd.toString(), 20));
+                logs.append(iMsgService.sendCMDMsgAndRawResponse(null, agentConfig.getId(), cmd.toString(), 20));
             } else {
-                logs.append(iMsgService.sendCMDMsgAndRawResponse(null,agentConfig.getId(), logCmdForm.getCmd(), 20));
+                logs.append(iMsgService.sendCMDMsgAndRawResponse(null, agentConfig.getId(), logCmdForm.getCmd(), 20));
             }
         }
         return logs.toString();
@@ -138,7 +138,7 @@ public class AgentConfigServiceImpl extends ServiceImpl<AgentConfigMapper, Agent
             jsonObject.putOnce("handle", "agentManagerHandle");
             jsonObject.putOnce("url", upgradeClientUrl);
             jsonObject.putOnce("cmd", cmd);
-            iMsgService.sendMsg(null, agentConfig.getId(), jsonObject.toString(), MonitorMsgType.TASK);
+            iMsgService.sendMsg(null, agentConfig.getId(), jsonObject.toString(), MonitorMsgType.TASK, null);
         }
     }
 
