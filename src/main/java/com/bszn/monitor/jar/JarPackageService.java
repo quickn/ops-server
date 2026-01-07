@@ -43,6 +43,9 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
     @Value("${file.upload.file-path}")
     private String filePath;
 
+    @Value("${file.upload.jar-path}")
+    private String jarPath;
+
     @Value("${file.upload.down-path}")
     private String downPath;
 
@@ -603,7 +606,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
             String combinedCmd = String.format("%s && %s && %s && %s",
                     downloadCmd, chmodCmd, executeCmd, cleanupCmd);
 
-            String scriptResult = msgService.sendCMDMsgAndResponse(userId,agentId, combinedCmd);
+            String scriptResult = msgService.sendCMDMsgAndResponse(userId, agentId, combinedCmd);
 
             // 6. 清理本地脚本文件
             new File(scriptPath).delete();
@@ -896,7 +899,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
         script.append("# 定义变量\n");
         script.append("JAR_URL=\"").append(downloadUrl).append("\"\n");
         script.append("JAR_NAME=\"").append(fileName).append("-").append(version).append(".jar\"\n");
-        script.append("LOCAL_JAR_PATH=\"").append(filePath).append("/$JAR_NAME\"\n");
+        script.append("LOCAL_JAR_PATH=\"").append(filePath).append("/").append(containerName).append("/$JAR_NAME\"\n");
         script.append("JAR_PATH=\"/tmp/$JAR_NAME\"\n");
         script.append("CONTAINER_NAME=\"").append(containerName).append("\"\n");
         script.append("CONTAINER_WORKDIR=\"\"\n");
@@ -1557,7 +1560,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
         // 基本变量
         script.append("JAR_URL=\"").append(downloadUrl).append("\"\n");
         script.append("JAR_NAME=\"").append(fileName).append("-").append(version).append(".jar\"\n");
-        script.append("LOCAL_JAR_PATH=\"").append(filePath).append("/$JAR_NAME\"\n");
+        script.append("LOCAL_JAR_PATH=\"").append(filePath).append("/").append(containerName).append("/$JAR_NAME\"\n");
         script.append("JAR_PATH=\"/tmp/$JAR_NAME\"\n");
         script.append("IMAGE_NAME=\"").append(imageName).append("\"\n");
         script.append("CONTAINER_NAME=\"").append(containerName).append("\"\n");
@@ -1832,7 +1835,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
         // 基本变量
         script.append("JAR_URL=\"").append(downloadUrl).append("\"\n");
         script.append("JAR_NAME=\"").append(fileName).append("-").append(version).append(".jar\"\n");
-        script.append("LOCAL_JAR_PATH=\"").append(filePath).append("/$JAR_NAME\"\n");
+        script.append("LOCAL_JAR_PATH=\"").append(filePath).append("/").append(containerName).append("/$JAR_NAME\"\n");
         script.append("JAR_PATH=\"/tmp/$JAR_NAME\"\n");
         script.append("IMAGE_NAME=\"").append(imageName).append("\"\n");
         script.append("CONTAINER_NAME=\"").append(containerName).append("\"\n");
