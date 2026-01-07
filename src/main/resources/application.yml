@@ -6,7 +6,8 @@ nacos:
     encode: UTF-8
     #配置自动刷新
     refresh-enabled: true
-    data-id: ${spring.application.name}.yaml
+    data-id: ${spring.application.name}-${spring.profiles.active}.yaml
+    #data-ids: ${spring.application.name}.yaml,${spring.application.name}-${spring.profiles.active}.yaml
     type: yaml
     auto-refresh: true
     group: DEFAULT_GROUP
@@ -21,6 +22,7 @@ spring:
     #开启快速启动模式
     lazy-initialization: true
     allow-circular-references: true
+    allow-bean-definition-overriding: true
   application:
     name: bs-monitor
   mvc:
@@ -129,8 +131,8 @@ mybatis-plus:
     # 驼峰下划线转换
     map-underscore-to-camel-case: true
     # 这个配置会将执行的sql打印出来，在开发或测试的时候可以用
-    #log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
-    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    #log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
 # 认证配置
 auth:
   token:
