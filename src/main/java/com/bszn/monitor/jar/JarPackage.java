@@ -1,19 +1,12 @@
 package com.bszn.monitor.jar;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.bszn.base.ServiceBaseEntity;
 import lombok.Data;
 
-import java.util.Date;
-
 @Data
 @TableName("jar_package")
 public class JarPackage extends ServiceBaseEntity {
-
-    @TableId(type = IdType.AUTO)
-    private Integer id;
 
     private String fileName;
     private String originalName;
