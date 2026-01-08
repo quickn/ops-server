@@ -127,6 +127,29 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
     }
 
     /**
+     * 更新DockerCompose
+     */
+    public boolean updateDockerCompose(Integer id, String dockerComposeContent) {
+        try {
+            JarPackage jarPackage = jarPackageMapper.selectById(id);
+            if (jarPackage == null) {
+                throw new IllegalArgumentException("JAR包不存在");
+            }
+
+            if (StringUtils.isBlank(dockerComposeContent)) {
+                throw new IllegalArgumentException("DockerCompose内容不能为空");
+            }
+
+            jarPackage.setDockerComposeContent(dockerComposeContent);
+            jarPackageMapper.updateById(jarPackage);
+            return true;
+        } catch (Exception e) {
+            log.error("更新DockerCompose失败", e);
+            throw e;
+        }
+    }
+
+    /**
      * 获取所有Agent（包含没有容器的Agent）
      */
     public List<Map<String, Object>> getAllAgents() {
@@ -1819,4 +1842,5 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
 
         return script.toString();
     }
+
 }
