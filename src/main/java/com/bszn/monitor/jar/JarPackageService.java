@@ -899,7 +899,8 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
         script.append("# 定义变量\n");
         script.append("JAR_URL=\"").append(downloadUrl).append("\"\n");
         script.append("JAR_NAME=\"").append(fileName).append("-").append(version).append(".jar\"\n");
-        script.append("LOCAL_JAR_PATH=\"").append(jarPath).append("/").append(containerName).append("/$JAR_NAME\"\n");
+        script.append("LOCAL_JAR_NAME=\"").append(fileName).append(".jar\"\n");
+        script.append("LOCAL_JAR_PATH=\"").append(jarPath).append("/").append(containerName).append("/$LOCAL_JAR_NAME\"\n");
         script.append("JAR_PATH=\"/tmp/$JAR_NAME\"\n");
         script.append("CONTAINER_NAME=\"").append(containerName).append("\"\n");
         script.append("CONTAINER_WORKDIR=\"\"\n");
@@ -1560,7 +1561,8 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
         // 基本变量
         script.append("JAR_URL=\"").append(downloadUrl).append("\"\n");
         script.append("JAR_NAME=\"").append(fileName).append("-").append(version).append(".jar\"\n");
-        script.append("LOCAL_JAR_PATH=\"").append(jarPath).append("/").append(containerName).append("/$JAR_NAME\"\n");
+        script.append("LOCAL_JAR_NAME=\"").append(fileName).append(".jar\"\n");
+        script.append("LOCAL_JAR_PATH=\"").append(jarPath).append("/").append(containerName).append("/$LOCAL_JAR_NAME\"\n");
         script.append("JAR_PATH=\"/tmp/$JAR_NAME\"\n");
         script.append("IMAGE_NAME=\"").append(imageName).append("\"\n");
         script.append("CONTAINER_NAME=\"").append(containerName).append("\"\n");
@@ -1817,10 +1819,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
                                                   String imageName, String containerName, String dockerfileContent) {
 
         Map<String, String> stringStringMap = parseDockerfileInfo(dockerfileContent);
-        String from = stringStringMap.get(InstructionConstant.FROM);
         String port = stringStringMap.get(InstructionConstant.EXPOSE);
-        String workdir = stringStringMap.get(InstructionConstant.WORKDIR);
-        String entrypoint = stringStringMap.get(InstructionConstant.ENTRYPOINT);
         StringBuilder script = new StringBuilder();
 
         script.append("#!/bin/bash\n\n");
@@ -1835,7 +1834,8 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
         // 基本变量
         script.append("JAR_URL=\"").append(downloadUrl).append("\"\n");
         script.append("JAR_NAME=\"").append(fileName).append("-").append(version).append(".jar\"\n");
-        script.append("LOCAL_JAR_PATH=\"").append(jarPath).append("/").append(containerName).append("/$JAR_NAME\"\n");
+        script.append("LOCAL_JAR_NAME=\"").append(fileName).append(".jar\"\n");
+        script.append("LOCAL_JAR_PATH=\"").append(jarPath).append("/").append(containerName).append("/$LOCAL_JAR_NAME\"\n");
         script.append("JAR_PATH=\"/tmp/$JAR_NAME\"\n");
         script.append("IMAGE_NAME=\"").append(imageName).append("\"\n");
         script.append("CONTAINER_NAME=\"").append(containerName).append("\"\n");
