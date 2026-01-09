@@ -1585,6 +1585,8 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
         // Docker Compose 相关变量
         script.append("USE_DOCKER_COMPOSE=").append(dockerComposeContent != null && !dockerComposeContent.trim().isEmpty() ? "true" : "false").append("\n");
         script.append("DOCKER_COMPOSE_FILE=\"$BUILD_DIR/docker-compose.yml\"\n");
+        script.append("ENV_FILE=\"/home/park/docker/.env\"  # 指定的 .env 文件路径\n");
+        script.append("ENV_FILE_EXISTS=false\n");  // 新增：标记文件是否存在
 
         // 日志函数
         script.append("log() { echo \"[$(date '+%Y-%m-%d %H:%M:%S')] $1\"; }\n");
@@ -1682,13 +1684,30 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
             script.append("cat \"$DOCKER_COMPOSE_FILE\"\n");
             script.append("echo \"\"\n");
 
-            script.append("log \"6. 使用 Docker Compose 启动服务\"\n");
-            script.append("if docker-compose -p \"$CONTAINER_NAME\" up -d; then\n");
+            // 检查 .env 文件是否存在，灵活处理
+            script.append("log \"6. 检查环境配置文件\"\n");
+            script.append("if [ -f \"$ENV_FILE\" ]; then\n");
+            script.append("    ENV_FILE_EXISTS=true\n");
+            script.append("    log_success \"找到环境配置文件: $ENV_FILE\"\n");
+            script.append("    echo \"环境变量配置:\"\n");
+            script.append("    cat \"$ENV_FILE\"\n");
+            script.append("    echo \"\"\n");
+            script.append("    # 构建Docker Compose命令（带环境文件）\n");
+            script.append("    DOCKER_COMPOSE_CMD=\"docker-compose --env-file \\\"$ENV_FILE\\\" -f \\\"$DOCKER_COMPOSE_FILE\\\" -p \\\"$CONTAINER_NAME\\\"\"\n");
+            script.append("else\n");
+            script.append("    log \"环境配置文件不存在: $ENV_FILE，将不使用环境文件\"\n");
+            script.append("    log \"提示：可以在 /home/park/docker/.env 文件中配置环境变量\"\n");
+            script.append("    # 构建Docker Compose命令（不带环境文件）\n");
+            script.append("    DOCKER_COMPOSE_CMD=\"docker-compose -f \\\"$DOCKER_COMPOSE_FILE\\\" -p \\\"$CONTAINER_NAME\\\"\"\n");
+            script.append("fi\n\n");
+
+            script.append("log \"7. 使用 Docker Compose 启动服务\"\n");
+            script.append("if $DOCKER_COMPOSE_CMD up -d; then\n");
             script.append("    log_success \"Docker Compose 启动成功\"\n");
-            script.append("    CONTAINER_ID=$(docker-compose -p \"$CONTAINER_NAME\" ps -q ").append(containerName).append(")\n");
+            script.append("    CONTAINER_ID=$($DOCKER_COMPOSE_CMD ps -q ").append(containerName).append(")\n");
             script.append("else\n");
             script.append("    log_error \"Docker Compose 启动失败\"\n");
-            script.append("    docker-compose -p \"$CONTAINER_NAME\" logs\n");
+            script.append("    $DOCKER_COMPOSE_CMD logs\n");
             script.append("    exit 1\n");
             script.append("fi\n\n");
         } else {
@@ -1717,7 +1736,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
 
         // 步骤6/7: 等待Spring Boot启动完成（修复版）
         if (dockerComposeContent != null && !dockerComposeContent.trim().isEmpty()) {
-            script.append("log \"7. 等待Spring Boot启动完成（120秒）\"\n");
+            script.append("log \"8. 等待Spring Boot启动完成（120秒）\"\n");
         }
 
         script.append("SUCCESS=false\n");
@@ -1727,13 +1746,13 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
         script.append("    # 检查容器是否还在运行\n");
         script.append("    if [ \"$USE_DOCKER_COMPOSE\" = \"true\" ]; then\n");
         script.append("        # Docker Compose 检查\n");
-        script.append("        if ! docker-compose -p \"$CONTAINER_NAME\" ps --services | grep -q \"^").append(containerName).append("$\"; then\n");
+        script.append("        if ! $DOCKER_COMPOSE_CMD ps --services | grep -q \"^").append(containerName).append("$\"; then\n");
         script.append("            log_error \"容器已停止运行\"\n");
-        script.append("            docker-compose -p \"$CONTAINER_NAME\" logs\n");
+        script.append("            $DOCKER_COMPOSE_CMD logs\n");
         script.append("            break\n");
         script.append("        fi\n");
         script.append("        # 获取容器日志\n");
-        script.append("        CONTAINER_LOGS=$(docker-compose -p \"$CONTAINER_NAME\" logs ").append(containerName).append(" 2>&1 || true)\n");
+        script.append("        CONTAINER_LOGS=$($DOCKER_COMPOSE_CMD logs ").append(containerName).append(" 2>&1 || true)\n");
         script.append("    else\n");
         script.append("        # Docker 检查\n");
         script.append("        if ! docker ps --filter \"name=$CONTAINER_NAME\" | grep -q \"$CONTAINER_NAME\"; then\n");
@@ -1760,7 +1779,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
 
         // 步骤8: 输出结果
         if (dockerComposeContent != null && !dockerComposeContent.trim().isEmpty()) {
-            script.append("log \"8. 部署结果\"\n");
+            script.append("log \"9. 部署结果\"\n");
         } else {
             script.append("log \"7. 部署结果\"\n");
         }
@@ -1775,9 +1794,14 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
         script.append("        # Docker Compose 信息\n");
         script.append("        echo \"🔹 部署方式: Docker Compose\"\n");
         script.append("        echo \"🔹 项目名称: $CONTAINER_NAME\"\n");
+        script.append("        if [ \"$ENV_FILE_EXISTS\" = true ]; then\n");
+        script.append("            echo \"🔹 环境文件: $ENV_FILE\"\n");
+        script.append("        else\n");
+        script.append("            echo \"🔹 环境文件: 未使用\"\n");
+        script.append("        fi\n");
         script.append("        echo \"\"\n");
         script.append("        echo \"📊 服务状态:\"\n");
-        script.append("        docker-compose -p \"$CONTAINER_NAME\" ps\n");
+        script.append("        $DOCKER_COMPOSE_CMD ps\n");
         script.append("    else\n");
         script.append("        # Docker 信息\n");
         script.append("        CONTAINER_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' \"$CONTAINER_NAME\" 2>/dev/null || echo \"unknown\")\n");
@@ -1798,7 +1822,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
         script.append("    \n");
         script.append("    if [ \"$USE_DOCKER_COMPOSE\" = \"true\" ]; then\n");
         script.append("        echo \"📝 应用启动日志:\"\n");
-        script.append("        docker-compose -p \"$CONTAINER_NAME\" logs ").append(containerName).append(" 2>&1 | grep -E \"Starting|Tomcat started|Started .*Application\" | tail -5\n");
+        script.append("        $DOCKER_COMPOSE_CMD logs ").append(containerName).append(" 2>&1 | grep -E \"Starting|Tomcat started|Started .*Application\" | tail -5\n");
         script.append("    else\n");
         script.append("        echo \"📝 应用启动日志:\"\n");
         script.append("        docker logs \"$CONTAINER_NAME\" 2>&1 | grep -E \"Starting|Tomcat started|Started .*Application\" | tail -5\n");
@@ -1812,12 +1836,12 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
         script.append("    \n");
         script.append("    if [ \"$USE_DOCKER_COMPOSE\" = \"true\" ]; then\n");
         script.append("        echo \"容器状态:\"\n");
-        script.append("        docker-compose -p \"$CONTAINER_NAME\" ps\n");
+        script.append("        $DOCKER_COMPOSE_CMD ps\n");
         script.append("        echo \"\"\n");
         script.append("        echo \"容器日志:\"\n");
-        script.append("        docker-compose -p \"$CONTAINER_NAME\" logs\n");
+        script.append("        $DOCKER_COMPOSE_CMD logs\n");
         script.append("        # 清理失败的容器\n");
-        script.append("        docker-compose -p \"$CONTAINER_NAME\" down 2>/dev/null || true\n");
+        script.append("        $DOCKER_COMPOSE_CMD down 2>/dev/null || true\n");
         script.append("    else\n");
         script.append("        echo \"容器状态:\"\n");
         script.append("        docker inspect \"$CONTAINER_NAME\" 2>/dev/null | grep -E 'Status|ExitCode|Error|RestartCount' | head -6\n");
@@ -1842,5 +1866,4 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
 
         return script.toString();
     }
-
 }
