@@ -1585,8 +1585,6 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
         // Docker Compose 相关变量
         script.append("USE_DOCKER_COMPOSE=").append(dockerComposeContent != null && !dockerComposeContent.trim().isEmpty() ? "true" : "false").append("\n");
         script.append("DOCKER_COMPOSE_FILE=\"$BUILD_DIR/docker-compose.yml\"\n");
-        script.append("ENV_FILE=\"/home/park/docker/.env\"  # 指定的 .env 文件路径\n");
-        script.append("ENV_FILE_EXISTS=false\n");  // 新增：标记文件是否存在
 
         // 日志函数
         script.append("log() { echo \"[$(date '+%Y-%m-%d %H:%M:%S')] $1\"; }\n");
@@ -1713,12 +1711,32 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
             script.append("\n");
             script.append("if $DOCKER_COMPOSE_CMD up -d; then\n");
             script.append("    log_success \"Docker Compose 启动成功\"\n");
-            script.append("    CONTAINER_ID=$($DOCKER_COMPOSE_CMD ps -q ").append(containerName).append(")\n");
+            script.append("    \n");
+            script.append("    # 等待一会让容器完全启动\n");
+            script.append("    sleep 2\n");
+            script.append("    \n");
+            script.append("    # 直接使用Docker命令获取容器ID\n");
+            script.append("    CONTAINER_ID=$(docker ps --filter \"name=${CONTAINER_NAME}\" --format \"{{.ID}}\" | head -1)\n");
+            script.append("    \n");
+            script.append("    if [ -n \"$CONTAINER_ID\" ]; then\n");
+            script.append("        log_success \"容器ID: ${CONTAINER_ID:0:12}\"\n");
+            script.append("    else\n");
+            script.append("        # 尝试查找任何包含容器名的容器\n");
+            script.append("        CONTAINER_ID=$(docker ps --filter \"name=^/${CONTAINER_NAME}$\" --format \"{{.ID}}\" | head -1)\n");
+            script.append("        if [ -n \"$CONTAINER_ID\" ]; then\n");
+            script.append("            log_success \"找到容器ID: ${CONTAINER_ID:0:12}\"\n");
+            script.append("        else\n");
+            script.append("            log \"警告: 无法获取容器ID，但服务已启动\"\n");
+            script.append("            CONTAINER_ID=\"unknown\"\n");
+            script.append("        fi\n");
+            script.append("    fi\n");
             script.append("else\n");
             script.append("    log_error \"Docker Compose 启动失败\"\n");
             script.append("    $DOCKER_COMPOSE_CMD logs\n");
             script.append("    exit 1\n");
             script.append("fi\n\n");
+
+            script.append("log \"8. 等待Spring Boot启动完成（120秒）\"\n");
         } else {
             // 使用 Docker 直接运行
             script.append("log \"5. 运行容器\"\n");
@@ -1743,25 +1761,22 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
             script.append("log \"6. 等待Spring Boot启动完成（120秒）\"\n");
         }
 
-        // 步骤6/7: 等待Spring Boot启动完成（修复版）
-        if (dockerComposeContent != null && !dockerComposeContent.trim().isEmpty()) {
-            script.append("log \"8. 等待Spring Boot启动完成（120秒）\"\n");
-        }
-
+        // 等待Spring Boot启动完成
         script.append("SUCCESS=false\n");
         script.append("for i in {1..120}; do\n");
         script.append("    sleep 1\n");
         script.append("    \n");
         script.append("    # 检查容器是否还在运行\n");
         script.append("    if [ \"$USE_DOCKER_COMPOSE\" = \"true\" ]; then\n");
-        script.append("        # Docker Compose 检查\n");
-        script.append("        if ! $DOCKER_COMPOSE_CMD ps --services | grep -q \"^").append(containerName).append("$\"; then\n");
+        script.append("        # Docker Compose 检查 - 使用Docker命令\n");
+        script.append("        if ! docker ps --filter \"name=^/${CONTAINER_NAME}$\" | grep -q \"${CONTAINER_NAME}\"; then\n");
         script.append("            log_error \"容器已停止运行\"\n");
-        script.append("            $DOCKER_COMPOSE_CMD logs\n");
+        script.append("            # 尝试获取Docker Compose日志\n");
+        script.append("            $DOCKER_COMPOSE_CMD logs 2>/dev/null || true\n");
         script.append("            break\n");
         script.append("        fi\n");
-        script.append("        # 获取容器日志\n");
-        script.append("        CONTAINER_LOGS=$($DOCKER_COMPOSE_CMD logs ").append(containerName).append(" 2>&1 || true)\n");
+        script.append("        # 获取容器日志 - 直接使用docker logs\n");
+        script.append("        CONTAINER_LOGS=$(docker logs \"$CONTAINER_NAME\" 2>&1 || true)\n");
         script.append("    else\n");
         script.append("        # Docker 检查\n");
         script.append("        if ! docker ps --filter \"name=$CONTAINER_NAME\" | grep -q \"$CONTAINER_NAME\"; then\n");
@@ -1786,7 +1801,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
         }
         script.append("done\n\n");
 
-        // 步骤8: 输出结果
+        // 步骤: 输出结果
         if (dockerComposeContent != null && !dockerComposeContent.trim().isEmpty()) {
             script.append("log \"9. 部署结果\"\n");
         } else {
@@ -1802,15 +1817,16 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
         script.append("    if [ \"$USE_DOCKER_COMPOSE\" = \"true\" ]; then\n");
         script.append("        # Docker Compose 信息\n");
         script.append("        echo \"🔹 部署方式: Docker Compose\"\n");
-        script.append("        echo \"🔹 项目名称: $CONTAINER_NAME\"\n");
+        script.append("        echo \"🔹 容器名称: $CONTAINER_NAME\"\n");
+        script.append("        echo \"🔹 容器ID:   ${CONTAINER_ID:0:12}\"\n");
         script.append("        if [ \"$ENV_FILE_EXISTS\" = true ]; then\n");
-        script.append("            echo \"🔹 环境文件: $ENV_FILE\"\n");
+        script.append("            echo \"🔹 环境文件: 已使用\"\n");
         script.append("        else\n");
         script.append("            echo \"🔹 环境文件: 未使用\"\n");
         script.append("        fi\n");
         script.append("        echo \"\"\n");
-        script.append("        echo \"📊 服务状态:\"\n");
-        script.append("        $DOCKER_COMPOSE_CMD ps\n");
+        script.append("        echo \"📊 容器状态:\"\n");
+        script.append("        docker ps --filter \"name=^$CONTAINER_NAME$\" --format \"table {{.Names}}\\t{{.Status}}\\t{{.Ports}}\"\n");
         script.append("    else\n");
         script.append("        # Docker 信息\n");
         script.append("        CONTAINER_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' \"$CONTAINER_NAME\" 2>/dev/null || echo \"unknown\")\n");
@@ -1831,7 +1847,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
         script.append("    \n");
         script.append("    if [ \"$USE_DOCKER_COMPOSE\" = \"true\" ]; then\n");
         script.append("        echo \"📝 应用启动日志:\"\n");
-        script.append("        $DOCKER_COMPOSE_CMD logs ").append(containerName).append(" 2>&1 | grep -E \"Starting|Tomcat started|Started .*Application\" | tail -5\n");
+        script.append("        docker logs \"$CONTAINER_NAME\" 2>&1 | grep -E \"Starting|Tomcat started|Started .*Application\" | tail -5\n");
         script.append("    else\n");
         script.append("        echo \"📝 应用启动日志:\"\n");
         script.append("        docker logs \"$CONTAINER_NAME\" 2>&1 | grep -E \"Starting|Tomcat started|Started .*Application\" | tail -5\n");
@@ -1845,12 +1861,12 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
         script.append("    \n");
         script.append("    if [ \"$USE_DOCKER_COMPOSE\" = \"true\" ]; then\n");
         script.append("        echo \"容器状态:\"\n");
-        script.append("        $DOCKER_COMPOSE_CMD ps\n");
+        script.append("        docker ps --filter \"name=$CONTAINER_NAME\" --format \"table {{.Names}}\\t{{.Status}}\\t{{.Ports}}\"\n");
         script.append("        echo \"\"\n");
-        script.append("        echo \"容器日志:\"\n");
-        script.append("        $DOCKER_COMPOSE_CMD logs\n");
+        script.append("        echo \"容器日志（最后20行）:\"\n");
+        script.append("        docker logs \"$CONTAINER_NAME\" 2>&1 | tail -20\n");
         script.append("        # 清理失败的容器\n");
-        script.append("        $DOCKER_COMPOSE_CMD down 2>/dev/null || true\n");
+        script.append("        docker rm -f \"$CONTAINER_NAME\" 2>/dev/null || true\n");
         script.append("    else\n");
         script.append("        echo \"容器状态:\"\n");
         script.append("        docker inspect \"$CONTAINER_NAME\" 2>/dev/null | grep -E 'Status|ExitCode|Error|RestartCount' | head -6\n");
