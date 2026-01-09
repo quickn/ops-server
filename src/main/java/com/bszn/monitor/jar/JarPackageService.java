@@ -1887,7 +1887,22 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
 
         // 清理
         script.append("\n# 清理临时文件\n");
-        script.append("rm -rf \"$BUILD_DIR\" /tmp/*.jar 2>/dev/null || true\n");
+        script.append("log \"清理临时文件...\"\n");
+        script.append("if [ -d \"$BUILD_DIR\" ]; then\n");
+        script.append("    echo \"删除构建目录: $BUILD_DIR\"\n");
+        script.append("    rm -rf \"$BUILD_DIR\" 2>/dev/null || true\n");
+        script.append("    if [ $? -eq 0 ]; then\n");
+        script.append("        log_success \"构建目录已删除\"\n");
+        script.append("    else\n");
+        script.append("        log \"警告: 构建目录删除失败，但可以忽略\"\n");
+        script.append("    fi\n");
+        script.append("else\n");
+        script.append("    log \"构建目录不存在，无需清理\"\n");
+        script.append("fi\n");
+        script.append("\n");
+        script.append("# 清理临时JAR文件\n");
+        script.append("rm -f /tmp/*.jar 2>/dev/null || true\n");
+        script.append("log_success \"所有临时文件已清理\"\n");
 
         return script.toString();
     }
