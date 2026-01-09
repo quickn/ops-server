@@ -1680,28 +1680,37 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
             script.append("EOF\n\n");
 
             script.append("log_success \"Docker Compose 配置文件已生成\"\n");
-            script.append("echo \"配置文件内容:\"\n");
-            script.append("cat \"$DOCKER_COMPOSE_FILE\"\n");
-            script.append("echo \"\"\n");
 
-            // 检查 .env 文件是否存在，灵活处理
-            script.append("log \"6. 检查环境配置文件\"\n");
-            script.append("if [ -f \"$ENV_FILE\" ]; then\n");
+            // 处理 .env 文件
+            script.append("log \"6. 处理环境变量文件\"\n");
+            script.append("ENV_SOURCE=\"/home/park/docker/.env\"\n");
+            script.append("ENV_TARGET=\"$BUILD_DIR/.env\"\n");
+            script.append("ENV_FILE_EXISTS=false\n");
+            script.append("\n");
+            script.append("# 拷贝 .env 文件（如果存在）\n");
+            script.append("if [ -f \"$ENV_SOURCE\" ]; then\n");
+            script.append("    cp \"$ENV_SOURCE\" \"$ENV_TARGET\"\n");
             script.append("    ENV_FILE_EXISTS=true\n");
-            script.append("    log_success \"找到环境配置文件: $ENV_FILE\"\n");
-            script.append("    echo \"环境变量配置:\"\n");
-            script.append("    cat \"$ENV_FILE\"\n");
+            script.append("    log_success \"已拷贝环境文件到构建目录\"\n");
+            script.append("    echo \"环境文件内容:\"\n");
+            script.append("    cat \"$ENV_TARGET\"\n");
             script.append("    echo \"\"\n");
-            script.append("    # 构建Docker Compose命令（带环境文件）\n");
-            script.append("    DOCKER_COMPOSE_CMD=\"docker-compose --env-file \\\"$ENV_FILE\\\" -f \\\"$DOCKER_COMPOSE_FILE\\\" -p \\\"$CONTAINER_NAME\\\"\"\n");
             script.append("else\n");
-            script.append("    log \"环境配置文件不存在: $ENV_FILE，将不使用环境文件\"\n");
-            script.append("    log \"提示：可以在 /home/park/docker/.env 文件中配置环境变量\"\n");
-            script.append("    # 构建Docker Compose命令（不带环境文件）\n");
-            script.append("    DOCKER_COMPOSE_CMD=\"docker-compose -f \\\"$DOCKER_COMPOSE_FILE\\\" -p \\\"$CONTAINER_NAME\\\"\"\n");
-            script.append("fi\n\n");
-
+            script.append("    log \"源环境文件不存在，将不使用环境文件\"\n");
+            script.append("fi\n");
+            script.append("\n");
+            script.append("# 构建命令\n");
+            script.append("if [ \"$ENV_FILE_EXISTS\" = true ]; then\n");
+            script.append("    DOCKER_COMPOSE_CMD=\"docker-compose --env-file .env -f docker-compose.yml -p \\\"$CONTAINER_NAME\\\"\"\n");
+            script.append("else\n");
+            script.append("    DOCKER_COMPOSE_CMD=\"docker-compose -f docker-compose.yml -p \\\"$CONTAINER_NAME\\\"\"\n");
+            script.append("fi\n");
+            script.append("\n");
             script.append("log \"7. 使用 Docker Compose 启动服务\"\n");
+            script.append("cd \"$BUILD_DIR\"\n");
+            script.append("echo \"当前目录: $(pwd)\"\n");
+            script.append("echo \"命令: $DOCKER_COMPOSE_CMD up -d\"\n");
+            script.append("\n");
             script.append("if $DOCKER_COMPOSE_CMD up -d; then\n");
             script.append("    log_success \"Docker Compose 启动成功\"\n");
             script.append("    CONTAINER_ID=$($DOCKER_COMPOSE_CMD ps -q ").append(containerName).append(")\n");
