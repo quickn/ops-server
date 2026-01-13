@@ -17,7 +17,7 @@ public class JarPackage extends ServiceBaseEntity {
     private String downloadUrl;
     private String dockerImageName;
     private String dockerContainerName;
-    private String dockerfilePath;
+    private String dockerComposeContent;
     private String dockerfileContent;
     private String agentIds;
     private String agentNames;

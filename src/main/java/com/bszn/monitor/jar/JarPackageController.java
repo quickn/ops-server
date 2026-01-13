@@ -81,6 +81,41 @@ public class JarPackageController {
         }
     }
 
+    @PutMapping("/{id}/dockerCompose")
+    @Operation(summary = "更新DockerCompose")
+    public Result<String> updateDockerCompose(@PathVariable Integer id, @RequestBody DockerComposeRequest request) {
+        try {
+            if (request.getDockerComposeContent() == null || request.getDockerComposeContent().isEmpty()) {
+                return Result.failed("DockerCompose内容不能为空");
+            }
+            boolean success = jarPackageService.updateDockerCompose(id, request.getDockerComposeContent());
+            if (success) {
+                return Result.success("DockerCompose更新成功");
+            }
+            return Result.failed("DockerCompose更新失败");
+        } catch (IllegalArgumentException e) {
+            return Result.failed(e.getMessage());
+        } catch (Exception e) {
+            log.error("更新DockerCompose异常", e);
+            return Result.failed("更新异常: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/{id}/dockerCompose")
+    @Operation(summary = "获取DockerCompose")
+    public Result<String> getDockerCompose(@PathVariable Integer id) {
+        try {
+            JarPackage jarPackage = jarPackageService.getJarPackageById(id);
+            if (jarPackage == null) {
+                return Result.failed("JAR包不存在");
+            }
+            return Result.success(jarPackage.getDockerComposeContent());
+        } catch (Exception e) {
+            log.error("获取DockerCompose异常", e);
+            return Result.failed("获取失败");
+        }
+    }
+
 
     @PostMapping("/rebuild/{id}")
     @Operation(summary = "重新构建容器（使用Dockerfile重新构建）")
@@ -283,5 +318,10 @@ public class JarPackageController {
     @Data
     public static class DockerfileRequest {
         private String dockerfileContent;
+    }
+
+    @Data
+    public static class DockerComposeRequest {
+        private String dockerComposeContent;
     }
 }
