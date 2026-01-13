@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bszn.monitor.chart.ChartMapper">
+
+    <select id="chartList" resultType="com.bszn.monitor.chart.ChartVO">
+        SELECT ${valueColumn} AS value, CREATE_TIME AS time
+        FROM ${tableName}
+        <where>
+            <if test="chartDto != null and chartDto.serviceId != null">
+                service_id = #{chartDto.serviceId}
+            </if>
+            <if test="chartDto != null and chartDto.startTime != null">
+                create_time >= #{chartDto.startTime}
+            </if>
+            <if test="chartDto != null and chartDto.endTime != null">
+                service_id &lt;= #{chartDto.endTime}
+            </if>
+
+        </where>
+    </select>
+
+</mapper>
