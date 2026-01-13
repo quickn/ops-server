@@ -5,7 +5,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -25,15 +27,15 @@ public class ChartController {
 
     private final ChartService chartService;
 
-    @GetMapping("/cpu")
+    @PostMapping("/cpu")
     @Operation(summary = "cpu监控")
-    public Result<List<ChartVO>> cpuList(ChartDto chartDto) {
+    public Result<List<ChartVO>> cpuList(@RequestBody @Validated ChartDto chartDto) {
         return Result.success(chartService.cpuList(chartDto));
     }
 
-    @GetMapping("/mem")
+    @PostMapping("/mem")
     @Operation(summary = "内存监控")
-    public Result<List<ChartVO>> memList(ChartDto chartDto) {
+    public Result<List<ChartVO>> memList(@RequestBody @Validated ChartDto chartDto) {
         return Result.success(chartService.memList(chartDto));
     }
 

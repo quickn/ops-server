@@ -9,15 +9,14 @@
         FROM ${tableName}
         <where>
             <if test="chartDto != null and chartDto.serviceId != null">
-                service_id = #{chartDto.serviceId}
+                AND service_id = #{chartDto.serviceId}
             </if>
             <if test="chartDto != null and chartDto.startTime != null">
-                create_time >= #{chartDto.startTime}
+                AND create_time &gt;= #{chartDto.startTime}
             </if>
             <if test="chartDto != null and chartDto.endTime != null">
-                service_id &lt;= #{chartDto.endTime}
+                AND create_time &lt;= #{chartDto.endTime}
             </if>
-
         </where>
     </select>
 

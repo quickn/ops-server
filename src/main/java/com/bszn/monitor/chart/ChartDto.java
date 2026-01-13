@@ -1,7 +1,10 @@
 package com.bszn.monitor.chart;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.annotations.ApiModelProperty;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDateTime;
 
@@ -13,13 +16,19 @@ import java.time.LocalDateTime;
 @Data
 public class ChartDto {
 
+    @NotNull(message = "服务id不能为空")
+    @ApiModelProperty("服务id")
+    private Integer serviceId;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @ApiModelProperty("开始时间")
     private LocalDateTime startTime;
 
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @ApiModelProperty("结束时间")
     private LocalDateTime endTime;
 
-    @ApiModelProperty("服务id")
-    private Integer serviceId;
 
 }
