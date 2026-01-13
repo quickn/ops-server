@@ -3,14 +3,6 @@ package com.bszn.server;
 import com.bszn.base.ServiceBaseEntity;
 import lombok.Data;
 
-/**
- * @version V2.3
- * @ClassName:MemState.java
- * @author: wgcloud
- * @date: 2019年11月16日
- * @Description: 查看内存使用情况
- * @Copyright: 2017-2022 www.wgstart.com. All rights reserved.
- */
 @Data
 public class MemState extends ServiceBaseEntity {
 
