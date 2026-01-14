@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author wzh
@@ -29,13 +30,13 @@ public class ChartController {
 
     @PostMapping("/cpu")
     @Operation(summary = "cpu监控")
-    public Result<List<ChartVO>> cpuList(@RequestBody @Validated ChartDto chartDto) {
+    public Result<Map<String, List<ChartVO>>> cpuList(@RequestBody @Validated ChartDto chartDto) {
         return Result.success(chartService.cpuList(chartDto));
     }
 
     @PostMapping("/mem")
     @Operation(summary = "内存监控")
-    public Result<List<ChartVO>> memList(@RequestBody @Validated ChartDto chartDto) {
+    public Result<Map<String, List<ChartVO>>> memList(@RequestBody @Validated ChartDto chartDto) {
         return Result.success(chartService.memList(chartDto));
     }
 

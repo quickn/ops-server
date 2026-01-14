@@ -20,6 +20,9 @@ public class ChartDto {
     @ApiModelProperty("服务id")
     private Integer serviceId;
 
+    @ApiModelProperty("主机ip")
+    private String hostname;
+
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @ApiModelProperty("开始时间")

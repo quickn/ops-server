@@ -5,16 +5,14 @@ import lombok.Data;
 
 /**
  * @author wzh
- * @date 2026/1/13 14:11
- * @description: 图表VO
+ * @date 2026/1/14 13:16
+ * @description: 图表业务对象
  */
 @Data
-public class ChartVO {
+public class ChartBO {
 
-    public ChartVO(ChartBO chartBO) {
-        this.value = chartBO.getValue();
-        this.time = chartBO.getTime();
-    }
+    @ApiModelProperty("主机地址")
+    private String hostname;
 
     @ApiModelProperty("值")
     private String value;

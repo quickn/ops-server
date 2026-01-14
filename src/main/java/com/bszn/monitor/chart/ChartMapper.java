@@ -13,6 +13,6 @@ import java.util.List;
 @Mapper
 public interface ChartMapper {
 
-    List<ChartVO> chartList(@Param("chartDto") ChartDto chartDto, @Param("tableName") String tableName, @Param("valueColumn") String valueColumn);
+    List<ChartBO> chartList(@Param("chartDto") ChartDto chartDto, @Param("tableName") String tableName, @Param("valueColumn") String valueColumn);
 
 }

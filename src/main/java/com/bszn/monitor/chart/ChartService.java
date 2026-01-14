@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @author wzh
@@ -16,15 +18,23 @@ public class ChartService {
 
     private final ChartMapper chartMapper;
 
-    public List<ChartVO> cpuList(ChartDto chartDto) {
+    public Map<String, List<ChartVO>> cpuList(ChartDto chartDto) {
         return chartList(chartDto, "cpu_state", "SYS");
     }
 
-    public List<ChartVO> memList(ChartDto chartDto) {
+    public Map<String, List<ChartVO>> memList(ChartDto chartDto) {
         return chartList(chartDto, "mem_state", "USE_PER");
     }
 
-    public List<ChartVO> chartList(ChartDto chartDto, String tableName, String valueColumn) {
-        return chartMapper.chartList(chartDto, tableName, valueColumn);
+    public Map<String, List<ChartVO>> chartList(ChartDto chartDto, String tableName, String valueColumn) {
+        List<ChartBO> chartBOS = chartMapper.chartList(chartDto, tableName, valueColumn);
+        return chartBOS.stream()
+                .collect(Collectors.groupingBy(
+                        ChartBO::getHostname,  // 按 hostname 分组
+                        Collectors.mapping(
+                                ChartVO::new,  // 将每个 ChartBO 转换为 ChartVO
+                                Collectors.toList()
+                        )
+                ));
     }
 }
