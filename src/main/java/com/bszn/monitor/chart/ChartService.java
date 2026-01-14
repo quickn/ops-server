@@ -20,12 +20,22 @@ public class ChartService {
 
     private final ChartMapper chartMapper;
 
-    public Map<String, List<ChartVO>> cpuList(ChartDto chartDto) {
-        return chartList(chartDto, "cpu_state", "SYS");
+    public List<ChartIpVO> cpuList(ChartDto chartDto) {
+        Map<String, List<ChartVO>> stringListMap = chartList(chartDto, "cpu_state", "SYS");
+        if (CollUtil.isEmpty(stringListMap)) {
+            return Collections.emptyList();
+        }
+        return stringListMap.keySet().stream().map(data -> ChartIpVO.builder().ip(data).list(stringListMap.get(data)).build())
+                .collect(Collectors.toList());
     }
 
-    public Map<String, List<ChartVO>> memList(ChartDto chartDto) {
-        return chartList(chartDto, "mem_state", "USE_PER");
+    public List<ChartIpVO> memList(ChartDto chartDto) {
+        Map<String, List<ChartVO>> stringListMap = chartList(chartDto, "mem_state", "USE_PER");
+        if (CollUtil.isEmpty(stringListMap)) {
+            return Collections.emptyList();
+        }
+        return stringListMap.keySet().stream().map(data -> ChartIpVO.builder().ip(data).list(stringListMap.get(data)).build())
+                .collect(Collectors.toList());
     }
 
     public Map<String, List<ChartVO>> chartList(ChartDto chartDto, String tableName, String valueColumn) {

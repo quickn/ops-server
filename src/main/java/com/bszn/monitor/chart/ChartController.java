@@ -30,13 +30,13 @@ public class ChartController {
 
     @PostMapping("/cpu")
     @Operation(summary = "cpu监控")
-    public Result<Map<String, List<ChartVO>>> cpuList(@RequestBody @Validated ChartDto chartDto) {
+    public Result<List<ChartIpVO>> cpuList(@RequestBody @Validated ChartDto chartDto) {
         return Result.success(chartService.cpuList(chartDto));
     }
 
     @PostMapping("/mem")
     @Operation(summary = "内存监控")
-    public Result<Map<String, List<ChartVO>>> memList(@RequestBody @Validated ChartDto chartDto) {
+    public Result<List<ChartIpVO>> memList(@RequestBody @Validated ChartDto chartDto) {
         return Result.success(chartService.memList(chartDto));
     }
 
