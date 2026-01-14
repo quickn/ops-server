@@ -26,7 +26,7 @@ public class ProjectController {
 
     @GetMapping("/page")
     @Operation(summary = "获取项目列表（分页）")
-    public Result<IPage<Project>> page(ProjectQueryPage dto) {
+    public Result<IPage<Project>> page(ProjectDto dto) {
         return Result.success(projectService.page(dto.getPage(), dto.buildLambda()));
     }
 
