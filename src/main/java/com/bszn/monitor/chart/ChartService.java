@@ -1,8 +1,10 @@
 package com.bszn.monitor.chart;
 
+import cn.hutool.core.collection.CollUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -28,6 +30,9 @@ public class ChartService {
 
     public Map<String, List<ChartVO>> chartList(ChartDto chartDto, String tableName, String valueColumn) {
         List<ChartBO> chartBOS = chartMapper.chartList(chartDto, tableName, valueColumn);
+        if (CollUtil.isEmpty(chartBOS)) {
+            return Collections.emptyMap();
+        }
         return chartBOS.stream()
                 .collect(Collectors.groupingBy(
                         ChartBO::getHostname,  // 按 hostname 分组
