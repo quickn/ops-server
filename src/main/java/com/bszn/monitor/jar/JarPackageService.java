@@ -37,7 +37,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
     private final JarPackageMapper jarPackageMapper;
     private final AgentConfigMapper agentConfigMapper;
     private final DockerContainerMapper dockerContainerMapper;
-    private final JarDeployRecordMapper jarDeployRecordMapper;
+    private final ProjectDeployRecordMapper projectDeployRecordMapper;
     private final IMsgService msgService;
     private final AgentConfigService agentConfigService;
 
@@ -233,7 +233,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
             String containerName = containerNames.get(i);
 
             // 创建部署记录
-            JarDeployRecord record = createDeployRecord(jarPackageId, agentId, containerName);
+            ProjectDeployRecord record = createDeployRecord(jarPackageId, agentId, containerName);
 
             // 异步执行首次部署（根据Dockerfile创建容器）
             CompletableFuture<Boolean> future = CompletableFuture.supplyAsync(() -> {
@@ -308,7 +308,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
             String containerName = containerNames.get(i);
 
             // 创建部署记录
-            JarDeployRecord record = createDeployRecord(jarPackageId, agentId, containerName);
+            ProjectDeployRecord record = createDeployRecord(jarPackageId, agentId, containerName);
 
             // 异步执行重新部署（只替换JAR包）
             CompletableFuture<Boolean> future = CompletableFuture.supplyAsync(() -> {
@@ -416,7 +416,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
             boolean containerExists = checkContainerExists(agentId, containerName, userId);
 
             // 创建部署记录
-            JarDeployRecord record = createDeployRecord(jarPackageId, agentId, containerName);
+            ProjectDeployRecord record = createDeployRecord(jarPackageId, agentId, containerName);
 
             CompletableFuture<Boolean> future;
 
@@ -493,7 +493,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
      * 根据Dockerfile部署到Agent（使用精简版脚本）
      */
     private boolean deployWithDockerfile(JarPackage jarPackage, Long agentId,
-                                         String containerName, Integer recordId, Long userId) {
+                                         String containerName, Long recordId, Long userId) {
         try {
             AgentConfig agentConfig = agentConfigMapper.selectById(agentId);
             if (agentConfig == null) {
@@ -581,7 +581,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
     /**
      * 重新部署：只替换JAR包（使用脚本方式）
      */
-    private boolean redeployJarOnly(JarPackage jarPackage, Long agentId, String containerName, Integer recordId, Long userId) {
+    private boolean redeployJarOnly(JarPackage jarPackage, Long agentId, String containerName, Long recordId, Long userId) {
         try {
             AgentConfig agentConfig = agentConfigMapper.selectById(agentId);
             if (agentConfig == null) {
@@ -842,33 +842,33 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
     /**
      * 创建部署记录
      */
-    private JarDeployRecord createDeployRecord(Integer jarPackageId, Long agentId, String containerName) {
+    private ProjectDeployRecord createDeployRecord(Integer jarPackageId, Long agentId, String containerName) {
         AgentConfig byId = agentConfigService.getById(agentId);
-        JarDeployRecord record = new JarDeployRecord();
-        record.setJarPackageId(jarPackageId);
+        ProjectDeployRecord record = new ProjectDeployRecord();
+        record.setProjectId(Long.valueOf(jarPackageId));
         record.setAgentId(agentId);
         record.setAgentIp(byId.getHostname());
         record.setContainerName(containerName);
         record.setStatus(0); // 待部署
         record.setCreateTime(new Date());
         record.setDeployLog("开始部署");
-        jarDeployRecordMapper.insert(record);
+        projectDeployRecordMapper.insert(record);
         return record;
     }
 
     /**
      * 更新部署记录
      */
-    private void updateDeployRecord(Integer recordId, Integer status, String logMsg) {
+    private void updateDeployRecord(Long recordId, Integer status, String logMsg) {
         try {
-            JarDeployRecord record = jarDeployRecordMapper.selectById(recordId);
+            ProjectDeployRecord record = projectDeployRecordMapper.selectById(recordId);
             if (record != null) {
                 record.setStatus(status);
                 if (status == 2 || status == 3) {
                     record.setDeployTime(new Date());
                 }
                 record.setDeployLog(logMsg);
-                jarDeployRecordMapper.updateById(record);
+                projectDeployRecordMapper.updateById(record);
             }
         } catch (Exception e) {
             log.error("更新部署记录失败", e);
@@ -878,8 +878,8 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
     /**
      * 获取部署记录
      */
-    public List<JarDeployRecord> getDeployRecords(Integer jarPackageId) {
-        return jarDeployRecordMapper.selectByJarPackageId(jarPackageId);
+    public List<ProjectDeployRecord> getDeployRecords(Long projectId) {
+        return projectDeployRecordMapper.selectByProjectId(projectId);
     }
 
     /**
@@ -906,8 +906,8 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
             }
 
             // 删除部署记录
-            jarDeployRecordMapper.delete(
-                    new QueryWrapper<JarDeployRecord>().eq("jar_package_id", id)
+            projectDeployRecordMapper.delete(
+                    new QueryWrapper<ProjectDeployRecord>().eq("jar_package_id", id)
             );
 
             // 删除JAR包记录
@@ -930,14 +930,14 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
     /**
      * 获取JAR包的状态统计
      */
-    public Map<String, Object> getJarPackageStats(Integer id) {
+    public Map<String, Object> getJarPackageStats(Long id) {
         Map<String, Object> stats = new HashMap<>();
 
         JarPackage jarPackage = jarPackageMapper.selectById(id);
         if (jarPackage != null) {
             stats.put("jarPackage", jarPackage);
 
-            List<JarDeployRecord> records = jarDeployRecordMapper.selectByJarPackageId(id);
+            List<ProjectDeployRecord> records = projectDeployRecordMapper.selectByProjectId(id);
             stats.put("deployRecords", records);
 
             long total = records.size();
@@ -1043,7 +1043,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
             String containerName = containerNames.get(i);
 
             // 创建部署记录
-            JarDeployRecord record = createDeployRecord(jarPackageId, agentId, containerName);
+            ProjectDeployRecord record = createDeployRecord(jarPackageId, agentId, containerName);
 
             // 异步执行重新构建
             CompletableFuture<Boolean> future = CompletableFuture.supplyAsync(() -> {
@@ -1081,7 +1081,7 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
      * 使用Dockerfile重新构建容器
      */
     private boolean rebuildWithDockerfile(JarPackage jarPackage, Long agentId,
-                                          String containerName, Integer recordId, Long userId) {
+                                          String containerName, Long recordId, Long userId) {
         try {
             AgentConfig agentConfig = agentConfigMapper.selectById(agentId);
             if (agentConfig == null) {

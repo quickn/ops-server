@@ -8,13 +8,13 @@ import lombok.Data;
 import java.util.Date;
 
 @Data
-@TableName("jar_deploy_record")
-public class JarDeployRecord {
+@TableName("project_deploy_record")
+public class ProjectDeployRecord {
 
     @TableId(type = IdType.AUTO)
-    private Integer id;
+    private Long id;
 
-    private Integer jarPackageId;
+    private Long projectId;
     private Long agentId;
     private String agentIp;
     private String containerName;

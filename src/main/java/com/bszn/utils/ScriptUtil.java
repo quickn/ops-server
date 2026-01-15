@@ -23,9 +23,22 @@ public class ScriptUtil {
      * @param dockerComposeContent docker编排文件
      * @return 脚本
      */
-    private static String deployScript(String projectName, String dockerfileContent, String dockerComposeContent, String jarPath) {
+    public static String deployScript(String projectName, String dockerfileContent, String dockerComposeContent, String jarPath) {
         String str = "";
         return deployScript(str, projectName, str, projectName, projectName, dockerfileContent, dockerComposeContent, jarPath);
+    }
+
+    /**
+     * 重新部署脚本（只替换JAR包）
+     *
+     * @param projectName       项目名
+     * @param dockerfileContent docker文件
+     * @param jarPath           本地jar包路径
+     * @return
+     */
+    public static String redeployScript(String projectName, String dockerfileContent, String jarPath) {
+        String str = "";
+        return redeployScript(str, projectName, str, projectName, dockerfileContent, jarPath);
     }
 
 
@@ -778,7 +791,7 @@ public class ScriptUtil {
 
         script.append("# 输出成功信息\n");
         script.append("log_info \"重新部署成功！\"\n");
-        script.append("echo \"=== 重新部署成功信息 ===\"\n");
+        script.append("echo \"=== 部署成功信息 ===\"\n");
         script.append("echo \"容器名称: $CONTAINER_NAME\"\n");
         script.append("CONTAINER_ID=$(docker inspect -f '{{.Id}}' \"$CONTAINER_NAME\" 2>/dev/null || echo \"unknown\")\n");
         script.append("echo \"容器ID: $CONTAINER_ID\"\n");
@@ -799,7 +812,7 @@ public class ScriptUtil {
         script.append("fi\n");
         script.append("echo \"JAR版本: ").append(version).append("\"\n");
         script.append("echo \"部署时间: $(date '+%Y-%m-%d %H:%M:%S')\"\n");
-        script.append("echo \"REDEPLOY_SUCCESS\"\n");
+        script.append("echo \"DEPLOY_SUCCESS\"\n");
 
         return script.toString();
     }
@@ -828,6 +841,54 @@ public class ScriptUtil {
             }
         }
         return info;
+    }
+
+    /**
+     * 提取部署成功信息
+     */
+    public static String extractDeploySuccessInfo(String scriptResult) {
+        StringBuilder info = new StringBuilder();
+        String[] lines = scriptResult.split("\n");
+        boolean inSuccessSection = false;
+
+        for (String line : lines) {
+            if (line.contains("=== 部署成功信息 ===")) {
+                inSuccessSection = true;
+                continue;
+            }
+            if (inSuccessSection && line.contains("DEPLOY_SUCCESS")) {
+                break;
+            }
+            if (inSuccessSection) {
+                info.append(line).append("\n");
+            }
+        }
+
+        return info.toString().trim();
+    }
+
+    /**
+     * 提取部署错误信息
+     */
+    public static String extractDeployErrorInfo(String scriptResult) {
+        StringBuilder errorInfo = new StringBuilder();
+        String[] lines = scriptResult.split("\n");
+
+        for (String line : lines) {
+            if (line.contains("[ERROR]")) {
+                errorInfo.append(line).append("\n");
+            }
+        }
+
+        if (errorInfo.length() == 0) {
+            // 如果没有明确的错误信息，返回最后10行
+            int start = Math.max(0, lines.length - 10);
+            for (int i = start; i < lines.length; i++) {
+                errorInfo.append(lines[i]).append("\n");
+            }
+        }
+
+        return errorInfo.toString().trim();
     }
 
 }

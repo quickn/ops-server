@@ -271,9 +271,9 @@ public class JarPackageController {
 
     @GetMapping("/deploy-records/{id}")
     @Operation(summary = "获取部署记录")
-    public Result<List<JarDeployRecord>> getDeployRecords(@PathVariable Integer id) {
+    public Result<List<ProjectDeployRecord>> getDeployRecords(@PathVariable Long id) {
         try {
-            List<JarDeployRecord> records = jarPackageService.getDeployRecords(id);
+            List<ProjectDeployRecord> records = jarPackageService.getDeployRecords(id);
             return Result.success(records);
         } catch (Exception e) {
             log.error("获取部署记录异常", e);
@@ -298,7 +298,7 @@ public class JarPackageController {
 
     @GetMapping("/status/{id}")
     @Operation(summary = "获取部署状态")
-    public Result<Map<String, Object>> getDeployStatus(@PathVariable Integer id) {
+    public Result<Map<String, Object>> getDeployStatus(@PathVariable Long id) {
         try {
             Map<String, Object> stats = jarPackageService.getJarPackageStats(id);
             return Result.success(stats);
