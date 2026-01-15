@@ -19,16 +19,12 @@ public class ProjectDto extends PageForm<Project> implements IQuery {
     @ApiModelProperty("项目名")
     private String name;
 
-    @ApiModelProperty("服务id")
-    private Integer serviceId;
-
     /**
      * 链式wrapper构建
      */
     public LambdaQueryWrapper<Project> buildLambda() {
         return Wrappers.<Project>lambdaQuery()
-                .like(StrUtil.isNotEmpty(name), Project::getName, name)
-                .eq(Objects.nonNull(serviceId), Project::getServiceId, serviceId);
+                .like(StrUtil.isNotEmpty(name), Project::getName, name);
     }
 
 }
