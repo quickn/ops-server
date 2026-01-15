@@ -40,4 +40,14 @@ public interface IProjectService extends IService<Project> {
      * @return 部署记录
      */
     List<ProjectDeployRecord> getDeployRecords(Long projectId);
+
+    /**
+     * 同步
+     *
+     * @param id          项目id
+     * @param userId      用户id
+     * @param syncRequest 请求参数
+     * @return 结果
+     */
+    String sync(Long id, Long userId, SyncRequest syncRequest);
 }

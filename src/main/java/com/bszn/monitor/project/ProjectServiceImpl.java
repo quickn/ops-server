@@ -6,6 +6,7 @@ import com.bszn.monitor.agent.AgentConfig;
 import com.bszn.monitor.agent.AgentConfigService;
 import com.bszn.monitor.msg.IMsgService;
 import com.bszn.system.common.exception.BusinessException;
+import com.bszn.system.common.result.Result;
 import com.bszn.utils.ScriptUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -84,6 +85,62 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
     @Override
     public List<ProjectDeployRecord> getDeployRecords(Long projectId) {
         return projectDeployRecordMapper.selectByProjectId(projectId);
+    }
+
+    /**
+     * 同步
+     *
+     * @param id          项目id
+     * @param userId      用户id
+     * @param syncRequest 请求参数
+     * @return 结果
+     */
+    @Override
+    public String sync(Long id, Long userId, SyncRequest syncRequest) {
+        Project project = getById(id);
+        if (Objects.isNull(project)) {
+            throw new BusinessException("项目不存在");
+        }
+        // 获取目标服务器信息
+        List<AgentConfig> targetServers = agentConfigService.listByIds(syncRequest.getTargetAgentIds());
+        if (targetServers.isEmpty()) {
+            throw new BusinessException("未找到选中的服务器信息");
+        }
+        StringBuilder result = new StringBuilder();
+        StringBuilder command = new StringBuilder();
+        // 源服务器 同步至跳板机
+        if (syncRequest.getType() == 1) {
+            String rsyncCmd = String.format("rsync -azv %s %s@%s:%s",
+                    jarPath + "/" + project.getName(),
+                    syncRequest.getUser() != null ? syncRequest.getUser() : "park",
+                    syncRequest.getRemoteIp(),
+                    jarPath);
+            // 直接在源服务器上执行rsync命令
+            result.append(msgService.sendCMDMsgAndResponse(userId, syncRequest.getSourceAgentId(), rsyncCmd, 300))
+                    .append(" === 第一段结果集结束 === ");
+        }
+        // jar包 在命令中添加下载动作
+        if (syncRequest.getType() == 2) {
+            String downloadCmd = String.format("curl -L -o %s '%s'", jarPath + "/" + project.getName() + "/" + project.getName() + ".jar",
+                    syncRequest.getJarDownloadUrl());
+            command.append(downloadCmd);
+            command.append(" && ");
+        }
+        for (int i = 0; i < targetServers.size(); i++) {
+            AgentConfig server = targetServers.get(i);
+            String rsyncCmd = String.format("rsync -azv %s %s@%s:%s",
+                    jarPath + "/" + project.getName(),
+                    syncRequest.getUser() != null ? syncRequest.getUser() : "park",
+                    server.getHostname(),
+                    jarPath);
+            command.append(rsyncCmd);
+            // 如果不是最后一条命令，添加 &&
+            if (i < targetServers.size() - 1) {
+                command.append(" && ");
+            }
+        }
+        result.append(msgService.sendCMDMsgAndResponse(userId, syncRequest.getAgentId(), command.toString(), 300));
+        return result.toString();
     }
 
     /**
