@@ -15,14 +15,14 @@ public class ProjectParam {
     @ApiModelProperty("项目名称")
     private String name;
 
-    @ApiModelProperty("jar包id")
-    private Long jarPackageId;
+    @ApiModelProperty("描述")
+    private String remark;
 
-    @ApiModelProperty("服务id")
-    private Integer serviceId;
+    @ApiModelProperty("docker编排文件")
+    private String dockerComposeContent;
 
-    @ApiModelProperty("服务名")
-    private String serviceName;
+    @ApiModelProperty("docker文件")
+    private String dockerfileContent;
 
     public Project toEntity() {
         Project project = new Project();

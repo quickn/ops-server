@@ -26,5 +26,7 @@ public class Project extends ServiceBaseEntity {
     @ApiModelProperty("0-未部署 1-部署中 2-部署成功 3-部署失败")
     private Integer status;
 
+    @ApiModelProperty("描述")
+    private String remark;
 
 }
