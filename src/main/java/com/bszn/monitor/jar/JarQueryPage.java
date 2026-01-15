@@ -18,8 +18,6 @@ public class JarQueryPage extends PageForm<JarPackage> implements IQuery {
 
     private String fileName;
 
-    private Integer status; // 0-未部署 1-部署中 2-部署成功 3-部署失败
-
     private Integer serviceId;
 
     /**
@@ -28,8 +26,7 @@ public class JarQueryPage extends PageForm<JarPackage> implements IQuery {
     public LambdaQueryWrapper<JarPackage> buildLambda() {
         return Wrappers.<JarPackage>lambdaQuery()
                 .like(StrUtil.isNotEmpty(fileName), JarPackage::getFileName, fileName)
-                .eq(Objects.nonNull(serviceId), JarPackage::getServiceId, serviceId)
-                .eq(Objects.nonNull(status), JarPackage::getStatus, status);
+                .eq(Objects.nonNull(serviceId), JarPackage::getServiceId, serviceId);
     }
 
     /**
@@ -38,8 +35,7 @@ public class JarQueryPage extends PageForm<JarPackage> implements IQuery {
     public QueryWrapper<JarPackage> build() {
         return Wrappers.<JarPackage>query()
                 .like(StrUtil.isNotEmpty(fileName), "jp1.file_name", fileName)
-                .eq(Objects.nonNull(serviceId), "jp1.service_id", serviceId)
-                .eq(Objects.nonNull(status), "jp1.service_name", status);
+                .eq(Objects.nonNull(serviceId), "jp1.service_id", serviceId);
     }
 
 }
