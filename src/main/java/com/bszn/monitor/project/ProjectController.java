@@ -11,6 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 /**
  * @author wzh
  * @date 2026/1/14 13:43
@@ -59,20 +61,33 @@ public class ProjectController {
         return Result.success(projectService.removeById(id));
     }
 
-    @PostMapping("/deploy/{projectId}")
+    @PostMapping("/deploy/{id}")
     @Operation(summary = "部署")
-    public Result<String> deploy(@ApiParam(value = "项目id", required = true) @PathVariable Long projectId,
+    public Result<String> deploy(@ApiParam(value = "项目id", required = true) @PathVariable Long id,
                                  @RequestBody @Validated DeployRequest request) {
-        projectService.deploy(projectId, request.getAgentIds(), SecurityUtils.getUserId());
-        return Result.success("开始部署，查看日志关注部署状态！");
+        projectService.deploy(id, request.getAgentIds(), SecurityUtils.getUserId());
+        return Result.success("id，查看日志关注部署状态！");
     }
 
-    @PostMapping("/redeploy/{projectId}")
+    @PostMapping("/redeploy/{id}")
     @Operation(summary = "重新部署（只替换JAR包）")
-    public Result<String> redeploy(@ApiParam(value = "项目id", required = true) @PathVariable Long projectId,
+    public Result<String> redeploy(@ApiParam(value = "项目id", required = true) @PathVariable Long id,
                                    @RequestBody DeployRequest request) {
-        projectService.redeploy(projectId, request.getAgentIds(), SecurityUtils.getUserId());
-        return Result.success("重新部署，查看日志关注部署状态！");
+        projectService.redeploy(id, request.getAgentIds(), SecurityUtils.getUserId());
+        return Result.success("id，查看日志关注部署状态！");
+    }
+
+
+    @GetMapping("/deploy-records/{id}")
+    @Operation(summary = "获取部署记录")
+    public Result<List<ProjectDeployRecord>> getDeployRecords(@PathVariable Long id) {
+        try {
+            List<ProjectDeployRecord> records = projectService.getDeployRecords(id);
+            return Result.success(records);
+        } catch (Exception e) {
+            log.error("获取部署记录异常", e);
+            return Result.failed("获取部署记录失败");
+        }
     }
 
 }

@@ -1,4 +1,4 @@
-package com.bszn.monitor.jar;
+package com.bszn.monitor.project;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;

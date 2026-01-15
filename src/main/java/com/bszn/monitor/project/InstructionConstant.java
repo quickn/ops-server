@@ -1,4 +1,4 @@
-package com.bszn.monitor.jar;
+package com.bszn.monitor.project;
 
 /**
  * @author wzh

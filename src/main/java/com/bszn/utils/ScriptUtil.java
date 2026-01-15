@@ -1,6 +1,6 @@
 package com.bszn.utils;
 
-import com.bszn.monitor.jar.InstructionConstant;
+import com.bszn.monitor.project.InstructionConstant;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.HashMap;
@@ -34,7 +34,7 @@ public class ScriptUtil {
      * @param projectName       项目名
      * @param dockerfileContent docker文件
      * @param jarPath           本地jar包路径
-     * @return
+     * @return 脚本
      */
     public static String redeployScript(String projectName, String dockerfileContent, String jarPath) {
         String str = "";
@@ -415,7 +415,7 @@ public class ScriptUtil {
      * @param containerName     容器名
      * @param dockerfileContent docker文件
      * @param jarPath           本地jar包路径
-     * @return
+     * @return 脚本
      */
     public static String redeployScript(String downloadUrl, String fileName, String version,
                                         String containerName, String dockerfileContent, String jarPath) {
@@ -830,12 +830,12 @@ public class ScriptUtil {
         String[] instructions = {InstructionConstant.FROM, InstructionConstant.EXPOSE, InstructionConstant.WORKDIR, InstructionConstant.ENTRYPOINT};
         for (String line : lines) {
             line = line.trim();
-            for (int i = 0; i < instructions.length; i++) {
+            for (String instruction : instructions) {
                 // 解析指令
-                if (line.startsWith(instructions[i])) {
+                if (line.startsWith(instruction)) {
                     String[] parts = line.split("\\s+");
                     if (parts.length > 1) {
-                        info.put(instructions[i], parts[1]);
+                        info.put(instruction, parts[1]);
                     }
                 }
             }
@@ -873,21 +873,18 @@ public class ScriptUtil {
     public static String extractDeployErrorInfo(String scriptResult) {
         StringBuilder errorInfo = new StringBuilder();
         String[] lines = scriptResult.split("\n");
-
         for (String line : lines) {
             if (line.contains("[ERROR]")) {
                 errorInfo.append(line).append("\n");
             }
         }
-
-        if (errorInfo.length() == 0) {
+        if (errorInfo.isEmpty()) {
             // 如果没有明确的错误信息，返回最后10行
             int start = Math.max(0, lines.length - 10);
             for (int i = start; i < lines.length; i++) {
                 errorInfo.append(lines[i]).append("\n");
             }
         }
-
         return errorInfo.toString().trim();
     }
 

@@ -2,20 +2,15 @@ package com.bszn.monitor.jar;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.bszn.system.common.result.Result;
-import com.bszn.system.common.util.SecurityUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 @Slf4j
 @RestController
@@ -46,103 +41,6 @@ public class JarPackageController {
         }
     }
 
-    @PutMapping("/{id}/dockerfile")
-    @Operation(summary = "更新Dockerfile")
-    public Result<String> updateDockerfile(@PathVariable Integer id, @RequestBody DockerfileRequest request) {
-        try {
-            if (request.getDockerfileContent() == null || request.getDockerfileContent().isEmpty()) {
-                return Result.failed("Dockerfile内容不能为空");
-            }
-            boolean success = jarPackageService.updateDockerfile(id, request.getDockerfileContent());
-            if (success) {
-                return Result.success("Dockerfile更新成功");
-            }
-            return Result.failed("Dockerfile更新失败");
-        } catch (IllegalArgumentException e) {
-            return Result.failed(e.getMessage());
-        } catch (Exception e) {
-            log.error("更新Dockerfile异常", e);
-            return Result.failed("更新异常: " + e.getMessage());
-        }
-    }
-
-    @GetMapping("/{id}/dockerfile")
-    @Operation(summary = "获取Dockerfile")
-    public Result<String> getDockerfile(@PathVariable Integer id) {
-        try {
-            JarPackage jarPackage = jarPackageService.getJarPackageById(id);
-            if (jarPackage == null) {
-                return Result.failed("JAR包不存在");
-            }
-            return Result.success(jarPackage.getDockerfileContent());
-        } catch (Exception e) {
-            log.error("获取Dockerfile异常", e);
-            return Result.failed("获取失败");
-        }
-    }
-
-    @PutMapping("/{id}/dockerCompose")
-    @Operation(summary = "更新DockerCompose")
-    public Result<String> updateDockerCompose(@PathVariable Integer id, @RequestBody DockerComposeRequest request) {
-        try {
-            if (request.getDockerComposeContent() == null || request.getDockerComposeContent().isEmpty()) {
-                return Result.failed("DockerCompose内容不能为空");
-            }
-            boolean success = jarPackageService.updateDockerCompose(id, request.getDockerComposeContent());
-            if (success) {
-                return Result.success("DockerCompose更新成功");
-            }
-            return Result.failed("DockerCompose更新失败");
-        } catch (IllegalArgumentException e) {
-            return Result.failed(e.getMessage());
-        } catch (Exception e) {
-            log.error("更新DockerCompose异常", e);
-            return Result.failed("更新异常: " + e.getMessage());
-        }
-    }
-
-    @GetMapping("/{id}/dockerCompose")
-    @Operation(summary = "获取DockerCompose")
-    public Result<String> getDockerCompose(@PathVariable Integer id) {
-        try {
-            JarPackage jarPackage = jarPackageService.getJarPackageById(id);
-            if (jarPackage == null) {
-                return Result.failed("JAR包不存在");
-            }
-            return Result.success(jarPackage.getDockerComposeContent());
-        } catch (Exception e) {
-            log.error("获取DockerCompose异常", e);
-            return Result.failed("获取失败");
-        }
-    }
-
-
-    @PostMapping("/rebuild/{id}")
-    @Operation(summary = "重新构建容器（使用Dockerfile重新构建）")
-    public Result<String> rebuildContainer(@PathVariable Integer id, @RequestBody(required = false) DeployRequest request) {
-        try {
-            Long userId = SecurityUtils.getUserId();
-            List<Long> agentIds = null;
-            List<String> containerNames = null;
-            if (request != null) {
-                agentIds = request.getAgentIds();
-                containerNames = request.getContainerNames();
-
-                if (agentIds != null && containerNames != null &&
-                        !agentIds.isEmpty() && !containerNames.isEmpty()) {
-                    if (agentIds.size() != containerNames.size()) {
-                        return Result.failed("Agent数量与容器数量必须一致");
-                    }
-                }
-            }
-            jarPackageService.rebuildContainer(id, agentIds, containerNames, userId);
-            return Result.success("开始重新构建容器，请稍后查看状态");
-        } catch (Exception e) {
-            log.error("重新构建容器异常", e);
-            return Result.failed("重新构建容器异常: " + e.getMessage());
-        }
-    }
-
     @GetMapping("/versions")
     @Operation(summary = "获取文件的所有版本")
     public Result<List<JarPackage>> getAllVersions(@RequestParam String fileName) {
@@ -164,78 +62,6 @@ public class JarPackageController {
         } catch (Exception e) {
             log.error("获取Agent列表异常", e);
             return Result.failed("获取Agent列表失败");
-        }
-    }
-
-    @PostMapping("/redeploy/{id}")
-    @Operation(summary = "重新部署（只替换JAR包）")
-    public Result<String> redeploy(@PathVariable Integer id, @RequestBody(required = false) DeployRequest request) {
-        try {
-            Long userId = SecurityUtils.getUserId();
-            List<Long> agentIds = null;
-            List<String> containerNames = null;
-            if (request != null) {
-                agentIds = request.getAgentIds();
-                containerNames = request.getContainerNames();
-
-                if (agentIds != null && containerNames != null &&
-                        !agentIds.isEmpty() && !containerNames.isEmpty()) {
-                    if (agentIds.size() != containerNames.size()) {
-                        return Result.failed("Agent数量与容器数量必须一致");
-                    }
-                }
-            }
-            jarPackageService.redeploy(id, agentIds, containerNames, userId);
-            return Result.success("开始重新部署，请稍后查看状态");
-        } catch (Exception e) {
-            log.error("重新部署异常", e);
-            return Result.failed("重新部署异常: " + e.getMessage());
-        }
-    }
-
-    @PostMapping("/deploy/{id}")
-    @Operation(summary = "部署JAR包（智能判断）")
-    public Result<String> deploy(@PathVariable Integer id, @RequestBody DeployRequest request) {
-        try {
-            Long userId = SecurityUtils.getUserId();
-            if (request.getAgentIds() == null || request.getAgentIds().isEmpty()) {
-                return Result.failed("请选择Agent");
-            }
-
-            if (request.getContainerNames() == null || request.getContainerNames().isEmpty()) {
-                return Result.failed("请输入容器名称");
-            }
-
-            if (request.getAgentIds().size() != request.getContainerNames().size()) {
-                return Result.failed("Agent数量与容器数量必须一致");
-            }
-            // 检查容器名称是否重复
-            Set<String> containerNameSet = new HashSet<>(request.getContainerNames());
-            if (containerNameSet.size() != request.getContainerNames().size()) {
-                return Result.failed("容器名称不能重复");
-            }
-            // 检查JAR包是否存在
-            JarPackage jarPackage = jarPackageService.getJarPackageById(id);
-            if (jarPackage == null) {
-                return Result.failed("JAR包不存在");
-            }
-
-            // 检查Dockerfile是否已设置
-            if (StringUtils.isBlank(jarPackage.getDockerfileContent())) {
-                return Result.failed("首次部署需要先设置Dockerfile");
-            }
-            // 智能判断：如果容器已存在，自动使用重新部署逻辑
-            jarPackageService.deployWithAutoStrategy(id, request.getAgentIds(), request.getContainerNames(), userId);
-            String message;
-            if (jarPackage.getStatus() == 0) {
-                message = "首次部署，将根据Dockerfile创建容器";
-            } else {
-                message = "容器已存在，将替换JAR包并重启";
-            }
-            return Result.success(message);
-        } catch (Exception e) {
-            log.error("部署异常", e);
-            return Result.failed("部署异常: " + e.getMessage());
         }
     }
 
@@ -269,18 +95,6 @@ public class JarPackageController {
         }
     }
 
-    @GetMapping("/deploy-records/{id}")
-    @Operation(summary = "获取部署记录")
-    public Result<List<ProjectDeployRecord>> getDeployRecords(@PathVariable Long id) {
-        try {
-            List<ProjectDeployRecord> records = jarPackageService.getDeployRecords(id);
-            return Result.success(records);
-        } catch (Exception e) {
-            log.error("获取部署记录异常", e);
-            return Result.failed("获取部署记录失败");
-        }
-    }
-
     @DeleteMapping("/{id}")
     @Operation(summary = "删除JAR包")
     public Result<String> deleteJarPackage(@PathVariable Integer id) {
@@ -294,34 +108,5 @@ public class JarPackageController {
             log.error("删除JAR包异常", e);
             return Result.failed("删除异常: " + e.getMessage());
         }
-    }
-
-    @GetMapping("/status/{id}")
-    @Operation(summary = "获取部署状态")
-    public Result<Map<String, Object>> getDeployStatus(@PathVariable Long id) {
-        try {
-            Map<String, Object> stats = jarPackageService.getJarPackageStats(id);
-            return Result.success(stats);
-        } catch (Exception e) {
-            log.error("获取部署状态异常", e);
-            return Result.failed("获取部署状态失败");
-        }
-    }
-
-    // 请求参数类
-    @Data
-    public static class DeployRequest {
-        private List<Long> agentIds;
-        private List<String> containerNames;
-    }
-
-    @Data
-    public static class DockerfileRequest {
-        private String dockerfileContent;
-    }
-
-    @Data
-    public static class DockerComposeRequest {
-        private String dockerComposeContent;
     }
 }

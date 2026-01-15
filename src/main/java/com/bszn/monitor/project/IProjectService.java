@@ -33,4 +33,11 @@ public interface IProjectService extends IService<Project> {
      */
     CompletableFuture<Boolean> redeploy(Long projectId, List<Long> agentIds, Long userId);
 
+    /**
+     * 获取部署记录
+     *
+     * @param projectId 项目id
+     * @return 部署记录
+     */
+    List<ProjectDeployRecord> getDeployRecords(Long projectId);
 }

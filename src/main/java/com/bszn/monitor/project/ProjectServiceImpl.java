@@ -4,8 +4,6 @@ import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.bszn.monitor.agent.AgentConfig;
 import com.bszn.monitor.agent.AgentConfigService;
-import com.bszn.monitor.jar.ProjectDeployRecord;
-import com.bszn.monitor.jar.ProjectDeployRecordMapper;
 import com.bszn.monitor.msg.IMsgService;
 import com.bszn.system.common.exception.BusinessException;
 import com.bszn.utils.ScriptUtil;
@@ -77,6 +75,16 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         return deploy(projectId, agentIds, userId, 2);
     }
 
+    /**
+     * 获取部署记录
+     *
+     * @param projectId 项目id
+     * @return 部署记录
+     */
+    @Override
+    public List<ProjectDeployRecord> getDeployRecords(Long projectId) {
+        return projectDeployRecordMapper.selectByProjectId(projectId);
+    }
 
     /**
      * 部署
