@@ -1,6 +1,6 @@
 package com.bszn.monitor.project;
 
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -15,27 +15,27 @@ import java.util.List;
 @Data
 public class SyncRequest {
 
-    @ApiModelProperty("源服务器id")
+    @Schema(description = "源服务器id")
     private Long sourceAgentId;
 
-    @ApiModelProperty("跳板机ip")
+    @Schema(description = "跳板机ip")
     private String remoteIp;
 
-    @ApiModelProperty("跳板机id")
+    @Schema(description = "跳板机id")
     private Long agentId;
 
-    @ApiModelProperty("jar包下载地址")
+    @Schema(description = "jar包下载地址")
     private String jarDownloadUrl;
 
     @NotNull(message = "类型不能为空")
-    @ApiModelProperty("类型 1 源服务器 2 jar包")
+    @Schema(description = "类型 1 源服务器 2 jar包")
     private Integer type;
 
     @NotEmpty(message = "目标服务器ids不能为空")
-    @ApiModelProperty("目标服务器ids")
+    @Schema(description = "目标服务器ids")
     private List<Long> targetAgentIds;
 
-    @ApiModelProperty("用户名")
+    @Schema(description = "用户名")
     private String user = "park";
 
 }

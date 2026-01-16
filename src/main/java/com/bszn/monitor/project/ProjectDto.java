@@ -5,10 +5,8 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.bszn.base.sql.IQuery;
 import com.bszn.base.sql.PageForm;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
-
-import java.util.Objects;
 
 /**
  * Created by Liuyun on 2023-09-09 11:51
@@ -16,7 +14,7 @@ import java.util.Objects;
 @Data
 public class ProjectDto extends PageForm<Project> implements IQuery {
 
-    @ApiModelProperty("项目名")
+    @Schema(description = "项目名")
     private String name;
 
     /**

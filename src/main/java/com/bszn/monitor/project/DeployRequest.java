@@ -1,6 +1,6 @@
 package com.bszn.monitor.project;
 
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 
@@ -15,7 +15,7 @@ import java.util.List;
 public class DeployRequest {
 
     @NotEmpty(message = "服务器id不能为空")
-    @ApiModelProperty("服务器id")
+    @Schema(description = "服务器id")
     private List<Long> agentIds;
 
 }

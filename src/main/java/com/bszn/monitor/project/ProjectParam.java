@@ -1,7 +1,7 @@
 package com.bszn.monitor.project;
 
 import cn.hutool.core.bean.BeanUtil;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -12,16 +12,16 @@ import lombok.Data;
 @Data
 public class ProjectParam {
 
-    @ApiModelProperty("项目名称")
+    @Schema(description = "项目名称")
     private String name;
 
-    @ApiModelProperty("描述")
+    @Schema(description = "描述")
     private String remark;
 
-    @ApiModelProperty("docker编排文件")
+    @Schema(description = "docker编排文件")
     private String dockerComposeContent;
 
-    @ApiModelProperty("docker文件")
+    @Schema(description = "docker文件")
     private String dockerfileContent;
 
     public Project toEntity() {
