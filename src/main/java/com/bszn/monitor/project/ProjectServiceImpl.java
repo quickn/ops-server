@@ -3,10 +3,11 @@ package com.bszn.monitor.project;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.bszn.monitor.agent.AgentConfig;
+import com.bszn.monitor.agent.AgentConfigQuery;
 import com.bszn.monitor.agent.AgentConfigService;
+import com.bszn.monitor.agent.AgentConfigVo;
 import com.bszn.monitor.msg.IMsgService;
 import com.bszn.system.common.exception.BusinessException;
-import com.bszn.system.common.result.Result;
 import com.bszn.utils.ScriptUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -101,10 +102,25 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         if (Objects.isNull(project)) {
             throw new BusinessException("项目不存在");
         }
+        // 拿到环境下的服务器
+        List<AgentConfigVo> list = agentConfigService.list(AgentConfigQuery.builder().serviceId(syncRequest.getServiceId()).build());
+        AgentConfigVo jump = null;
+        for (AgentConfigVo agentConfigVo : list) {
+            if (agentConfigVo.getIsJumpServer()) {
+                jump = agentConfigVo;
+            }
+        }
+        if (Objects.isNull(jump)) {
+            throw new BusinessException("该环境没有设置跳板机！");
+        }
+        String remoteIp = jump.getRemoteIp();
+        Long agentId = jump.getId();
+
+        // 删除跳板机 剩下的即是指向服务器
+        list.remove(jump);
         // 获取目标服务器信息
-        List<AgentConfig> targetServers = agentConfigService.listByIds(syncRequest.getTargetAgentIds());
-        if (targetServers.isEmpty()) {
-            throw new BusinessException("未找到选中的服务器信息");
+        if (list.isEmpty()) {
+            throw new BusinessException("未找到指向服务器信息");
         }
         StringBuilder result = new StringBuilder();
         StringBuilder command = new StringBuilder();
@@ -113,7 +129,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
             String rsyncCmd = String.format("rsync -azv %s %s@%s:%s",
                     jarPath + "/" + project.getName(),
                     syncRequest.getUser() != null ? syncRequest.getUser() : "park",
-                    syncRequest.getRemoteIp(),
+                    remoteIp,
                     jarPath);
             // 直接在源服务器上执行rsync命令
             result.append(msgService.sendCMDMsgAndResponse(userId, syncRequest.getSourceAgentId(), rsyncCmd, 300))
@@ -126,8 +142,8 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
             command.append(downloadCmd);
             command.append(" && ");
         }
-        for (int i = 0; i < targetServers.size(); i++) {
-            AgentConfig server = targetServers.get(i);
+        for (int i = 0; i < list.size(); i++) {
+            AgentConfigVo server = list.get(i);
             String rsyncCmd = String.format("rsync -azv %s %s@%s:%s",
                     jarPath + "/" + project.getName(),
                     syncRequest.getUser() != null ? syncRequest.getUser() : "park",
@@ -135,11 +151,11 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
                     jarPath);
             command.append(rsyncCmd);
             // 如果不是最后一条命令，添加 &&
-            if (i < targetServers.size() - 1) {
+            if (i < list.size() - 1) {
                 command.append(" && ");
             }
         }
-        result.append(msgService.sendCMDMsgAndResponse(userId, syncRequest.getAgentId(), command.toString(), 300));
+        result.append(msgService.sendCMDMsgAndResponse(userId, agentId, command.toString(), 300));
         return result.toString();
     }
 

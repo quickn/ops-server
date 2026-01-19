@@ -34,6 +34,9 @@ public class AgentConfigVo extends ServiceBaseEntity {
     @Schema(description = "主机ip")
     private String hostname;
 
+    @ApiModelProperty("远程ip")
+    private String remoteIp;
+
     @Schema(description = "是否跳板机")
     private Boolean isJumpServer;
 
