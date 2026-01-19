@@ -20,8 +20,9 @@ import java.util.List;
 
 
 @Tag(name = "终端")
-@RestController(value = "/agent")
 @Slf4j
+@RestController
+@RequestMapping("/agent")
 public class AgentController {
     @Resource
     AgentConfigService iAgentConfigService;
