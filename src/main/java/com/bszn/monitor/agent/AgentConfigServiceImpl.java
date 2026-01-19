@@ -19,9 +19,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -70,6 +72,23 @@ public class AgentConfigServiceImpl extends ServiceImpl<AgentConfigMapper, Agent
             }
         }
         return query.stream().map(AgentConfigVo::new).collect(Collectors.toList());
+    }
+
+    /**
+     * 重写新增修改方法
+     *
+     * @param entity
+     * @return
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean saveOrUpdate(AgentConfig entity) {
+        // 修改跳板机 需要把环境其他的跳板机修正 一个环境只有1个跳板机
+        if (Objects.nonNull(entity.getIsJumpServer()) && entity.getIsJumpServer() && Objects.nonNull(entity.getServiceId())) {
+            lambdaUpdate().set(AgentConfig::getIsJumpServer, false).eq(AgentConfig::getServiceId, entity.getServiceId()).update();
+
+        }
+        return super.saveOrUpdate(entity);
     }
 
     @Override

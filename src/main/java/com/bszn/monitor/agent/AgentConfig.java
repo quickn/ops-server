@@ -34,6 +34,9 @@ public class AgentConfig extends ServiceBaseEntity {
     @ApiModelProperty("终端版本")
     private String clientVersion;
 
+    @ApiModelProperty("远程ip")
+    private String remoteIp;
+
     @ApiModelProperty("是否跳板机")
     private Boolean isJumpServer;
 
