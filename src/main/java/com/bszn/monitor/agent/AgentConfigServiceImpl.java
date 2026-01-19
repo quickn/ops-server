@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -62,8 +63,10 @@ public class AgentConfigServiceImpl extends ServiceImpl<AgentConfigMapper, Agent
             // 设置状态
             if (CollUtil.isNotEmpty(dockerContainers)) {
                 Set<String> hosts = dockerContainers.stream().map(DockerContainer::getHostname).collect(Collectors.toSet());
-                return query.stream().map(data ->
-                        new AgentConfigVo(data, hosts.contains(data.getHostname()) ? "1" : null)).collect(Collectors.toList());
+                return query.stream()
+                        .map(data -> new AgentConfigVo(data, hosts.contains(data.getHostname()) ? "1" : null))
+                        .sorted(Comparator.comparing(vo -> vo.getStatus() == null ? 1 : 0, Comparator.naturalOrder()))
+                        .collect(Collectors.toList());
             }
         }
         return query.stream().map(AgentConfigVo::new).collect(Collectors.toList());
