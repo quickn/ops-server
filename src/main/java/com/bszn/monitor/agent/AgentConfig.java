@@ -3,7 +3,7 @@ package com.bszn.monitor.agent;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.bszn.base.ServiceBaseEntity;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -15,35 +15,47 @@ public class AgentConfig extends ServiceBaseEntity {
 
     @TableId(type = IdType.AUTO)
     private Long id;
+
+    @Schema(description = "是否docker")
     private Boolean isDocker;
+
+    @Schema(description = "主机ip")
     private String hostname;
+
+    @Schema(description = "mac地址")
     private String mac;
+
+    @Schema(description = "cpu阈值")
     private Double cpuWarnVal;
+
+    @Schema(description = "内存阈值")
     private Double memWarnVal;
+
+    @Schema(description = "硬盘阈值")
     private Double diskWarnVal;
 
-    @ApiModelProperty("docker服务Cpu阈值")
+    @Schema(description = "docker服务Cpu阈值")
     private Double cpuWarnValDocker;
 
-    @ApiModelProperty("是否发送邮件提醒")
+    @Schema(description = "是否发送邮件提醒")
     private Boolean isMail;
 
-    @ApiModelProperty("是否监控")
+    @Schema(description = "是否监控")
     private Boolean isMonitor;
 
-    @ApiModelProperty("终端版本")
+    @Schema(description = "终端版本")
     private String clientVersion;
 
-    @ApiModelProperty("远程ip")
+    @Schema(description = "远程ip")
     private String remoteIp;
 
-    @ApiModelProperty("是否跳板机")
+    @Schema(description = "是否跳板机")
     private Boolean isJumpServer;
 
-    @ApiModelProperty("是否是源服务")
+    @Schema(description = "是否是源服务")
     private Boolean isOriginServer;
 
-    @ApiModelProperty("是否在线")
+    @Schema(description = "是否在线")
     private Boolean online;
 
 }
