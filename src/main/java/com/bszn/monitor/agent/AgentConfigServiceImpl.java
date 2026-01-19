@@ -2,6 +2,8 @@ package com.bszn.monitor.agent;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.bean.copier.CopyOptions;
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONObject;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -9,6 +11,8 @@ import com.bszn.constant.MonitorMsgType;
 import com.bszn.monitor.cmd.ClientMsgForm;
 import com.bszn.monitor.cmd.LogCmdForm;
 import com.bszn.monitor.constant.MonitorCmdC;
+import com.bszn.monitor.docker.DockerContainer;
+import com.bszn.monitor.docker.DockerContainerMapper;
 import com.bszn.monitor.msg.IMsgService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +21,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Created by Liuyun on 2023-07-26 11:16
@@ -34,6 +40,34 @@ public class AgentConfigServiceImpl extends ServiceImpl<AgentConfigMapper, Agent
 
     @Resource
     IMsgService iMsgService;
+
+    @Resource
+    DockerContainerMapper dockerContainerMapper;
+
+    /**
+     * 获取服务器列表
+     *
+     * @param dto 查询参数
+     * @return 服务器列表
+     */
+    @Override
+    public List<AgentConfigVo> list(AgentConfigQuery dto) {
+        List<AgentConfig> query = getBaseMapper().query(dto);
+
+        // 设置部署状态
+        if (StrUtil.isNotEmpty(dto.getDockerName())) {
+            // 拿到容器
+            List<DockerContainer> dockerContainers =
+                    dockerContainerMapper.selectList(Wrappers.<DockerContainer>lambdaQuery().eq(DockerContainer::getNames, dto.getDockerName()));
+            // 设置状态
+            if (CollUtil.isNotEmpty(dockerContainers)) {
+                Set<String> hosts = dockerContainers.stream().map(DockerContainer::getHostname).collect(Collectors.toSet());
+                return query.stream().map(data ->
+                        new AgentConfigVo(data, hosts.contains(data.getHostname()) ? "1" : null)).collect(Collectors.toList());
+            }
+        }
+        return query.stream().map(AgentConfigVo::new).collect(Collectors.toList());
+    }
 
     @Override
     public AgentConfig getByMac(String mac, String hostname) {

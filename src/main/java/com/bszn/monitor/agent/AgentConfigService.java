@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.bszn.monitor.cmd.ClientMsgForm;
 import com.bszn.monitor.cmd.LogCmdForm;
 
+import java.util.List;
+
 /**
  * Created by Liuyun on 2023-07-26 11:16
  **/
@@ -22,4 +24,12 @@ public interface AgentConfigService extends IService<AgentConfig> {
     void handleAgentByServiceId(Integer serviceId, String cmd);
 
     void handleAgent(Long agentId, String cmd);
+
+    /**
+     * 获取服务器列表
+     *
+     * @param dto 查询参数
+     * @return 服务器列表
+     */
+    List<AgentConfigVo> list(AgentConfigQuery dto);
 }

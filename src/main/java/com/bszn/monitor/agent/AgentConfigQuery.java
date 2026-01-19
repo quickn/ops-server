@@ -5,6 +5,7 @@ import com.bszn.base.sql.PageForm;
 import com.bszn.base.sql.annotation.OrderBy;
 import com.bszn.base.sql.annotation.SelectSql;
 import com.bszn.base.sql.annotation.Where;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -16,4 +17,7 @@ import lombok.Data;
 public class AgentConfigQuery extends PageForm implements IQuery {
     @Where
     private Integer serviceId;
+
+    @Schema(description = "容器名称")
+    private String dockerName;
 }

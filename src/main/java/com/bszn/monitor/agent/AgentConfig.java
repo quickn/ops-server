@@ -37,6 +37,9 @@ public class AgentConfig extends ServiceBaseEntity {
     @ApiModelProperty("是否跳板机")
     private Boolean isJumpServer;
 
+    @ApiModelProperty("是否是源服务")
+    private Boolean isOriginServer;
+
     @ApiModelProperty("是否在线")
     private Boolean online;
 

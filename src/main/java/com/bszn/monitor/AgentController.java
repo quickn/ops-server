@@ -3,10 +3,7 @@ package com.bszn.monitor;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.bszn.monitor.agent.AgentConfig;
-import com.bszn.monitor.agent.AgentConfigMapper;
-import com.bszn.monitor.agent.AgentConfigQuery;
-import com.bszn.monitor.agent.AgentConfigService;
+import com.bszn.monitor.agent.*;
 import com.bszn.monitor.cmd.ClientMsgForm;
 import com.bszn.monitor.cmd.LogCmdForm;
 import com.bszn.monitor.service.ServiceInfo;
@@ -19,10 +16,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 
 @Tag(name = "终端")
-@RestController
-@RequestMapping(value = "/agent")
+@RestController(value = "/agent")
 @Slf4j
 public class AgentController {
     @Resource
@@ -32,14 +30,18 @@ public class AgentController {
     @Resource
     ServiceInfoService serviceInfoService;
 
-    @ResponseBody
     @GetMapping("/listPage")
     public Result listPage(@ParameterObject AgentConfigQuery agentConfigQuery) {
         Page<AgentConfig> list = agentConfigMapper.queryPage(agentConfigQuery, agentConfigMapper.getPage());
         return Result.success(list);
     }
 
-    @ResponseBody
+    @GetMapping("/list")
+    @Operation(summary = "获取服务器列表")
+    public Result<List<AgentConfigVo>> list(@ParameterObject AgentConfigQuery agentConfigQuery) {
+        return Result.success(iAgentConfigService.list(agentConfigQuery));
+    }
+
     @PostMapping("/save")
     public Result save(@RequestBody AgentConfig agentConfig) {
         if (agentConfig.getServiceId() != null) {
@@ -51,7 +53,6 @@ public class AgentController {
     }
 
 
-    @ResponseBody
     @PostMapping("/getConf")
     @Operation(summary = "获取配置文件")
     public JSONObject getConf(@RequestBody JSONObject jsonObject) {
@@ -65,7 +66,6 @@ public class AgentController {
     }
 
 
-    @ResponseBody
     @PostMapping("/receiveClientMsg")
     @Operation(summary = "接收终端消息")
     public Result receiveClientMsg(@RequestBody ClientMsgForm clientMsgForm) {
@@ -73,7 +73,6 @@ public class AgentController {
         return Result.success();
     }
 
-    @ResponseBody
     @GetMapping("/getLogsByServiceId")
     @Operation(summary = "实时日志查询")
     public Result getLogsByServiceId(@ParameterObject LogCmdForm logCmdForm) {
@@ -81,7 +80,6 @@ public class AgentController {
         return Result.success(log);
     }
 
-    @ResponseBody
     @GetMapping("/handleAgentByServiceId/{serviceId}")
     public Result handleAgentByServiceId(@PathVariable Integer serviceId, @RequestParam String cmd) {
         iAgentConfigService.handleAgentByServiceId(serviceId, cmd);
@@ -89,7 +87,6 @@ public class AgentController {
     }
 
 
-    @ResponseBody
     @GetMapping("/handleAgent/{agentId}")
     public Result handleAgent(@PathVariable Long agentId, @RequestParam String cmd) {
         iAgentConfigService.handleAgent(agentId, cmd);
@@ -98,7 +95,6 @@ public class AgentController {
 
 
     @DeleteMapping("/delete/{ids}")
-    @ResponseBody
     public Result delete(@PathVariable Integer ids) {
         iAgentConfigService.removeById(ids);
         return Result.success();

@@ -34,6 +34,7 @@ public class ProjectController {
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "项目详情")
     public Result<Project> get(@ApiParam("项目id") @PathVariable Long id) {
         return Result.success(projectService.getById(id));
     }
@@ -66,7 +67,7 @@ public class ProjectController {
     public Result<String> deploy(@ApiParam(value = "项目id", required = true) @PathVariable Long id,
                                  @RequestBody @Validated DeployRequest request) {
         projectService.deploy(id, request.getAgentIds(), SecurityUtils.getUserId());
-        return Result.success("id，查看日志关注部署状态！");
+        return Result.success("开始部署，查看日志关注部署状态！");
     }
 
     @PostMapping("/redeploy/{id}")
@@ -74,7 +75,7 @@ public class ProjectController {
     public Result<String> redeploy(@ApiParam(value = "项目id", required = true) @PathVariable Long id,
                                    @RequestBody DeployRequest request) {
         projectService.redeploy(id, request.getAgentIds(), SecurityUtils.getUserId());
-        return Result.success("id，查看日志关注部署状态！");
+        return Result.success("开始部署，查看日志关注部署状态！");
     }
 
 
