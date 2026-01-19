@@ -12,7 +12,6 @@ import lombok.Data;
 @Data
 public class SyncRequest {
 
-    @NotNull(message = "源服务器id不能为空")
     @Schema(description = "源服务器id")
     private Long sourceAgentId;
 
