@@ -93,7 +93,7 @@ public class ProjectController {
 
     @PostMapping("/sync/{id}")
     @Operation(summary = "同步")
-    public Result<String> sync(@ApiParam(value = "项目id", required = true) @PathVariable Long id,
+    public Result<Boolean> sync(@ApiParam(value = "项目id", required = true) @PathVariable Long id,
                                @RequestBody @Validated SyncRequest syncRequest) {
         return Result.success(projectService.sync(id, SecurityUtils.getUserId(), syncRequest));
     }

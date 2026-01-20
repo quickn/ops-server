@@ -49,5 +49,5 @@ public interface IProjectService extends IService<Project> {
      * @param syncRequest 请求参数
      * @return 结果
      */
-    String sync(Long id, Long userId, SyncRequest syncRequest);
+    Boolean sync(Long id, Long userId, SyncRequest syncRequest);
 }

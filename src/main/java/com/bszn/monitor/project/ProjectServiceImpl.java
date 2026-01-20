@@ -97,7 +97,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
      * @return 结果
      */
     @Override
-    public String sync(Long id, Long userId, SyncRequest syncRequest) {
+    public Boolean sync(Long id, Long userId, SyncRequest syncRequest) {
         Project project = getById(id);
         if (Objects.isNull(project)) {
             throw new BusinessException("项目不存在");
@@ -156,7 +156,8 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
             }
         }
         result.append(msgService.sendCMDMsgAndResponse(userId, agentId, command.toString(), 300));
-        return result.toString();
+        log.info("同步结果：{}", result);
+        return true;
     }
 
     /**
