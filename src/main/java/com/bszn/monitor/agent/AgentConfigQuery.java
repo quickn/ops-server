@@ -20,6 +20,7 @@ public class AgentConfigQuery extends PageForm implements IQuery {
     @Where
     private Integer serviceId;
 
+    @Where(ignore = true)
     @Schema(description = "容器名称")
     private String dockerName;
 }
