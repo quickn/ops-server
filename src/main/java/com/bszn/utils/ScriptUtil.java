@@ -198,9 +198,9 @@ public class ScriptUtil {
             script.append("\n");
             script.append("# 构建命令\n");
             script.append("if [ \"$ENV_FILE_EXISTS\" = true ]; then\n");
-            script.append("    DOCKER_COMPOSE_CMD=\"docker-compose --env-file .env -f docker-compose.yml -p \\\"$CONTAINER_NAME\\\"\"\n");
+            script.append("    DOCKER_COMPOSE_CMD=\"docker-compose --env-file .env -f docker-compose.yml -p $CONTAINER_NAME\"\n");
             script.append("else\n");
-            script.append("    DOCKER_COMPOSE_CMD=\"docker-compose -f docker-compose.yml -p \\\"$CONTAINER_NAME\\\"\"\n");
+            script.append("    DOCKER_COMPOSE_CMD=\"docker-compose -f docker-compose.yml -p $CONTAINER_NAME\"\n");
             script.append("fi\n");
             script.append("\n");
             script.append("log \"7. 使用 Docker Compose 启动服务\"\n");
