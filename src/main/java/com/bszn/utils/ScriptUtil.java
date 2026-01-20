@@ -161,25 +161,18 @@ public class ScriptUtil {
         script.append(dockerfileContent).append("\n");
         script.append("EOF\n\n");
 
-        script.append("if docker build -t \"$IMAGE_NAME\" .; then\n");
-        script.append("    log_success \"镜像构建成功\"\n");
-        script.append("else\n");
-        script.append("    log_error \"镜像构建失败\"\n");
-        script.append("    exit 1\n");
-        script.append("fi\n\n");
-
-        // 步骤5: 运行容器（Docker Compose 或 Docker）
         if (dockerComposeContent != null && !dockerComposeContent.trim().isEmpty()) {
-            // 使用 Docker Compose
-            script.append("log \"5. 配置 Docker Compose\"\n");
+            // Docker Compose 构建方式
+            script.append("# 生成 Docker Compose 配置文件\n");
             script.append("cat > \"$DOCKER_COMPOSE_FILE\" << 'EOF'\n");
             script.append(dockerComposeContent).append("\n");
             script.append("EOF\n\n");
 
             script.append("log_success \"Docker Compose 配置文件已生成\"\n");
+            script.append("\n");
 
-            // 处理 .env 文件
-            script.append("log \"6. 处理环境变量文件\"\n");
+            // 使用 docker-compose 构建
+            script.append("# 处理 .env 文件\n");
             script.append("ENV_SOURCE=\"/home/park/docker/.env\"\n");
             script.append("ENV_TARGET=\"$BUILD_DIR/.env\"\n");
             script.append("ENV_FILE_EXISTS=false\n");
@@ -196,6 +189,7 @@ public class ScriptUtil {
             script.append("    log \"源环境文件不存在，将不使用环境文件\"\n");
             script.append("fi\n");
             script.append("\n");
+
             script.append("# 构建命令\n");
             script.append("if [ \"$ENV_FILE_EXISTS\" = true ]; then\n");
             script.append("    DOCKER_COMPOSE_CMD=\"docker-compose --env-file .env -f docker-compose.yml -p $CONTAINER_NAME\"\n");
@@ -203,18 +197,40 @@ public class ScriptUtil {
             script.append("    DOCKER_COMPOSE_CMD=\"docker-compose -f docker-compose.yml -p $CONTAINER_NAME\"\n");
             script.append("fi\n");
             script.append("\n");
-            script.append("log \"7. 使用 Docker Compose 启动服务\"\n");
+            script.append("# 使用 docker-compose 构建镜像\n");
+            script.append("if $DOCKER_COMPOSE_CMD build; then\n");
+            script.append("    log_success \"镜像构建成功 (通过 Docker Compose)\"\n");
+            script.append("else\n");
+            script.append("    log_error \"镜像构建失败\"\n");
+            script.append("    exit 1\n");
+            script.append("fi\n");
+        } else {
+            // 普通的 Docker 构建
+            script.append("if docker build -t \"$IMAGE_NAME\" .; then\n");
+            script.append("    log_success \"镜像构建成功\"\n");
+            script.append("else\n");
+            script.append("    log_error \"镜像构建失败\"\n");
+            script.append("    exit 1\n");
+            script.append("fi\n");
+        }
+        script.append("\n");
+
+        // 步骤5: 运行容器（Docker Compose 或 Docker）
+        if (dockerComposeContent != null && !dockerComposeContent.trim().isEmpty()) {
+            // 使用 Docker Compose 启动
+            script.append("log \"5. 使用 Docker Compose 启动服务\"\n");
             script.append("cd \"$BUILD_DIR\"\n");
             script.append("echo \"当前目录: $(pwd)\"\n");
             script.append("echo \"命令: $DOCKER_COMPOSE_CMD up -d\"\n");
             script.append("\n");
+
             script.append("if $DOCKER_COMPOSE_CMD up -d; then\n");
             script.append("    log_success \"Docker Compose 启动成功\"\n");
             script.append("    \n");
             script.append("    # 等待一会让容器完全启动\n");
             script.append("    sleep 2\n");
             script.append("    \n");
-            script.append("    # 直接使用Docker命令获取容器ID\n");
+            // 获取容器ID
             script.append("    CONTAINER_ID=$(docker ps --filter \"name=${CONTAINER_NAME}\" --format \"{{.ID}}\" | head -1)\n");
             script.append("    \n");
             script.append("    if [ -n \"$CONTAINER_ID\" ]; then\n");
@@ -235,7 +251,7 @@ public class ScriptUtil {
             script.append("    exit 1\n");
             script.append("fi\n\n");
 
-            script.append("log \"8. 等待Spring Boot启动完成（120秒）\"\n");
+            script.append("log \"6. 等待Spring Boot启动完成（120秒）\"\n");
         } else {
             // 使用 Docker 直接运行
             script.append("log \"5. 运行容器\"\n");
@@ -266,25 +282,17 @@ public class ScriptUtil {
         script.append("    sleep 1\n");
         script.append("    \n");
         script.append("    # 检查容器是否还在运行\n");
-        script.append("    if [ \"$USE_DOCKER_COMPOSE\" = \"true\" ]; then\n");
-        script.append("        # Docker Compose 检查 - 使用Docker命令\n");
-        script.append("        if ! docker ps --filter \"name=^/${CONTAINER_NAME}$\" | grep -q \"${CONTAINER_NAME}\"; then\n");
-        script.append("            log_error \"容器已停止运行\"\n");
+        script.append("    if ! docker ps --filter \"name=$CONTAINER_NAME\" | grep -q \"$CONTAINER_NAME\"; then\n");
+        script.append("        log_error \"容器已停止运行\"\n");
+        script.append("        if [ \"$USE_DOCKER_COMPOSE\" = \"true\" ]; then\n");
         script.append("            # 尝试获取Docker Compose日志\n");
         script.append("            $DOCKER_COMPOSE_CMD logs 2>/dev/null || true\n");
-        script.append("            break\n");
         script.append("        fi\n");
-        script.append("        # 获取容器日志 - 直接使用docker logs\n");
-        script.append("        CONTAINER_LOGS=$(docker logs \"$CONTAINER_NAME\" 2>&1 || true)\n");
-        script.append("    else\n");
-        script.append("        # Docker 检查\n");
-        script.append("        if ! docker ps --filter \"name=$CONTAINER_NAME\" | grep -q \"$CONTAINER_NAME\"; then\n");
-        script.append("            log_error \"容器已停止运行\"\n");
-        script.append("            break\n");
-        script.append("        fi\n");
-        script.append("        # 获取容器日志\n");
-        script.append("        CONTAINER_LOGS=$(docker logs \"$CONTAINER_NAME\" 2>&1 || true)\n");
+        script.append("        break\n");
         script.append("    fi\n");
+        script.append("    \n");
+        script.append("    # 获取容器日志\n");
+        script.append("    CONTAINER_LOGS=$(docker logs \"$CONTAINER_NAME\" 2>&1 || true)\n");
         script.append("    \n");
         script.append("    # 检查Spring Boot启动关键词\n");
         script.append("    if echo \"$CONTAINER_LOGS\" | grep -q \"Tomcat started on port.*").append(port).append("\\|Started .*Application in\"; then\n");
@@ -301,12 +309,7 @@ public class ScriptUtil {
         script.append("done\n\n");
 
         // 步骤: 输出结果
-        if (dockerComposeContent != null && !dockerComposeContent.trim().isEmpty()) {
-            script.append("log \"9. 部署结果\"\n");
-        } else {
-            script.append("log \"7. 部署结果\"\n");
-        }
-
+        script.append("log \"7. 部署结果\"\n");
         script.append("if [ \"$SUCCESS\" = true ]; then\n");
         script.append("    echo \"\"\n");
         script.append("    echo \"========================================\"\n");
@@ -325,7 +328,10 @@ public class ScriptUtil {
         script.append("        fi\n");
         script.append("        echo \"\"\n");
         script.append("        echo \"📊 容器状态:\"\n");
-        script.append("        docker ps --filter \"name=^$CONTAINER_NAME$\" --format \"table {{.Names}}\\t{{.Status}}\\t{{.Ports}}\"\n");
+        script.append("        docker ps --filter \"name=$CONTAINER_NAME\" --format \"table {{.Names}}\\t{{.Status}}\\t{{.Ports}}\"\n");
+        script.append("        echo \"\"\n");
+        script.append("        echo \"📊 服务列表:\"\n");
+        script.append("        $DOCKER_COMPOSE_CMD ps\n");
         script.append("    else\n");
         script.append("        # Docker 信息\n");
         script.append("        CONTAINER_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' \"$CONTAINER_NAME\" 2>/dev/null || echo \"unknown\")\n");
@@ -336,7 +342,7 @@ public class ScriptUtil {
         script.append("        echo \"🔹 映射端口: $PORT -> ").append(port).append("\"\n");
         script.append("        echo \"\"\n");
         script.append("        echo \"📊 容器状态:\"\n");
-        script.append("        docker ps --filter \"name=^$CONTAINER_NAME$\" --format \"table {{.Names}}\\t{{.Status}}\\t{{.Ports}}\"\n");
+        script.append("        docker ps --filter \"name=$CONTAINER_NAME\" --format \"table {{.Names}}\\t{{.Status}}\\t{{.Ports}}\"\n");
         script.append("    fi\n");
         script.append("    \n");
         script.append("    echo \"🔹 镜像版本: $IMAGE_NAME\"\n");
@@ -344,13 +350,8 @@ public class ScriptUtil {
         script.append("    echo \"🔹 启动时间: $(date '+%Y-%m-%d %H:%M:%S')\"\n");
         script.append("    echo \"\"\n");
         script.append("    \n");
-        script.append("    if [ \"$USE_DOCKER_COMPOSE\" = \"true\" ]; then\n");
-        script.append("        echo \"📝 应用启动日志:\"\n");
-        script.append("        docker logs \"$CONTAINER_NAME\" 2>&1 | grep -E \"Starting|Tomcat started|Started .*Application\" | tail -5\n");
-        script.append("    else\n");
-        script.append("        echo \"📝 应用启动日志:\"\n");
-        script.append("        docker logs \"$CONTAINER_NAME\" 2>&1 | grep -E \"Starting|Tomcat started|Started .*Application\" | tail -5\n");
-        script.append("    fi\n");
+        script.append("    echo \"📝 应用启动日志:\"\n");
+        script.append("    docker logs \"$CONTAINER_NAME\" 2>&1 | grep -E \"Starting|Tomcat started|Started .*Application\" | tail -5\n");
         script.append("    echo \"\"\n");
         script.append("    echo \"✅ DEPLOY_SUCCESS\"\n");
         script.append("else\n");
@@ -358,28 +359,30 @@ public class ScriptUtil {
         script.append("    echo \"\"\n");
         script.append("    echo \"🔍 错误诊断:\"\n");
         script.append("    \n");
+        script.append("    echo \"容器状态:\"\n");
+        script.append("    docker ps --filter \"name=$CONTAINER_NAME\" --format \"table {{.Names}}\\t{{.Status}}\\t{{.Ports}}\"\n");
+        script.append("    echo \"\"\n");
+        script.append("    echo \"容器日志（最后20行）:\"\n");
+        script.append("    docker logs \"$CONTAINER_NAME\" 2>&1 | tail -20\n");
+        script.append("    \n");
         script.append("    if [ \"$USE_DOCKER_COMPOSE\" = \"true\" ]; then\n");
-        script.append("        echo \"容器状态:\"\n");
-        script.append("        docker ps --filter \"name=$CONTAINER_NAME\" --format \"table {{.Names}}\\t{{.Status}}\\t{{.Ports}}\"\n");
         script.append("        echo \"\"\n");
-        script.append("        echo \"容器日志（最后20行）:\"\n");
-        script.append("        docker logs \"$CONTAINER_NAME\" 2>&1 | tail -20\n");
-        script.append("        # 清理失败的容器\n");
-        script.append("        docker rm -f \"$CONTAINER_NAME\" 2>/dev/null || true\n");
-        script.append("    else\n");
-        script.append("        echo \"容器状态:\"\n");
-        script.append("        docker inspect \"$CONTAINER_NAME\" 2>/dev/null | grep -E 'Status|ExitCode|Error|RestartCount' | head -6\n");
-        script.append("        echo \"\"\n");
-        script.append("        echo \"容器日志（最后20行）:\"\n");
-        script.append("        docker logs \"$CONTAINER_NAME\" 2>&1 | tail -20\n");
-        script.append("        # 清理失败的容器\n");
-        script.append("        docker rm -f \"$CONTAINER_NAME\" 2>/dev/null || true\n");
+        script.append("        echo \"Docker Compose 日志:\"\n");
+        script.append("        $DOCKER_COMPOSE_CMD logs 2>/dev/null || true\n");
         script.append("    fi\n");
         script.append("    \n");
-        script.append("    # 检查端口是否被其他进程占用\n");
-        script.append("    echo \"\"\n");
-        script.append("    echo \"端口占用情况:\"\n");
-        script.append("    ss -tlnp | grep \":$PORT\" || echo \"端口 $PORT 未被其他进程占用\"\n");
+        script.append("    # 检查端口是否被其他进程占用（只在 Docker 模式下）\n");
+        script.append("    if [ \"$USE_DOCKER_COMPOSE\" = \"false\" ]; then\n");
+        script.append("        echo \"\"\n");
+        script.append("        echo \"端口占用情况:\"\n");
+        script.append("        ss -tlnp | grep \":$PORT\" || echo \"端口 $PORT 未被其他进程占用\"\n");
+        script.append("    fi\n");
+        script.append("    \n");
+        script.append("    # 清理失败的容器\n");
+        script.append("    if [ \"$USE_DOCKER_COMPOSE\" = \"true\" ]; then\n");
+        script.append("        $DOCKER_COMPOSE_CMD down 2>/dev/null || true\n");
+        script.append("    fi\n");
+        script.append("    docker rm -f \"$CONTAINER_NAME\" 2>/dev/null || true\n");
         script.append("    \n");
         script.append("    exit 1\n");
         script.append("fi\n");
