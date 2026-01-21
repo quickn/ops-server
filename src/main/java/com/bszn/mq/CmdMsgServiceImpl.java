@@ -1,6 +1,7 @@
 package com.bszn.mq;
 
 import com.bszn.base.util.MyIdWorker;
+import com.bszn.monitor.cmdlog.ICmdLogInfoService;
 import com.bszn.monitor.encryption.CryptoService;
 import com.bszn.monitor.encryption.EncryptRequest;
 import com.bszn.monitor.msg.CmdCacheMsgService;
@@ -23,6 +24,9 @@ public class CmdMsgServiceImpl implements IMsgService {
 
     @Autowired
     private CryptoService cryptoService;
+
+    @Autowired
+    private ICmdLogInfoService cmdLogInfoService;
 
 
     @Override
@@ -56,6 +60,9 @@ public class CmdMsgServiceImpl implements IMsgService {
     @Override
     public MsgResult sendMsgAndResponse(Long userId, Long agentId, String msg, String msgType, Integer timeout) {
         String messageId = sendMsg(userId, agentId, msg, msgType, timeout);
-        return cmdCacheMsgService.getMsgResult(messageId, timeout);
+        MsgResult msgResult = cmdCacheMsgService.getMsgResult(messageId, timeout);
+        // 保存日志
+        cmdLogInfoService.save(userId, agentId, msg, msgResult.getData());
+        return msgResult;
     }
 }

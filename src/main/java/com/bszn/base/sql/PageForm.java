@@ -1,5 +1,7 @@
 package com.bszn.base.sql;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.bszn.base.sql.annotation.Where;
 import lombok.Data;
@@ -18,5 +20,12 @@ public class PageForm<T> {
 
     public Page<T> getPage() {
         return new Page<>(this.getPageNum(), this.getPageSize());
+    }
+
+    /**
+     * 链式wrapper构建
+     */
+    public LambdaQueryWrapper<T> buildLambda() {
+        return Wrappers.lambdaQuery();
     }
 }
