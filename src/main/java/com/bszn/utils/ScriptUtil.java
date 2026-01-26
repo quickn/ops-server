@@ -51,12 +51,12 @@ public class ScriptUtil {
      * @param imageName            镜像名
      * @param containerName        容器名
      * @param dockerfileContent    docker文件
-     * @param jarPath              本地jar包路径
      * @param dockerComposeContent docker编排文件
+     * @param jarPath              本地jar包路径
      * @return 脚本
      */
-    public static String deployScript(String downloadUrl, String fileName, String version, String imageName,
-                                      String containerName, String dockerfileContent, String dockerComposeContent, String jarPath) {
+    public static String deployScript(String downloadUrl, String fileName, String version, String imageName, String containerName,
+                                      String dockerfileContent, String dockerComposeContent, String jarPath) {
 
         Map<String, String> stringStringMap = parseDockerfileInfo(dockerfileContent);
         String port = stringStringMap.get(InstructionConstant.EXPOSE);
@@ -172,21 +172,73 @@ public class ScriptUtil {
             script.append("\n");
 
             // 使用 docker-compose 构建
-            script.append("# 处理 .env 文件\n");
+            script.append("# 处理 .env 文件（支持动态变量）\n");
             script.append("ENV_SOURCE=\"/home/park/docker/.env\"\n");
             script.append("ENV_TARGET=\"$BUILD_DIR/.env\"\n");
             script.append("ENV_FILE_EXISTS=false\n");
             script.append("\n");
-            script.append("# 拷贝 .env 文件（如果存在）\n");
+
             script.append("if [ -f \"$ENV_SOURCE\" ]; then\n");
-            script.append("    cp \"$ENV_SOURCE\" \"$ENV_TARGET\"\n");
+            script.append("    log \"处理动态 .env 文件\"\n");
+            script.append("    \n");
+            script.append("    # 使用 bash 的 process substitution 处理命令替换\n");
+            script.append("    # 这个方法最安全，支持所有 bash 语法\n");
+            script.append("    bash -c '\n");
+            script.append("        while IFS=\"=\" read -r key value || [ -n \"$key\" ]; do\n");
+            script.append("            # 跳过空行和注释\n");
+            script.append("            [[ -z \"$key\" ]] && continue\n");
+            script.append("            [[ \"$key\" =~ ^[[:space:]]*# ]] && continue\n");
+            script.append("            \n");
+            script.append("            # 去除首尾空格\n");
+            script.append("            key=$(echo \"$key\" | xargs)\n");
+            script.append("            value=$(echo \"$value\" | xargs)\n");
+            script.append("            \n");
+            script.append("            # 如果值包含 $() 或 ``，执行命令替换\n");
+            script.append("            if [[ \"$value\" =~ \\$\\(.+\\) ]] || [[ \"$value\" =~ \\`.+\\` ]]; then\n");
+            script.append("                value=$(eval \"echo \\\"$value\\\"\")\n");
+            script.append("            fi\n");
+            script.append("            \n");
+            script.append("            echo \"${key}=${value}\"\n");
+            script.append("        done < \"'\"$ENV_SOURCE\"'\"\n");
+            script.append("    ' > \"$ENV_TARGET\"\n");
+            script.append("    \n");
             script.append("    ENV_FILE_EXISTS=true\n");
-            script.append("    log_success \"已拷贝环境文件到构建目录\"\n");
-            script.append("    echo \"环境文件内容:\"\n");
+            script.append("    log_success \"环境文件处理完成\"\n");
+            script.append("    echo \"生成的环境变量:\"\n");
             script.append("    cat \"$ENV_TARGET\"\n");
             script.append("    echo \"\"\n");
             script.append("else\n");
-            script.append("    log \"源环境文件不存在，将不使用环境文件\"\n");
+            script.append("    # 创建动态 .env 文件\n");
+            script.append("    log \"源环境文件不存在，创建动态环境文件\"\n");
+            script.append("    cat > \"$ENV_TARGET\" << 'ENV_EOF'\n");
+            script.append("# 自动生成的 .env 文件\n");
+            script.append("UID=$(id -u)\n");
+            script.append("GID=$(id -g)\n");
+            script.append("DEPLOY_TIME=$(date '+%Y-%m-%d %H:%M:%S')\n");
+            script.append("ENV_EOF\n");
+            script.append("    \n");
+            script.append("    # 处理新创建文件中的命令替换\n");
+            script.append("    bash -c '\n");
+            script.append("        while IFS=\"=\" read -r key value || [ -n \"$key\" ]; do\n");
+            script.append("            # 跳过空行和注释\n");
+            script.append("            [[ -z \"$key\" ]] && continue\n");
+            script.append("            [[ \"$key\" =~ ^[[:space:]]*# ]] && continue\n");
+            script.append("            \n");
+            script.append("            # 去除首尾空格\n");
+            script.append("            key=$(echo \"$key\" | xargs)\n");
+            script.append("            value=$(echo \"$value\" | xargs)\n");
+            script.append("            \n");
+            script.append("            # 如果值包含 $() 或 ``，执行命令替换\n");
+            script.append("            if [[ \"$value\" =~ \\$\\(.+\\) ]] || [[ \"$value\" =~ \\`.+\\` ]]; then\n");
+            script.append("                value=$(eval \"echo \\\"$value\\\"\")\n");
+            script.append("            fi\n");
+            script.append("            \n");
+            script.append("            echo \"${key}=${value}\"\n");
+            script.append("        done < \"'\"$ENV_TARGET\"'\"\n");
+            script.append("    ' > \"${ENV_TARGET}.tmp\" && mv \"${ENV_TARGET}.tmp\" \"$ENV_TARGET\"\n");
+            script.append("    \n");
+            script.append("    ENV_FILE_EXISTS=true\n");
+            script.append("    log_success \"已创建动态环境文件\"\n");
             script.append("fi\n");
             script.append("\n");
 
@@ -197,6 +249,7 @@ public class ScriptUtil {
             script.append("    DOCKER_COMPOSE_CMD=\"docker-compose -f docker-compose.yml -p $CONTAINER_NAME\"\n");
             script.append("fi\n");
             script.append("\n");
+
             script.append("# 使用 docker-compose 构建镜像\n");
             script.append("if $DOCKER_COMPOSE_CMD build; then\n");
             script.append("    log_success \"镜像构建成功 (通过 Docker Compose)\"\n");
@@ -322,7 +375,8 @@ public class ScriptUtil {
         script.append("        echo \"🔹 容器名称: $CONTAINER_NAME\"\n");
         script.append("        echo \"🔹 容器ID:   ${CONTAINER_ID:0:12}\"\n");
         script.append("        if [ \"$ENV_FILE_EXISTS\" = true ]; then\n");
-        script.append("            echo \"🔹 环境文件: 已使用\"\n");
+        script.append("            echo \"🔹 环境文件: 已使用（包含动态变量）\"\n");
+        script.append("            echo \"🔹 动态UID:  $(grep '^UID=' \"$ENV_TARGET\" 2>/dev/null | cut -d= -f2 || echo '未设置')\"\n");
         script.append("        else\n");
         script.append("            echo \"🔹 环境文件: 未使用\"\n");
         script.append("        fi\n");
@@ -420,8 +474,7 @@ public class ScriptUtil {
      * @param jarPath           本地jar包路径
      * @return 脚本
      */
-    public static String redeployScript(String downloadUrl, String fileName, String version,
-                                        String containerName, String dockerfileContent, String jarPath) {
+    public static String redeployScript(String downloadUrl, String fileName, String version, String containerName, String dockerfileContent, String jarPath) {
         Map<String, String> stringStringMap = parseDockerfileInfo(dockerfileContent);
         String workdir = stringStringMap.get(InstructionConstant.WORKDIR);
         StringBuilder script = new StringBuilder();

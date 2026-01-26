@@ -106,6 +106,9 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         if (agentConfig == null) {
             throw new BusinessException("Agent不存在");
         }
+        if (!agentConfig.getOnline()) {
+            throw new BusinessException("源服务Agent不在线");
+        }
         if (syncRequest.getServiceId().equals(agentConfig.getServiceId())) {//源服务跟同步服务一样，无需同步
             return true;
         }
