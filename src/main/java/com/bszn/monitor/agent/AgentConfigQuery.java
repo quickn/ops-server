@@ -23,4 +23,16 @@ public class AgentConfigQuery extends PageForm implements IQuery {
     @Where(ignore = true)
     @Schema(description = "容器名称")
     private String dockerName;
+
+    @Where
+    @Schema(description = "是否跳板机")
+    private Boolean isJumpServer;
+
+    @Where
+    @Schema(description = "是否是源服务")
+    private Boolean isOriginServer;
+
+    @Where
+    @Schema(description = "是否在线")
+    private Boolean online;
 }
