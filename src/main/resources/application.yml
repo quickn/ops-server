@@ -49,7 +49,7 @@ spring:
       database: 9
       host: bs-redis
       port: 6379
-      password: open_cloud_test_1
+      password: baisheng123
       timeout: 10s
       lettuce:
         pool:
