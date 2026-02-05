@@ -16,7 +16,7 @@ spring:
     password: BSzn@1999@2022
   data:
     redis:
-      password: open_cloud_test_1
+      password: baisheng123
 # xxl-job 定时任务配置
 xxl:
   job:
