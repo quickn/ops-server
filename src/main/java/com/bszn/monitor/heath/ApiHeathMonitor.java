@@ -19,10 +19,10 @@ public class ApiHeathMonitor extends ServiceBaseEntity {
     @Schema(description = "接口地址")
     private String apiUrl;
 
-    @Schema(description = "请求方式")
+    @Schema(description = "请求方式 get post")
     private String requestMethod;
 
-    @Schema(description = "内容类型")
+    @Schema(description = "内容类型 application/json,x-www-form-urlencoded 下拉")
     private String contentType;
 
     @Schema(description = "参数")
@@ -34,7 +34,6 @@ public class ApiHeathMonitor extends ServiceBaseEntity {
     @Schema(description = "超时预警时间(秒)")
     private Integer timeoutWarnTime;
 
-
     @Schema(description = "接口返回结果")
     private String body;
 
@@ -43,9 +42,5 @@ public class ApiHeathMonitor extends ServiceBaseEntity {
 
     @Schema(description = "最新响应时间")
     private Long responseTime;
-
-    @TableField(exist = false)
-    String serviceName;
-
 
 }

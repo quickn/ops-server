@@ -17,45 +17,29 @@ public class ApiHeathMonitorController {
     @Resource
     private ApiHeathMonitorService heathMonitorService;
 
-    /**
-     * 根据条件查询心跳监控列表
-     *
-     * @return
-     */
+    @Operation(summary = "心跳监控列表（分页）")
     @GetMapping(value = "/listHeaths")
     public Result<Page<ApiHeathMonitor>> listHeaths(@ParameterObject ApiHeathQueryPage heathQueryPage) {
-        Page<ApiHeathMonitor> pageInfo = heathMonitorService.queryPage(heathQueryPage);
-        return Result.success(pageInfo);
+        return Result.success(heathMonitorService.page(heathQueryPage.getPage(), heathQueryPage.buildLambda()));
     }
 
-    /**
-     * 保存心跳监控信息
-     *
-     * @return
-     */
+    @Operation(summary = "保存心跳监控信息")
     @PostMapping(value = "/save")
-    public Result saveHeathMonitor(@RequestBody ApiHeathMonitor heathMonitor) {
-        heathMonitorService.saveOrUpdate(heathMonitor);
+    public Result<Boolean> saveHeathMonitor(@RequestBody ApiHeathMonitor heathMonitor) {
+        return Result.success(heathMonitorService.saveOrUpdate(heathMonitor));
+    }
+
+    @Operation(summary = "删除心跳监控")
+    @DeleteMapping("/delete/{id}")
+    public Result<Boolean> delete(@PathVariable Integer id) {
+        heathMonitorService.removeById(id);
         return Result.success();
     }
 
-
-    /**
-     * 删除心跳监控
-     *
-     * @param ids
-     * @return
-     */
-    @DeleteMapping("/delete/{ids}")
-    @ResponseBody
-    public Result delete(@PathVariable Integer ids) {
-        heathMonitorService.removeById(ids);
-        return Result.success();
-    }
-
-    @GetMapping(value = "/heathMonitorTask")
     @Operation(summary = "执行监控")
+    @GetMapping(value = "/heathMonitorTask")
     public void heathMonitorTask() {
         heathMonitorService.heathMonitorTask();
     }
+
 }
