@@ -31,6 +31,7 @@ public class CmdLogInfoQueryDto extends PageForm<CmdLogInfo> implements IQuery {
         return super.buildLambda()
                 .eq(Objects.nonNull(serviceId), CmdLogInfo::getServiceId, serviceId)
                 .eq(Objects.nonNull(agentId), CmdLogInfo::getAgentId, agentId)
-                .eq(Objects.nonNull(userId), CmdLogInfo::getUserId, userId);
+                .eq(Objects.nonNull(userId), CmdLogInfo::getUserId, userId)
+                .orderByDesc(CmdLogInfo::getId);
     }
 }

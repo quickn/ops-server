@@ -24,7 +24,8 @@ public class ApiHeathQueryPage extends PageForm<ApiHeathMonitor> implements IQue
     public LambdaQueryWrapper<ApiHeathMonitor> buildLambda() {
         return super.buildLambda()
                 .eq(Objects.nonNull(serviceId), ApiHeathMonitor::getServiceId, serviceId)
-                .eq(Objects.nonNull(apiName), ApiHeathMonitor::getApiName, apiName);
+                .eq(Objects.nonNull(apiName), ApiHeathMonitor::getApiName, apiName)
+                .orderByDesc(ApiHeathMonitor::getId);
     }
 
 }

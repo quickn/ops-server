@@ -31,6 +31,7 @@ public class DockerStatsQueryDto extends PageForm<DockerStats> implements IQuery
         return super.buildLambda()
                 .eq(Objects.nonNull(serviceId), DockerStats::getServiceId, serviceId)
                 .eq(Objects.nonNull(agentId), DockerStats::getAgentId, agentId)
-                .eq(Objects.nonNull(names), DockerStats::getNames, names);
+                .eq(Objects.nonNull(names), DockerStats::getNames, names)
+                .orderByDesc(DockerStats::getId);
     }
 }
