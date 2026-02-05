@@ -3,7 +3,7 @@ package com.bszn.monitor.log;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.bszn.monitor.agent.AgentConfig;
 import com.bszn.monitor.agent.AgentConfigService;
-import com.bszn.monitor.email.MailSet;
+import com.bszn.monitor.email.MailConfig;
 import com.bszn.msg.WarnMailUtil;
 import com.bszn.server.StaticKeys;
 import com.bszn.server.SystemInfo;
@@ -105,7 +105,7 @@ public class LogInfoServiceImpl extends ServiceImpl<LogInfoMapper, LogInfo> impl
     }
 
     @Override
-    public boolean checkSendEmail(MailSet mailSet, String title) {
+    public boolean checkSendEmail(MailConfig mailSet, String title) {
         LogInfo temp = logInfoMapper.getLastByServiceIdAndTitle(mailSet.getServiceId(), title);
         if (temp != null) {
             long minute = LogInfoServiceImpl.differMinute(temp.getCreateTime(), new Date());
