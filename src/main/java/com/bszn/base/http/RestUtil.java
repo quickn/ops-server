@@ -2,6 +2,7 @@ package com.bszn.base.http;
 
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
+import com.bszn.monitor.heath.ApiHeathMonitor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
@@ -37,10 +38,22 @@ public class RestUtil {
         return JSONUtil.parseObj(responseEntity.getBody());
     }
 
+    public ResponseEntity<String> post(ApiHeathMonitor apiHeathMonitor) {
+        HttpHeaders headers = new HttpHeaders();
+        if ("x-www-form-urlencoded".equals(apiHeathMonitor.getContentType())) {
+            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        } else {
+            headers.setContentType(MediaType.APPLICATION_JSON_UTF8);
+        }
+        headers.add("Accept", MediaType.APPLICATION_JSON_UTF8.toString());
+        HttpEntity<String> httpEntity = new HttpEntity<>(apiHeathMonitor.getParam(), headers);
+        return restTemplate.postForEntity(apiHeathMonitor.getApiUrl(), httpEntity, String.class);
+    }
+
     public int get(String url) {
         try {
             ResponseEntity<String> responseEntity = restTemplate.getForEntity(url.trim(), String.class);
-            return responseEntity.getStatusCodeValue();
+            return responseEntity.getStatusCode().value();
         } catch (HttpClientErrorException e) {
             log.error("服务接口检测任务错误", e);
             return e.getRawStatusCode();
@@ -49,6 +62,5 @@ public class RestUtil {
             return 500;
         }
     }
-
 
 }

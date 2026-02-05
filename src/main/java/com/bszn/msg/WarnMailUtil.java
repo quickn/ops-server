@@ -105,7 +105,7 @@ public class WarnMailUtil {
     public static boolean sendHeathInfo(ApiHeathMonitor heathMonitor, String logTitle, boolean isEmail, Long time) {
         try {
             String commContent = heathMonitor.getApiName() + "接口：" + heathMonitor.getApiUrl()
-                    + "，响应状态码为" + heathMonitor.getHeathStatus() + "，请求时长:" + time + "毫秒";
+                    + "，响应状态码为" + heathMonitor.getHeathStatus() + "，请求时长:" + time + "秒";
             if (isEmail) {
                 MailSet mailSet = mailService.getByServiceId(heathMonitor.getServiceId());
                 isEmail = logInfoService.checkSendEmail(mailSet, logTitle);

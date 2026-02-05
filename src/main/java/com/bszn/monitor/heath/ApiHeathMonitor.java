@@ -6,7 +6,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
- *
+ * 接口健康监控
  */
 @Data
 public class ApiHeathMonitor extends ServiceBaseEntity {
@@ -22,11 +22,21 @@ public class ApiHeathMonitor extends ServiceBaseEntity {
     @Schema(description = "请求方式")
     private String requestMethod;
 
+    @Schema(description = "内容类型")
+    private String contentType;
+
+    @Schema(description = "参数")
+    private String param;
+
     @Schema(description = "是否开启监控")
     private Boolean isMonitor;
 
     @Schema(description = "超时预警时间(秒)")
-    private Long timeoutWarnTime;
+    private Integer timeoutWarnTime;
+
+
+    @Schema(description = "接口返回结果")
+    private String body;
 
     @Schema(description = "健康状态")
     private Integer heathStatus;

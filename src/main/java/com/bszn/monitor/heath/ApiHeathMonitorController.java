@@ -2,6 +2,7 @@ package com.bszn.monitor.heath;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.bszn.system.common.result.Result;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import org.springdoc.core.annotations.ParameterObject;
@@ -50,5 +51,11 @@ public class ApiHeathMonitorController {
     public Result delete(@PathVariable Integer ids) {
         heathMonitorService.removeById(ids);
         return Result.success();
+    }
+
+    @GetMapping(value = "/heathMonitorTask")
+    @Operation(summary = "执行监控")
+    public void heathMonitorTask() {
+        heathMonitorService.heathMonitorTask();
     }
 }

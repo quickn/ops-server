@@ -11,10 +11,10 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 
@@ -54,7 +54,7 @@ public class ApiHeathMonitorServiceImpl extends ServiceImpl<ApiHeathMonitorMappe
         log.info("heathMonitorTask------------");
         try {
             List<ApiHeathMonitor> heathMonitorAllList = heathMonitorMapper.selectListByMonitor();
-            if (heathMonitorAllList.size() == 0) {
+            if (heathMonitorAllList.isEmpty()) {
                 return;
             }
             ApiHeathMonitorService heathMonitorService = SpringUtil.getBean(ApiHeathMonitorService.class);
@@ -73,12 +73,27 @@ public class ApiHeathMonitorServiceImpl extends ServiceImpl<ApiHeathMonitorMappe
         ApiHeathMonitor updateTemp = new ApiHeathMonitor();
         updateTemp.setId(heathMonitor.getId());
         Long currTime = System.currentTimeMillis();
-        int status = restUtil.get(heathMonitor.getApiUrl());
+        int status;
+        ResponseEntity response = null;
+        try {
+            if ("post".equals(heathMonitor.getRequestMethod())) {
+                response = restUtil.post(heathMonitor);
+                status = response.getStatusCode().value();
+                updateTemp.setBody(response.getBody().toString());
+            } else {
+                status = restUtil.get(heathMonitor.getApiUrl());
+            }
+        } catch (Exception e) {
+            status = 500;
+        }
         updateTemp.setHeathStatus(status);
         String logTitle = "接口状态异常";
-        Long responseTime = System.currentTimeMillis() - currTime;
-        if ("200".equals(updateTemp.getHeathStatus())) {
-            if (responseTime <= 3000) {
+        Long responseTime = (System.currentTimeMillis() - currTime) / 1000;
+        if (status == 200) {
+            if (heathMonitor.getTimeoutWarnTime() == null) {
+                heathMonitor.setTimeoutWarnTime(3);
+            }
+            if (responseTime <= heathMonitor.getTimeoutWarnTime()) {
                 failCount.put(heathMonitor.getId(), 0);
                 return;
             }
@@ -88,15 +103,15 @@ public class ApiHeathMonitorServiceImpl extends ServiceImpl<ApiHeathMonitorMappe
         if (count == null) {
             count = 0;
         }
-        count = ++count;
+        ++count;
         failCount.put(heathMonitor.getId(), count);
         updateTemp.setResponseTime(responseTime);
-        updateTemp.setUpdateTime(LocalDateTime.now());
         this.updateById(updateTemp);
         heathMonitor.setHeathStatus(updateTemp.getHeathStatus());
         boolean isEmail = false;
         if (count >= 2) {
             isEmail = true;
+            failCount.put(heathMonitor.getId(), 0);
         }
         WarnMailUtil.sendHeathInfo(heathMonitor, logTitle, isEmail, responseTime);
     }
