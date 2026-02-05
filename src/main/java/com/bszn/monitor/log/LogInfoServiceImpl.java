@@ -110,7 +110,7 @@ public class LogInfoServiceImpl extends ServiceImpl<LogInfoMapper, LogInfo> impl
         if (temp != null) {
             long minute = LogInfoServiceImpl.differMinute(temp.getCreateTime(), new Date());
             //小于1个小时
-            if (minute <= mailSet.getHeathInterval()) {
+            if (minute <= mailSet.getTimeInterval()) {
                 return false;
             }
         }
