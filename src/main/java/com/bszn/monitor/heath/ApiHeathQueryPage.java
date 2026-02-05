@@ -13,7 +13,7 @@ import lombok.Data;
 @Data
 @SelectSql(" * from heath_monitor ")
 @OrderBy(" id desc")
-public class HeathQueryPage extends PageForm implements IQuery {
+public class ApiHeathQueryPage extends PageForm implements IQuery {
 
     @Where
     private String appName;

@@ -20,10 +20,10 @@ import java.util.List;
 
 @Service
 @Slf4j
-public class HeathMonitorServiceImpl extends ServiceImpl<HeathMonitorMapper, HeathMonitor> implements HeathMonitorService {
+public class ApiHeathMonitorServiceImpl extends ServiceImpl<ApiHeathMonitorMapper, ApiHeathMonitor> implements ApiHeathMonitorService {
 
     @Autowired
-    private HeathMonitorMapper heathMonitorMapper;
+    private ApiHeathMonitorMapper heathMonitorMapper;
     @Resource
     LogInfoService logInfoService;
     @Resource
@@ -35,17 +35,17 @@ public class HeathMonitorServiceImpl extends ServiceImpl<HeathMonitorMapper, Hea
     HashMap<Long, Integer> failCount = new HashMap();
 
     @Override
-    public boolean save(HeathMonitor HeathMonitor) {
-        if (StringUtils.isEmpty(HeathMonitor.getHeathUrl())) {
-            HeathMonitor.setHeathUrl(HeathMonitor.getHeathUrl().trim());
+    public boolean save(ApiHeathMonitor HeathMonitor) {
+        if (StringUtils.isEmpty(HeathMonitor.getApiUrl())) {
+            HeathMonitor.setApiUrl(HeathMonitor.getApiUrl().trim());
         }
         heathMonitorMapper.insert(HeathMonitor);
         return true;
     }
 
     @Override
-    public Page<HeathMonitor> queryPage(HeathQueryPage heathQueryPage) {
-        Page<HeathMonitor> pageQuery = this.heathMonitorMapper.queryPage(heathQueryPage, baseMapper.getPage());
+    public Page<ApiHeathMonitor> queryPage(ApiHeathQueryPage heathQueryPage) {
+        Page<ApiHeathMonitor> pageQuery = this.heathMonitorMapper.queryPage(heathQueryPage, baseMapper.getPage());
         return pageQuery;
     }
 
@@ -53,12 +53,12 @@ public class HeathMonitorServiceImpl extends ServiceImpl<HeathMonitorMapper, Hea
     public void heathMonitorTask() {
         log.info("heathMonitorTask------------");
         try {
-            List<HeathMonitor> heathMonitorAllList = heathMonitorMapper.selectListByMonitor();
+            List<ApiHeathMonitor> heathMonitorAllList = heathMonitorMapper.selectListByMonitor();
             if (heathMonitorAllList.size() == 0) {
                 return;
             }
-            HeathMonitorService heathMonitorService = SpringUtil.getBean(HeathMonitorService.class);
-            for (HeathMonitor heathMonitor : heathMonitorAllList) {
+            ApiHeathMonitorService heathMonitorService = SpringUtil.getBean(ApiHeathMonitorService.class);
+            for (ApiHeathMonitor heathMonitor : heathMonitorAllList) {
                 heathMonitorService.handle(heathMonitor);
             }
         } catch (Exception e) {
@@ -69,12 +69,12 @@ public class HeathMonitorServiceImpl extends ServiceImpl<HeathMonitorMapper, Hea
 
     @Async
     @Override
-    public void handle(HeathMonitor heathMonitor) {
-        HeathMonitor updateTemp = new HeathMonitor();
+    public void handle(ApiHeathMonitor heathMonitor) {
+        ApiHeathMonitor updateTemp = new ApiHeathMonitor();
         updateTemp.setId(heathMonitor.getId());
         Long currTime = System.currentTimeMillis();
-        int status = restUtil.get(heathMonitor.getHeathUrl());
-        updateTemp.setHeathStatus(status + "");
+        int status = restUtil.get(heathMonitor.getApiUrl());
+        updateTemp.setHeathStatus(status);
         String logTitle = "接口状态异常";
         Long responseTime = System.currentTimeMillis() - currTime;
         if ("200".equals(updateTemp.getHeathStatus())) {

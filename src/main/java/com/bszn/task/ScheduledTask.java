@@ -1,6 +1,6 @@
 package com.bszn.task;
 
-import com.bszn.monitor.heath.HeathMonitorService;
+import com.bszn.monitor.heath.ApiHeathMonitorService;
 import com.bszn.system.common.exception.BusinessException;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +20,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 public class ScheduledTask {
 
     @Resource
-    HeathMonitorService heathMonitorService;
+    ApiHeathMonitorService heathMonitorService;
 
 
     @Bean

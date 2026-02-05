@@ -10,7 +10,7 @@ import java.nio.charset.Charset;
 
 @Component
 @Order(value = 1)
-public class HeathConfig {
+public class ApiHeathConfig {
 
     @Bean
     public RestTemplate restTemplate() {

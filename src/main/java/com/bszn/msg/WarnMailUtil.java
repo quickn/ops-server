@@ -5,7 +5,7 @@ import com.bszn.base.util.ThreadPoolUtil;
 import com.bszn.monitor.agent.AgentConfig;
 import com.bszn.monitor.email.MailService;
 import com.bszn.monitor.email.MailSet;
-import com.bszn.monitor.heath.HeathMonitor;
+import com.bszn.monitor.heath.ApiHeathMonitor;
 import com.bszn.monitor.log.LogInfo;
 import com.bszn.monitor.log.LogInfoService;
 import com.bszn.server.*;
@@ -102,9 +102,9 @@ public class WarnMailUtil {
      * @param heathMonitor
      * @return
      */
-    public static boolean sendHeathInfo(HeathMonitor heathMonitor, String logTitle, boolean isEmail, Long time) {
+    public static boolean sendHeathInfo(ApiHeathMonitor heathMonitor, String logTitle, boolean isEmail, Long time) {
         try {
-            String commContent = heathMonitor.getAppName() + "接口：" + heathMonitor.getHeathUrl()
+            String commContent = heathMonitor.getApiName() + "接口：" + heathMonitor.getApiUrl()
                     + "，响应状态码为" + heathMonitor.getHeathStatus() + "，请求时长:" + time + "毫秒";
             if (isEmail) {
                 MailSet mailSet = mailService.getByServiceId(heathMonitor.getServiceId());

@@ -6,11 +6,11 @@ import com.baomidou.mybatisplus.extension.service.IService;
 /**
  * Created by Liuyun on 2023-09-09 11:18
  **/
-public interface HeathMonitorService extends IService<HeathMonitor> {
+public interface ApiHeathMonitorService extends IService<ApiHeathMonitor> {
 
-    Page<HeathMonitor> queryPage(HeathQueryPage heathQueryPage);
+    Page<ApiHeathMonitor> queryPage(ApiHeathQueryPage heathQueryPage);
 
     void heathMonitorTask();
 
-    void handle(HeathMonitor heathMonitor);
+    void handle(ApiHeathMonitor heathMonitor);
 }
