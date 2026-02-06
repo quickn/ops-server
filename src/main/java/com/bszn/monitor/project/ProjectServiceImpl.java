@@ -102,15 +102,19 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         if (Objects.isNull(project)) {
             throw new BusinessException("项目不存在");
         }
-        AgentConfig agentConfig = agentConfigService.getById(syncRequest.getSourceAgentId());
-        if (agentConfig == null) {
-            throw new BusinessException("Agent不存在");
-        }
-        if (!agentConfig.getOnline()) {
-            throw new BusinessException("源服务Agent不在线");
-        }
-        if (syncRequest.getServiceId().equals(agentConfig.getServiceId())) {//源服务跟同步服务一样，无需同步
-            return true;
+        // 手动同步没有源服务
+        if (Objects.nonNull(syncRequest.getSourceAgentId()) && syncRequest.getType() != 3) {
+            AgentConfig agentConfig = agentConfigService.getById(syncRequest.getSourceAgentId());
+            if (agentConfig == null) {
+                throw new BusinessException("Agent不存在");
+            }
+            if (!agentConfig.getOnline()) {
+                throw new BusinessException("源服务Agent不在线");
+            }
+            // 源服务跟同步服务一样，无需同步
+            if (syncRequest.getServiceId().equals(agentConfig.getServiceId())) {
+                return true;
+            }
         }
         // 拿到环境下的服务器
         List<AgentConfigVo> list = agentConfigService.list(AgentConfigQuery.builder().serviceId(syncRequest.getServiceId()).build());

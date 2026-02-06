@@ -23,7 +23,7 @@ public class SyncRequest {
     private String jarDownloadUrl;
 
     @NotNull(message = "类型不能为空")
-    @Schema(description = "类型 1 源服务器 2 jar包")
+    @Schema(description = "类型 1 源服务器 2 jar包 3 手动同步")
     private Integer type;
 
     @Schema(description = "用户名")
