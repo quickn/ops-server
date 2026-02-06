@@ -1,6 +1,6 @@
 package com.bszn.server;
 
-import com.bszn.monitor.email.MailSet;
+import com.bszn.monitor.email.MailConfig;
 
 
 public class StaticKeys {
@@ -42,6 +42,6 @@ public class StaticKeys {
 
     public static String DOWN_STATE = "2";
 
-    public static MailSet mailSet = null;
+    public static MailConfig mailSet = null;
 
 }

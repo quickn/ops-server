@@ -1,8 +1,6 @@
-package com.bszn.monitor;
+package com.bszn.monitor.email;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.bszn.monitor.email.MailService;
-import com.bszn.monitor.email.MailSet;
 import com.bszn.monitor.log.LogInfoService;
 import com.bszn.msg.WarnMailUtil;
 import com.bszn.server.StaticKeys;
@@ -21,19 +19,19 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping(value = "/monitor/mailset")
+@RequestMapping(value = "/monitor/mailConfig")
 @Slf4j
-public class MailSetController {
+public class MailConfigController {
 
     @Resource
-    private MailService mailService;
+    private MailConfigService mailService;
     @Resource
     private LogInfoService logInfoService;
 
     @GetMapping(value = "/getLastData")
-    public Result<MailSet> getLastData() {
-        MailSet mailSet = mailService.getOne(Wrappers.<MailSet>lambdaQuery().
-                orderByDesc(MailSet::getId).last(" limit 1 "));
+    public Result<MailConfig> getLastData() {
+        MailConfig mailSet = mailService.getOne(Wrappers.<MailConfig>lambdaQuery().
+                orderByDesc(MailConfig::getId).last(" limit 1 "));
         return Result.success(mailSet);
     }
 
@@ -45,10 +43,10 @@ public class MailSetController {
      * @return
      */
     @RequestMapping(value = "list")
-    public String MailSetList(MailSet MailSet, Model model, HttpServletRequest request) {
+    public String MailSetList(MailConfig MailSet, Model model, HttpServletRequest request) {
         Map<String, Object> params = new HashMap<String, Object>();
         try {
-            List<MailSet> list = mailService.listByMap(params);
+            List<MailConfig> list = mailService.listByMap(params);
             if (list.size() > 0) {
                 model.addAttribute("mailSet", list.get(0));
             }
@@ -82,7 +80,7 @@ public class MailSetController {
      * 保存邮件设置信息
      */
     @PostMapping(value = "/save")
-    public Result saveMailSet(@RequestBody MailSet mailSet) {
+    public Result saveMailSet(@RequestBody MailConfig mailSet) {
         try {
             if (mailSet.getId() == null) {
                 mailService.saveNew(mailSet);
@@ -98,7 +96,7 @@ public class MailSetController {
     }
 
     @PostMapping(value = "/test")
-    public Result test(@RequestBody MailSet mailSet) {
+    public Result test(@RequestBody MailConfig mailSet) {
         String result = "success";
         try {
             StaticKeys.mailSet = mailSet;

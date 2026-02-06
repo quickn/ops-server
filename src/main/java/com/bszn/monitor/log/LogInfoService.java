@@ -2,7 +2,7 @@ package com.bszn.monitor.log;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.bszn.monitor.agent.AgentConfig;
-import com.bszn.monitor.email.MailSet;
+import com.bszn.monitor.email.MailConfig;
 import com.bszn.server.SystemInfo;
 
 /**
@@ -15,5 +15,5 @@ public interface LogInfoService extends IService<LogInfo> {
 
     void saveErrorLog(String title, String commContent, SystemInfo systemInfo);
 
-    boolean checkSendEmail(MailSet mailSet, String title);
+    boolean checkSendEmail(MailConfig mailSet, String title);
 }

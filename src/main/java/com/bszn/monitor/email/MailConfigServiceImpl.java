@@ -10,13 +10,13 @@ import org.springframework.stereotype.Service;
  **/
 @Service
 @Slf4j
-public class MailServiceImpl extends ServiceImpl<MailSetMapper, MailSet> implements MailService {
+public class MailConfigServiceImpl extends ServiceImpl<MailConfigMapper, MailConfig> implements MailConfigService {
 
     @Override
-    public MailSet getByServiceId(Integer serviceId) {
-        MailSet mailSet = this.baseMapper.selectOne(Wrappers.<MailSet>lambdaQuery().eq(MailSet::getServiceId, serviceId));
+    public MailConfig getByServiceId(Integer serviceId) {
+        MailConfig mailSet = this.baseMapper.selectOne(Wrappers.<MailConfig>lambdaQuery().eq(MailConfig::getServiceId, serviceId));
         if (mailSet == null) {
-            mailSet = this.baseMapper.selectOne(Wrappers.<MailSet>lambdaQuery().isNull(MailSet::getServiceId));
+            mailSet = this.baseMapper.selectOne(Wrappers.<MailConfig>lambdaQuery().isNull(MailConfig::getServiceId));
         }
         if (mailSet != null) {
             mailSet.setServiceId(serviceId);
@@ -25,7 +25,7 @@ public class MailServiceImpl extends ServiceImpl<MailSetMapper, MailSet> impleme
     }
 
     @Override
-    public void saveNew(MailSet MailSet) {
+    public void saveNew(MailConfig MailSet) {
         MailSet.setFromMailName(MailSet.getFromMailName().trim());
         MailSet.setFromPwd(MailSet.getFromPwd().trim());
         MailSet.setToMail(MailSet.getToMail().trim());
