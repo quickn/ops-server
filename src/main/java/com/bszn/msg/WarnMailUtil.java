@@ -1,7 +1,6 @@
 package com.bszn.msg;
 
 import cn.hutool.extra.spring.SpringUtil;
-import com.bszn.base.util.ThreadPoolUtil;
 import com.bszn.monitor.agent.AgentConfig;
 import com.bszn.monitor.email.MailConfig;
 import com.bszn.monitor.email.MailConfigService;
@@ -62,58 +61,26 @@ public class WarnMailUtil {
     }
 
 
-    public static String sendMail(MailConfig mailSet, String mailTitle, String mailContent) {
-        ThreadPoolUtil.getInstance().getNewCachedThreadPool().execute(() -> {
-            try {
-                HtmlEmail email = new HtmlEmail();
-                email.setHostName(mailSet.getSmtpHost());
-                email.setSmtpPort(mailSet.getSmtpPort());
-                if (mailSet.getIsSendMail()) {
-                    email.setSSL(true);
-                }
-                email.setAuthenticator(new DefaultAuthenticator(mailSet.getFromMailName(), mailSet.getFromPwd()));
-                email.setFrom(mailSet.getFromMailName());//发信者
-                email.setSubject("[百胜智能] " + mailTitle);//标题
-                email.setCharset("UTF-8");//编码格式
-                email.setHtmlMsg(mailContent + content_suffix);//内容
-                email.addTo(mailSet.getToMail().split(";"));
-                email.setSentDate(new Date());
-                email.send();//发送
-                //   return "success";
-            } catch (Exception e) {
-                log.error("发送邮件错误：", e);
-                logInfoService.save("发送邮件错误", e.toString(), StaticKeys.LOG_ERROR);
-                //return "error";
-            }
-        });
-        return null;
+    public static String sendMail(MailConfig mailConfig, String mailTitle, String mailContent) {
+        try {
+            HtmlEmail email = new HtmlEmail();
+            email.setHostName(mailConfig.getSmtpHost());
+            email.setSmtpPort(mailConfig.getSmtpPort());
+            email.setSSLOnConnect(true);
+            email.setAuthenticator(new DefaultAuthenticator(mailConfig.getFromMailName().trim(), mailConfig.getFromPwd().trim()));
+            email.setFrom(mailConfig.getFromMailName().trim());//发信者
+            email.setSubject("[百胜智能] " + mailTitle);//标题
+            email.setCharset("UTF-8");//编码格式
+            email.setHtmlMsg(mailContent + content_suffix);//内容
+            email.addTo(mailConfig.getToMail().trim().split(";"));
+            email.setSentDate(new Date());
+            email.send();//发送
+            return null;
+        } catch (Exception e) {
+            log.error("发送邮件错误：", e);
+            logInfoService.save("发送邮件错误", e.toString(), StaticKeys.LOG_ERROR);
+            return e.getMessage();
+        }
     }
 
-
-    public static String sendMail(String mails, String mailTitle, String mailContent) {
-        ThreadPoolUtil.getInstance().getNewCachedThreadPool().execute(() -> {
-            try {
-                HtmlEmail email = new HtmlEmail();
-                email.setHostName(StaticKeys.mailSet.getSmtpHost());
-                email.setSmtpPort(Integer.valueOf(StaticKeys.mailSet.getSmtpPort()));
-                if ((StaticKeys.mailSet.getIsSmtpSsl())) {
-                    email.setSSL(true);
-                }
-                email.setAuthenticator(new DefaultAuthenticator(StaticKeys.mailSet.getFromMailName(), StaticKeys.mailSet.getFromPwd()));
-                email.setFrom(StaticKeys.mailSet.getFromMailName());//发信者
-                email.setSubject("[百胜智能] " + mailTitle);//标题
-                email.setCharset("UTF-8");//编码格式
-                email.setHtmlMsg(mailContent + content_suffix);//内容
-                email.addTo(mails.split(";"));
-                email.setSentDate(new Date());
-                email.send();//发送
-                //   return "success";
-            } catch (Exception e) {
-                log.error("发送邮件错误：", e);
-                logInfoService.save("发送邮件错误", e.toString(), StaticKeys.LOG_ERROR);
-                //return "error";
-            }
-        });
-        return null;
-    }
 }

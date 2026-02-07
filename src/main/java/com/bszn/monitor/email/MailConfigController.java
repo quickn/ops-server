@@ -5,6 +5,8 @@ import com.bszn.monitor.log.LogInfoService;
 import com.bszn.msg.WarnMailUtil;
 import com.bszn.server.StaticKeys;
 import com.bszn.system.common.result.Result;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Tag(name = "邮件")
 @RestController
 @RequestMapping(value = "/monitor/mailConfig")
 @Slf4j
@@ -28,6 +31,8 @@ public class MailConfigController {
     @Resource
     private LogInfoService logInfoService;
 
+
+    @Operation(summary = "获取最新的数据")
     @GetMapping(value = "/getLastData")
     public Result<MailConfig> getLastData() {
         MailConfig mailSet = mailService.getOne(Wrappers.<MailConfig>lambdaQuery().
@@ -42,7 +47,8 @@ public class MailConfigController {
      * @param request
      * @return
      */
-    @RequestMapping(value = "list")
+    @GetMapping(value = "list")
+    @Operation(summary = "列表")
     public String MailSetList(MailConfig MailSet, Model model, HttpServletRequest request) {
         Map<String, Object> params = new HashMap<String, Object>();
         try {
@@ -80,6 +86,7 @@ public class MailConfigController {
      * 保存邮件设置信息
      */
     @PostMapping(value = "/save")
+    @Operation(summary = "保存邮件")
     public Result saveMailSet(@RequestBody MailConfig mailSet) {
         try {
             if (mailSet.getId() == null) {
@@ -97,27 +104,17 @@ public class MailConfigController {
 
     @PostMapping(value = "/test")
     public Result test(@RequestBody MailConfig mailSet) {
-        String result = "success";
-        try {
-            StaticKeys.mailSet = mailSet;
-            result = WarnMailUtil.sendMail(mailSet.getToMail(), "测试邮件发送", "测试邮件发送");
-        } catch (Exception e) {
-            log.error("测试邮件设置信息错误：", e);
-            logInfoService.save("测试邮件设置信息错误", e.toString(), StaticKeys.LOG_ERROR);
+        StaticKeys.mailSet = mailSet;
+        String msg = WarnMailUtil.sendMail(mailSet, "测试邮件发送", "测试邮件发送");
+        if (msg == null) {
+            return Result.success();
         }
-        return Result.success();
+        return Result.failed(msg);
     }
 
-    /**
-     * 删除告警邮件信息
-     *
-     * @param id
-     * @param model
-     * @param request
-     * @param redirectAttributes
-     * @return
-     */
-    @RequestMapping(value = "del")
+
+    @Operation(summary = "删除邮件")
+    @DeleteMapping(value = "del")
     public String delete(Model model, HttpServletRequest request, RedirectAttributes redirectAttributes) {
         String errorMsg = "删除告警邮件设置错误：";
         try {
