@@ -87,14 +87,14 @@ public class MailConfigController {
      */
     @PostMapping(value = "/save")
     @Operation(summary = "保存邮件")
-    public Result saveMailSet(@RequestBody MailConfig mailSet) {
+    public Result saveMailSet(@RequestBody MailConfig mailConfig) {
         try {
-            if (mailSet.getId() == null) {
-                mailService.saveNew(mailSet);
+            if (mailConfig.getId() == null) {
+                mailService.saveNew(mailConfig);
             } else {
-                mailService.updateById(mailSet);
+                mailService.updateById(mailConfig);
             }
-            StaticKeys.mailSet = mailSet;
+            StaticKeys.mailConfig = mailConfig;
         } catch (Exception e) {
             log.error("保存邮件设置信息错误：", e);
             logInfoService.save("邮件设置信息错误", e.toString(), StaticKeys.LOG_ERROR);
@@ -103,9 +103,9 @@ public class MailConfigController {
     }
 
     @PostMapping(value = "/test")
-    public Result test(@RequestBody MailConfig mailSet) {
-        StaticKeys.mailSet = mailSet;
-        String msg = WarnMailUtil.sendMail(mailSet, "测试邮件发送", "测试邮件发送");
+    public Result test(@RequestBody MailConfig mailConfig) {
+        StaticKeys.mailConfig = mailConfig;
+        String msg = WarnMailUtil.sendMail(mailConfig, "测试邮件发送", "测试邮件发送");
         if (msg == null) {
             return Result.success();
         }
@@ -121,7 +121,7 @@ public class MailConfigController {
             if (!StringUtils.isEmpty(request.getParameter("id"))) {
                 List<String> list = Arrays.asList(request.getParameter("id").split(","));
                 mailService.removeByIds(list);
-                StaticKeys.mailSet = null;
+                StaticKeys.mailConfig = null;
             }
         } catch (Exception e) {
             log.error(errorMsg, e);

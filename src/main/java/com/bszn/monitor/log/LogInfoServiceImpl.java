@@ -105,12 +105,15 @@ public class LogInfoServiceImpl extends ServiceImpl<LogInfoMapper, LogInfo> impl
     }
 
     @Override
-    public boolean checkSendEmail(MailConfig mailSet, String title) {
-        LogInfo temp = logInfoMapper.getLastByServiceIdAndTitle(mailSet.getServiceId(), title);
+    public boolean checkSendEmail(MailConfig mailConfig, String title) {
+        if (!mailConfig.getIsSendMail()) {
+            return false;
+        }
+        LogInfo temp = logInfoMapper.getLastByServiceIdAndTitle(mailConfig.getServiceId(), title);
         if (temp != null) {
             long minute = LogInfoServiceImpl.differMinute(temp.getCreateTime(), new Date());
             //小于1个小时
-            if (minute <= mailSet.getTimeInterval()) {
+            if (minute <= mailConfig.getTimeInterval()) {
                 return false;
             }
         }

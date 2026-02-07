@@ -1,4 +1,4 @@
-package com.bszn.monitor;
+package com.bszn.monitor.agent;
 
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;

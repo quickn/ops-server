@@ -23,14 +23,14 @@ public class WarnMailUtil {
     private static MailConfigService mailService = SpringUtil.getBean(MailConfigService.class);
 
     public static void sendWarnMail(AgentConfig agentConfig, String title, String commContent) {
-        if (StaticKeys.mailSet == null) {
+        if (StaticKeys.mailConfig == null) {
             return;
         }
         if (!agentConfig.getIsMail()) {
             return;
         }
-        MailConfig mailSet = StaticKeys.mailSet;
-        sendMail(mailSet, agentConfig.getServiceName() + " " + title, commContent);
+        MailConfig mailConfig = StaticKeys.mailConfig;
+        sendMail(mailConfig, agentConfig.getServiceName() + " " + title, commContent);
     }
 
 
@@ -63,6 +63,9 @@ public class WarnMailUtil {
 
     public static String sendMail(MailConfig mailConfig, String mailTitle, String mailContent) {
         try {
+            if (!mailConfig.getIsSendMail()) {
+                return null;
+            }
             HtmlEmail email = new HtmlEmail();
             email.setHostName(mailConfig.getSmtpHost());
             email.setSmtpPort(mailConfig.getSmtpPort());

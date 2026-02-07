@@ -16,8 +16,6 @@ public class AgentConfig extends ServiceBaseEntity {
     @TableId(type = IdType.AUTO)
     private Long id;
 
-    @Schema(description = "是否docker")
-    private Boolean isDocker;
 
     @Schema(description = "主机ip")
     private String hostname;
@@ -57,5 +55,12 @@ public class AgentConfig extends ServiceBaseEntity {
 
     @Schema(description = "是否在线")
     private Boolean online;
+
+    @Schema(description = "是否docker")
+    private Boolean isDocker;
+
+    @Schema(description = "是否docker统计")
+    private Boolean isDockerStats;
+
 
 }
