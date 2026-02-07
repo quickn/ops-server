@@ -64,7 +64,6 @@ public class SecurityConfig {
         http.addFilterBefore(new VerifyCodeFilter(), UsernamePasswordAuthenticationFilter.class);
         // JWT 校验过滤器
         http.addFilterBefore(new JwtAuthenticationFilter(jwtTokenManager), UsernamePasswordAuthenticationFilter.class);
-
         return http.build();
     }
 
