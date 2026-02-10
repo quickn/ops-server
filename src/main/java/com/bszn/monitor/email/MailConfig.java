@@ -31,7 +31,7 @@ public class MailConfig extends ServiceBaseEntity {
     @Schema(description = "接受告警信息的邮件")
     private String toMail;
 
-    @Schema(description = "发送时间间隔")
+    @Schema(description = "发送时间间隔(分)")
     private Integer timeInterval;
 
 }

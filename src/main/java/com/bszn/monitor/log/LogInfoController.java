@@ -1,9 +1,6 @@
-package com.bszn.monitor;
+package com.bszn.monitor.log;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.bszn.monitor.log.LogInfo;
-import com.bszn.monitor.log.LogInfoMapper;
-import com.bszn.monitor.log.LogInfoQuery;
 import com.bszn.system.common.result.Result;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

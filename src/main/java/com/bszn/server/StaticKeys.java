@@ -42,6 +42,6 @@ public class StaticKeys {
 
     public static String DOWN_STATE = "2";
 
-    public static MailConfig mailSet = null;
+    public static MailConfig mailConfig = null;
 
 }

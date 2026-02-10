@@ -20,7 +20,7 @@ nacos:
 spring:
   main:
     #开启快速启动模式
-    lazy-initialization: true
+    lazy-initialization: false
     allow-circular-references: true
     allow-bean-definition-overriding: true
   application:

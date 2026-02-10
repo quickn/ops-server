@@ -3,6 +3,7 @@ package com.bszn.monitor.system;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.bszn.base.ServiceBaseEntity;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -10,9 +11,7 @@ import lombok.Data;
  */
 @Data
 public class SystemInfo extends ServiceBaseEntity {
-    /**
-     *
-     */
+
     private static final long serialVersionUID = 879979812204191283L;
 
 
@@ -20,60 +19,41 @@ public class SystemInfo extends ServiceBaseEntity {
     private Long id;
 
 
-    /**
-     * host名称
-     */
+    @Schema(description = "IP")
     private String hostname;
 
 
-    /**
-     * cpu使用率
-     */
+    @Schema(description = "cpu使用率")
     private Double cpuPer;
 
 
-    /**
-     * 内存使用率
-     */
+    @Schema(description = "内存使用率")
     private Double memPer;
 
 
-
-    //磁盘总使用率%
+    @Schema(description = "磁盘总使用率")
     private Double diskPer;
 
 
-    /**
-     * core的个数(即核数)
-     */
-    private String cpuCoreNum;
+    @Schema(description = "cpu核数")
+    private Integer cpuCoreNum;
 
 
-    /**
-     * CPU型号信息
-     */
+    @Schema(description = "CPU型号信息")
     private String cpuXh;
 
 
-    /**
-     * 系统版本信息
-     */
+    @Schema(description = "系统版本信息")
     private String version;
 
-    /**
-     * 系统版本详细信息
-     */
+    @Schema(description = "系统版本详细信息")
     private String versionDetail;
 
 
-    /**
-     * 主机状态，1正常，2下线
-     */
-    private String state;
+    @Schema(description = "主机状态，1正常 0下线")
+    private Integer state;
 
-    /**
-     * 主机备注
-     */
+    @Schema(description = "备注")
     private String remark;
 
 }
