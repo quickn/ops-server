@@ -328,7 +328,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
             updateDeployRecord(recordId, 1, "执行部署脚本...");
 
             // 执行命令
-            String remoteScriptPath = "/tmp/deploy_simple_" + project.getName() + ".sh";
+            String remoteScriptPath = "/tmp/deploy.sh";
             String downloadCmd = String.format("curl -s -L -o %s '%s'", remoteScriptPath, scriptDownloadUrl);
             String chmodCmd = String.format("chmod +x %s", remoteScriptPath);
             String executeCmd = String.format("bash -c '%s 2>&1'", remoteScriptPath);

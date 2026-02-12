@@ -25,7 +25,7 @@ public class DockerStatsController {
     private final IDockerStatsService dockerStatsService;
 
     @GetMapping("/page")
-    @Operation(summary = "获取指令列表（分页）")
+    @Operation(summary = "获取容器统计列表（分页）")
     public Result<IPage<DockerStats>> page(DockerStatsQueryDto dto) {
         return Result.success(dockerStatsService.page(dto.getPage(), dto.buildLambda()));
     }
