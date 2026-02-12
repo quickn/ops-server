@@ -67,9 +67,8 @@ public class ApiHeathMonitorServiceImpl extends ServiceImpl<ApiHeathMonitorMappe
         }
     }
 
-    @Async
     @Override
-    public void handle(ApiHeathMonitor heathMonitor) {
+    public ApiHeathMonitor handle(ApiHeathMonitor heathMonitor) {
         ApiHeathMonitor updateTemp = new ApiHeathMonitor();
         updateTemp.setId(heathMonitor.getId());
         Long currTime = System.currentTimeMillis();
@@ -95,24 +94,28 @@ public class ApiHeathMonitorServiceImpl extends ServiceImpl<ApiHeathMonitorMappe
             }
             if (responseTime <= heathMonitor.getTimeoutWarnTime()) {
                 failCount.put(heathMonitor.getId(), 0);
-                return;
+                return updateTemp;
             }
             logTitle = "接口请求超时";
         }
+        updateTemp.setResponseTime(responseTime);
+        if (updateTemp.getId() == null) {
+            return updateTemp;
+        }
+        this.updateById(updateTemp);
+        heathMonitor.setHeathStatus(updateTemp.getHeathStatus());
         Integer count = failCount.get(heathMonitor.getId());
         if (count == null) {
             count = 0;
         }
         ++count;
         failCount.put(heathMonitor.getId(), count);
-        updateTemp.setResponseTime(responseTime);
-        this.updateById(updateTemp);
-        heathMonitor.setHeathStatus(updateTemp.getHeathStatus());
         boolean isEmail = false;
         if (count >= 2) {
             isEmail = true;
             failCount.put(heathMonitor.getId(), 0);
         }
         WarnMailUtil.sendHeathInfo(heathMonitor, logTitle, isEmail, responseTime);
+        return updateTemp;
     }
 }
