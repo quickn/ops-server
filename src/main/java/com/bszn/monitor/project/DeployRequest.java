@@ -18,4 +18,7 @@ public class DeployRequest {
     @Schema(description = "服务器id")
     private List<Long> agentIds;
 
+    @Schema(description = "部署方式 1:重新构建 2:直接替换jar")
+    private Integer deployType = 1;
+
 }
