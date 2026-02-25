@@ -116,44 +116,113 @@ EOF
     if [ -f "${ENV_SOURCE}" ]; then
         log "处理动态 .env 文件"
 
-        # 清空目标文件
-        > "${ENV_TARGET}"
+        # 创建临时文件
+        TEMP_ENV=$(mktemp)
 
-        # 使用 source 命令加载并重新导出变量
-        (
-            # 在一个子shell中处理，避免污染当前环境
-            set -a  # 自动导出所有变量
+        # 方法1：使用 grep 直接提取有效变量（不通过 source）
+        log "从源文件提取有效变量..."
 
-            # 加载原始 .env 文件
-            source "${ENV_SOURCE}" 2>/dev/null || true
+        # 使用 grep 提取格式正确的变量（变量名只包含字母、数字和下划线）
+        grep -E '^[a-zA-Z_][a-zA-Z0-9_]*=' "${ENV_SOURCE}" 2>/dev/null | \
+        while IFS= read -r line; do
+            # 去除行首行尾空白
+            line=$(echo "$line" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
 
-            # 导出所有变量到新文件
-            env | grep -v "^_" | grep -v "^SHLVL=" | grep -v "^PWD=" | grep -v "^OLDPWD=" \
-                 | grep -v "^BASH" | grep -v "^SHELL=" | grep -v "^TERM=" | grep -v "^USER=" \
-                 | sort > "${ENV_TARGET}"
-        )
+            # 跳过空行和注释
+            if [[ -z "$line" ]] || [[ "$line" =~ ^# ]]; then
+                continue
+            fi
 
-        # 清理空行
-        sed -i '/^[[:space:]]*$/d' "${ENV_TARGET}"
+            # 检查是否包含特殊字符
+            if echo "$line" | grep -q '[{}()$`"'\'']'; then
+                # 如果包含特殊字符，对值进行转义
+                var_name=$(echo "$line" | cut -d'=' -f1)
+                var_value=$(echo "$line" | cut -d'=' -f2- | sed 's/"/\\"/g' | sed 's/[{}()$`]//g')
+                echo "${var_name}=${var_value}" >> "${TEMP_ENV}"
+            else
+                echo "$line" >> "${TEMP_ENV}"
+            fi
+        done
 
-        ENV_FILE_EXISTS=true
-        log_success "环境文件处理完成"
-        echo "生成的环境变量数量: $(wc -l < "${ENV_TARGET}")"
-        echo "示例变量:"
-        grep -E "^(UID|GID|os|contextPath)=" "${ENV_TARGET}" || head -5 "${ENV_TARGET}"
-        echo ""
+        # 添加系统变量（确保这些变量存在）
+        {
+            echo ""
+            echo "# 系统变量"
+            echo "UID=$(id -u)"
+            echo "GID=$(id -g)"
+            echo "DEPLOY_TIMESTAMP=$(date +%s)"
+
+            # 如果 contextPath 不存在，添加默认值
+            if ! grep -q '^contextPath=' "${TEMP_ENV}" 2>/dev/null; then
+                echo "contextPath=/home/park"
+            fi
+
+            # 如果 os 不存在，添加默认值
+            if ! grep -q '^os=' "${TEMP_ENV}" 2>/dev/null; then
+                echo "os=centos"
+            fi
+
+            # 添加 profileActive（如果不存在）
+            if ! grep -q '^profileActive=' "${TEMP_ENV}" 2>/dev/null; then
+                echo "profileActive=${profileActive:-dev}"
+            fi
+
+            # 添加 logPath（如果不存在）
+            if ! grep -q '^logPath=' "${TEMP_ENV}" 2>/dev/null; then
+                echo "logPath=${logPath:-/var/log}"
+            fi
+        } >> "${TEMP_ENV}"
+
+        # 去重并清理空行
+        sort -u "${TEMP_ENV}" | sed '/^[[:space:]]*$/d' > "${ENV_TARGET}"
+        rm -f "${TEMP_ENV}"
+
+        # 验证生成的 .env 文件
+        if [ -s "${ENV_TARGET}" ]; then
+            ENV_FILE_EXISTS=true
+            log_success "环境文件处理完成"
+            echo "生成的环境变量数量: $(wc -l < "${ENV_TARGET}")"
+            echo "示例变量:"
+            head -5 "${ENV_TARGET}" | sed 's/^/  /'
+            echo ""
+
+            # 调试信息：检查是否有异常字符
+            if grep -q '[^a-zA-Z0-9_=./@-]' "${ENV_TARGET}"; then
+                log "警告: 发现可能的特殊字符，但已处理"
+            fi
+        else
+            log_error "生成的 .env 文件为空"
+            exit 1
+        fi
+
     else
         # 创建动态 .env 文件
         log "源环境文件不存在，创建动态环境文件"
-        cat > "${ENV_TARGET}" << 'ENV_EOF'
+        cat > "${ENV_TARGET}" << EOF
+# 自动生成的环境文件 - $(date '+%Y-%m-%d %H:%M:%S')
 UID=$(id -u)
 GID=$(id -g)
 DEPLOY_TIMESTAMP=$(date +%s)
-ENV_EOF
+contextPath=/home/park
+os=centos
+profileActive=${profileActive:-dev}
+logPath=${logPath:-/var/log}
+EOF
 
-        ENV_FILE_EXISTS=true
-        log_success "已创建动态环境文件"
+        if [ -s "${ENV_TARGET}" ]; then
+            ENV_FILE_EXISTS=true
+            log_success "已创建动态环境文件"
+            echo "生成的环境变量数量: $(wc -l < "${ENV_TARGET}")"
+        else
+            log_error "创建环境文件失败"
+            exit 1
+        fi
     fi
+
+    # 显示 .env 文件内容预览
+    echo "--- .env 文件预览 (前10行) ---"
+    head -10 "${ENV_TARGET}" | sed 's/^/  /'
+    echo "------------------------------"
 
     # 构建命令
     if [ "$ENV_FILE_EXISTS" = true ]; then
@@ -163,10 +232,13 @@ ENV_EOF
     fi
 
     # 使用 docker-compose 构建镜像
+    log "开始构建 Docker 镜像..."
     if $DOCKER_COMPOSE_CMD build; then
         log_success "镜像构建成功 (通过 Docker Compose)"
     else
         log_error "镜像构建失败"
+        echo "最后20行构建日志:"
+        $DOCKER_COMPOSE_CMD build --no-cache 2>&1 | tail -20 || true
         exit 1
     fi
 else
@@ -333,6 +405,14 @@ else
         echo ""
         echo "Docker Compose 日志:"
         $DOCKER_COMPOSE_CMD logs 2>/dev/null || true
+
+        echo ""
+        echo "Docker Compose 配置:"
+        cat "${DOCKER_COMPOSE_FILE}" 2>/dev/null || true
+
+        echo ""
+        echo ".env 文件内容:"
+        cat "${ENV_TARGET}" 2>/dev/null || true
     fi
 
     # 检查端口是否被其他进程占用（只在 Docker 模式下）
