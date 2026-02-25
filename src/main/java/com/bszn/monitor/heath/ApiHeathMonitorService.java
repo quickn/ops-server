@@ -12,5 +12,5 @@ public interface ApiHeathMonitorService extends IService<ApiHeathMonitor> {
 
     void heathMonitorTask();
 
-    void handle(ApiHeathMonitor heathMonitor);
+    ApiHeathMonitor handle(ApiHeathMonitor heathMonitor);
 }

@@ -42,4 +42,12 @@ public class ApiHeathMonitorController {
         heathMonitorService.heathMonitorTask();
     }
 
+    @Operation(summary = "测试接口")
+    @PostMapping(value = "/testApi")
+    public Result<ApiHeathMonitor> testApi(@RequestBody ApiHeathMonitor apiHeathMonitor) {
+        apiHeathMonitor.setId(null);
+        ApiHeathMonitor temp = heathMonitorService.handle(apiHeathMonitor);
+        return Result.success(temp);
+    }
+
 }
