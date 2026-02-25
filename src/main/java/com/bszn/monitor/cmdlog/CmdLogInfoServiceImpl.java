@@ -30,8 +30,8 @@ public class CmdLogInfoServiceImpl extends ServiceImpl<CmdLogInfoMapper, CmdLogI
      */
     @Override
     public boolean save(Long userId, Long agentId, String cmd, String result) {
-        if (result != null && result.length() >= 200) {
-            result = result.substring(0, 200);
+        if (result != null && result.length() >= 2000) {
+            result = result.substring(0, 2000);
         }
         // 拿到服务
         AgentConfig byId = agentConfigService.getById(agentId);
