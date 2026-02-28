@@ -6,6 +6,7 @@ import com.bszn.monitor.encryption.CryptoService;
 import com.bszn.monitor.encryption.EncryptRequest;
 import com.bszn.monitor.msg.CmdCacheMsgService;
 import com.bszn.monitor.msg.IMsgService;
+import com.bszn.system.common.exception.BusinessException;
 import com.bszn.utils.IpUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -60,9 +61,20 @@ public class CmdMsgServiceImpl implements IMsgService {
     @Override
     public MsgResult sendMsgAndResponse(Long userId, Long agentId, String msg, String msgType, Integer timeout) {
         String messageId = sendMsg(userId, agentId, msg, msgType, timeout);
-        MsgResult msgResult = cmdCacheMsgService.getMsgResult(messageId, timeout);
+        MsgResult msgResult = null;
+        try {
+            msgResult = cmdCacheMsgService.getMsgResult(messageId, timeout);
+        } catch (Exception exception) {
+            log.error("发送消息异常", exception);
+            cmdLogInfoService.save(userId, agentId, msg, exception.getMessage());
+            throw new BusinessException(exception.getMessage());
+        }
+        String result = "返回结果为空";
+        if (msgResult != null) {
+            result = msgResult.getData();
+        }
+        cmdLogInfoService.save(userId, agentId, msg, result);
         // 保存日志
-        cmdLogInfoService.save(userId, agentId, msg, msgResult.getData());
         return msgResult;
     }
 }
