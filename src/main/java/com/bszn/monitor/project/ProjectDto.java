@@ -22,7 +22,7 @@ public class ProjectDto extends PageForm<Project> implements IQuery {
      */
     public LambdaQueryWrapper<Project> buildLambda() {
         return Wrappers.<Project>lambdaQuery()
-                .like(StrUtil.isNotEmpty(name), Project::getName, name);
+                .like(StrUtil.isNotEmpty(name), Project::getName, name).orderByDesc(Project::getUpdateTime);
     }
 
 }

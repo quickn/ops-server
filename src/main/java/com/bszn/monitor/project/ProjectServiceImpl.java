@@ -192,8 +192,10 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
             throw new BusinessException("尚未设置Dockerfile");
         }
         // 更新状态为部署中
-        project.setStatus(1);
-        this.updateById(project);
+        Project projectTemp = new Project();
+        projectTemp.setId(projectId);
+        projectTemp.setStatus(1);
+        this.updateById(projectTemp);
 
         List<CompletableFuture<Boolean>> futures = new ArrayList<>();
         // 为每个Agent创建部署任务
@@ -225,8 +227,8 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
                         }
                     }
                     // 更新JAR包状态
-                    project.setStatus(allSuccess ? 2 : 3);
-                    this.updateById(project);
+                    projectTemp.setStatus(allSuccess ? 2 : 3);
+                    this.updateById(projectTemp);
                     log.info("部署完成: id={}, success={}", projectId, allSuccess);
                     return allSuccess;
                 });
