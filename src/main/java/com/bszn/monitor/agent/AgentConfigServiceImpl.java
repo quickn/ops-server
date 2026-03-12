@@ -23,8 +23,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -56,19 +56,28 @@ public class AgentConfigServiceImpl extends ServiceImpl<AgentConfigMapper, Agent
     @Override
     public List<AgentConfigVo> list(AgentConfigQuery dto) {
         List<AgentConfig> query = getBaseMapper().query(dto);
-
         // 设置部署状态
         if (StrUtil.isNotEmpty(dto.getDockerName())) {
             // 拿到容器
             List<DockerContainer> dockerContainers =
-                    dockerContainerMapper.selectList(Wrappers.<DockerContainer>lambdaQuery().eq(DockerContainer::getNames, dto.getDockerName()));
+                    dockerContainerMapper.selectList(Wrappers.<DockerContainer>lambdaQuery().eq(DockerContainer::getServiceId, dto.getServiceId()).eq(DockerContainer::getNames,
+                            dto.getDockerName()));
             // 设置状态
             if (CollUtil.isNotEmpty(dockerContainers)) {
-                Set<String> hosts = dockerContainers.stream().map(DockerContainer::getHostname).collect(Collectors.toSet());
-                return query.stream()
-                        .map(data -> new AgentConfigVo(data, hosts.contains(data.getHostname()) ? "1" : null))
-                        .sorted(Comparator.comparing(vo -> vo.getStatus() == null ? 1 : 0, Comparator.naturalOrder()))
-                        .collect(Collectors.toList());
+                Map<String, DockerContainer> sourceMap = dockerContainers.stream()
+                        .collect(Collectors.toMap(DockerContainer::getHostname, user -> user));
+                return query.stream().map(agentConfig -> {
+                    AgentConfigVo agentConfigVo = new AgentConfigVo(agentConfig);
+                    if (sourceMap.containsKey(agentConfig.getHostname())) {
+                        DockerContainer source = sourceMap.get(agentConfig.getHostname());
+                        agentConfigVo.setUpdateTime(source.getUpdateTime());
+                        agentConfigVo.setStatus(source.getStatus());
+                        agentConfigVo.setDockerName(source.getNames());
+                    } else {
+                        agentConfigVo.setStatus(null);
+                    }
+                    return agentConfigVo;
+                }).sorted(Comparator.comparing(vo -> vo.getStatus() == null ? 1 : 0, Comparator.naturalOrder())).collect(Collectors.toList());
             }
         }
         return query.stream().map(AgentConfigVo::new).collect(Collectors.toList());

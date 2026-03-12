@@ -1,8 +1,6 @@
 package com.bszn.monitor.agent;
 
 import cn.hutool.core.bean.BeanUtil;
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
 import com.bszn.base.ServiceBaseEntity;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -23,11 +21,6 @@ public class AgentConfigVo extends ServiceBaseEntity {
         BeanUtil.copyProperties(agentConfig, this);
     }
 
-    public AgentConfigVo(AgentConfig agentConfig, String status) {
-        BeanUtil.copyProperties(agentConfig, this);
-        this.status = status;
-    }
-
     @Schema(description = "服务器id")
     private Long id;
 
@@ -46,7 +39,10 @@ public class AgentConfigVo extends ServiceBaseEntity {
     @Schema(description = "是否在线")
     private Boolean online;
 
-    @Schema(description = "部署状态 空 未部署 有值 已部署")
+    @Schema(description = "容器名称")
+    private String dockerName;
+
+    @Schema(description = "容器状态")
     private String status;
 
 }

@@ -5,6 +5,7 @@ import com.bszn.base.sql.IQuery;
 import com.bszn.base.sql.PageForm;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Objects;
 
@@ -31,7 +32,7 @@ public class DockerStatsQueryDto extends PageForm<DockerStats> implements IQuery
         return super.buildLambda()
                 .eq(Objects.nonNull(serviceId), DockerStats::getServiceId, serviceId)
                 .eq(Objects.nonNull(agentId), DockerStats::getAgentId, agentId)
-                .eq(Objects.nonNull(names), DockerStats::getNames, names)
+                .eq(StringUtils.isNotEmpty(names), DockerStats::getNames, names)
                 .orderByDesc(DockerStats::getId);
     }
 }
