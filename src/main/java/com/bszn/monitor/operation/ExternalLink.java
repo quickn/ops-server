@@ -15,4 +15,6 @@ public class ExternalLink extends ServiceBaseEntity {
 
     private String url;
 
+    private Boolean isInternalOpen;
+
 }

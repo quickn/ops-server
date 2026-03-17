@@ -26,7 +26,7 @@ public class ExternalLinkController {
 
     @Operation(summary = "保存外链")
     @PostMapping(value = "/save")
-    public Result<Boolean> saveHeathMonitor(@RequestBody ExternalLink externalLink) {
+    public Result<Boolean> save(@RequestBody ExternalLink externalLink) {
         return Result.success(externalLinkService.saveOrUpdate(externalLink));
     }
 
