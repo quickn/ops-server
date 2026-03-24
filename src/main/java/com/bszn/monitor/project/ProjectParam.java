@@ -15,6 +15,9 @@ public class ProjectParam {
     @Schema(description = "项目名称")
     private String name;
 
+    @Schema(description = "类型 1 jar包部署 2 docker部署")
+    private Integer type;
+
     @Schema(description = "描述")
     private String remark;
 

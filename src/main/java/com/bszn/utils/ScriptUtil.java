@@ -55,7 +55,7 @@ public class ScriptUtil {
      * @param dockerfileContent    docker文件
      * @param dockerComposeContent docker编排文件
      * @param jarPath              jar包路径
-     * @param type                 类型 1 jar部署脚本 2 替换jar包部署脚本 3 docker部署脚本
+     * @param type                 类型 1 jar部署脚本 2 docker部署脚本 3 替换jar包部署脚本
      * @return 部署脚本
      */
     public static String deployScript(String projectName, String dockerfileContent,
@@ -64,9 +64,9 @@ public class ScriptUtil {
             case 1:
                 return deployScript(projectName, dockerfileContent, dockerComposeContent, jarPath);
             case 2:
-                return redeployScript(projectName, dockerfileContent, jarPath);
-            case 3:
                 return deployDockerScript(projectName, dockerfileContent, dockerComposeContent);
+            case 3:
+                return redeployScript(projectName, dockerfileContent, jarPath);
             default:
                 return null;
         }

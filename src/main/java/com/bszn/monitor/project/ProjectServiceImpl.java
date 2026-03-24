@@ -254,7 +254,8 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
                 return false;
             }
             // 2. 生成重新部署脚本
-            String redeployScript = ScriptUtil.redeployScript(project.getName(), project.getDockerfileContent(), jarPath);
+            int type = project.getType() == 1 ? 3 : project.getType();
+            String redeployScript = ScriptUtil.deployScript(project.getName(), project.getDockerfileContent(), project.getDockerComposeContent(), jarPath, type);
 
 
             // 3. 将脚本保存为可下载文件
@@ -314,7 +315,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
     private Boolean deployWithDockerfile(Project project, Long agentId, Long recordId, Long userId) {
         try {
             // 获取脚本
-            String deployScript = ScriptUtil.deployScript(project.getName(), project.getDockerfileContent(), project.getDockerComposeContent(), jarPath);
+            String deployScript = ScriptUtil.deployScript(project.getName(), project.getDockerfileContent(), project.getDockerComposeContent(), jarPath, project.getType());
 
             // 将脚本保存为可下载文件
             String scriptFileName = "deploy_" + project.getName() + "_simple_" + System.currentTimeMillis() + ".sh";
