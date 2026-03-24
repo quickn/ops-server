@@ -145,7 +145,7 @@ public class ScriptUtil {
             String exposePort = dockerInfo.get(InstructionConstant.EXPOSE);
 
             // 读取模板
-            String template = readTemplate("deploy-template.sh");
+            String template = readTemplate("docker-template.sh");
 
             // 构建变量映射
             Map<String, String> variables = new HashMap<>();
