@@ -50,6 +50,38 @@ public class ScriptUtil {
 
     /**
      * 部署脚本
+     *
+     * @param projectName          项目名
+     * @param dockerfileContent    docker文件
+     * @param dockerComposeContent docker编排文件
+     * @param jarPath              jar包路径
+     * @param type                 类型 1 jar部署脚本 2 替换jar包部署脚本 3 docker部署脚本
+     * @return 部署脚本
+     */
+    public static String deployScript(String projectName, String dockerfileContent,
+                                      String dockerComposeContent, String jarPath, Integer type) {
+        switch (type) {
+            case 1:
+                return deployScript(projectName, dockerfileContent, dockerComposeContent, jarPath);
+            case 2:
+                return redeployScript(projectName, dockerfileContent, jarPath);
+            case 3:
+                return deployDockerScript(projectName, dockerfileContent, dockerComposeContent);
+            default:
+                return null;
+        }
+    }
+
+    /**
+     * 部署脚本
+     */
+    public static String deployDockerScript(String projectName, String dockerfileContent,
+                                            String dockerComposeContent) {
+        return dockerScript(projectName, dockerfileContent, dockerComposeContent);
+    }
+
+    /**
+     * 部署脚本
      */
     public static String deployScript(String projectName, String dockerfileContent,
                                       String dockerComposeContent, String jarPath) {
@@ -105,6 +137,39 @@ public class ScriptUtil {
     }
 
     /**
+     * docker部署脚本
+     */
+    public static String dockerScript(String fileName, String dockerfileContent, String dockerComposeContent) {
+        try {
+            Map<String, String> dockerInfo = parseDockerfileInfo(dockerfileContent);
+            String exposePort = dockerInfo.get(InstructionConstant.EXPOSE);
+
+            // 读取模板
+            String template = readTemplate("deploy-template.sh");
+
+            // 构建变量映射
+            Map<String, String> variables = new HashMap<>();
+
+            // 基本变量
+            variables.put("IMAGE_NAME", fileName);
+            variables.put("CONTAINER_NAME", fileName);
+            variables.put("PORT", exposePort);
+            variables.put("EXPOSE_PORT", exposePort);
+            variables.put("FILE_NAME", fileName);
+            variables.put("USE_DOCKER_COMPOSE",
+                    StringUtils.isNotBlank(dockerComposeContent) ? "true" : "false");
+            variables.put("DOCKERFILE_CONTENT", dockerfileContent);
+            variables.put("DOCKER_COMPOSE_CONTENT",
+                    StringUtils.defaultString(dockerComposeContent, ""));
+
+            return replaceVariables(template, variables);
+        } catch (IOException e) {
+            throw new RuntimeException("读取docker部署脚本模板失败", e);
+        }
+    }
+
+
+    /**
      * 重新部署脚本（只替换JAR包）
      */
     public static String redeployScript(String downloadUrl, String fileName, String version,
@@ -134,6 +199,7 @@ public class ScriptUtil {
             throw new RuntimeException("读取重新部署脚本模板失败", e);
         }
     }
+
 
     /**
      * 解析Dockerfile获取配置信息
