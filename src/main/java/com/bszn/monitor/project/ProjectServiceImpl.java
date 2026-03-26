@@ -138,21 +138,22 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         }
         StringBuilder result = new StringBuilder();
         StringBuilder command = new StringBuilder();
-        String jarPath = StrUtil.isEmpty(project.getSourceDir()) ? this.jarPath : project.getSourceDir();
+        String sourceDir = StrUtil.isEmpty(project.getSourceDir()) ? this.jarPath : project.getSourceDir();
+        String targetDir = StrUtil.isEmpty(project.getTargetDir()) ? this.jarPath : project.getSourceDir();
         // 源服务器 同步至跳板机
         if (syncRequest.getType() == 1) {
             String rsyncCmd = String.format("rsync -azv %s %s@%s:%s",
-                    jarPath + "/" + project.getName(),
+                    sourceDir + "/" + project.getName(),
                     syncRequest.getUser() != null ? syncRequest.getUser() : "park",
                     remoteIp,
-                    jarPath);
+                    targetDir);
             // 直接在源服务器上执行rsync命令
             result.append(msgService.sendCMDMsgAndResponse(userId, syncRequest.getSourceAgentId(), rsyncCmd, 300))
                     .append(" === 第一段结果集结束 === ");
         }
         // jar包 在命令中添加下载动作
         if (syncRequest.getType() == 2) {
-            String downloadCmd = String.format("curl -L -o %s '%s'", jarPath + "/" + project.getName() + "/" + project.getName() + ".jar",
+            String downloadCmd = String.format("curl -L -o %s '%s'", sourceDir + "/" + project.getName() + "/" + project.getName() + ".jar",
                     syncRequest.getJarDownloadUrl());
             command.append(downloadCmd);
             command.append(" && ");
@@ -160,10 +161,10 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         for (int i = 0; i < list.size(); i++) {
             AgentConfigVo server = list.get(i);
             String rsyncCmd = String.format("rsync -azv %s %s@%s:%s",
-                    jarPath + "/" + project.getName(),
+                    sourceDir + "/" + project.getName(),
                     syncRequest.getUser() != null ? syncRequest.getUser() : "park",
                     server.getHostname(),
-                    jarPath);
+                    targetDir);
             command.append(rsyncCmd);
             // 如果不是最后一条命令，添加 &&
             if (i < list.size() - 1) {

@@ -21,6 +21,9 @@ public class ProjectParam {
     @Schema(description = "源文件目录")
     private Integer sourceDir;
 
+    @Schema(description = "指向目录")
+    private String targetDir;
+
     @Schema(description = "描述")
     private String remark;
 

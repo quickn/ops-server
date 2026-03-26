@@ -34,6 +34,9 @@ public class Project implements Serializable {
     @Schema(description = "源文件目录")
     private String sourceDir;
 
+    @Schema(description = "指向目录")
+    private String targetDir;
+
     @Schema(description = "docker编排文件")
     private String dockerComposeContent;
 
