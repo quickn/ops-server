@@ -19,7 +19,7 @@ public class ProjectParam {
     private Integer type;
 
     @Schema(description = "源文件目录")
-    private Integer sourceDir;
+    private String sourceDir;
 
     @Schema(description = "指向目录")
     private String targetDir;
