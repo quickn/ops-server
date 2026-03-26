@@ -138,6 +138,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         }
         StringBuilder result = new StringBuilder();
         StringBuilder command = new StringBuilder();
+        String jarPath = StrUtil.isEmpty(project.getSourceDir()) ? this.jarPath : project.getSourceDir();
         // 源服务器 同步至跳板机
         if (syncRequest.getType() == 1) {
             String rsyncCmd = String.format("rsync -azv %s %s@%s:%s",
@@ -255,6 +256,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
             }
             // 2. 生成重新部署脚本
             int type = project.getType() == 1 ? 3 : project.getType();
+            String jarPath = StrUtil.isEmpty(project.getSourceDir()) ? this.jarPath : project.getSourceDir();
             String redeployScript = ScriptUtil.deployScript(project.getName(), project.getDockerfileContent(), project.getDockerComposeContent(), jarPath, type);
 
 
@@ -315,6 +317,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
     private Boolean deployWithDockerfile(Project project, Long agentId, Long recordId, Long userId) {
         try {
             // 获取脚本
+            String jarPath = StrUtil.isEmpty(project.getSourceDir()) ? this.jarPath : project.getSourceDir();
             String deployScript = ScriptUtil.deployScript(project.getName(), project.getDockerfileContent(), project.getDockerComposeContent(), jarPath, project.getType());
 
             // 将脚本保存为可下载文件

@@ -31,6 +31,9 @@ public class Project implements Serializable {
     @Schema(description = "类型 1 jar包部署 2 docker部署")
     private Integer type;
 
+    @Schema(description = "源文件目录")
+    private String sourceDir;
+
     @Schema(description = "docker编排文件")
     private String dockerComposeContent;
 

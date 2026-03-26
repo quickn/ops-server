@@ -18,6 +18,9 @@ public class ProjectParam {
     @Schema(description = "类型 1 jar包部署 2 docker部署")
     private Integer type;
 
+    @Schema(description = "源文件目录")
+    private Integer sourceDir;
+
     @Schema(description = "描述")
     private String remark;
 
