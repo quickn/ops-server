@@ -170,14 +170,26 @@ public class AgentConfigServiceImpl extends ServiceImpl<AgentConfigMapper, Agent
                 }
                 if (StringUtils.isNotEmpty(logCmdForm.getKeyword())) {
                     cmd.append("|grep ");
-                    if (StringUtils.isNotEmpty(logCmdForm.getGrepPara())) {
+                    if (StringUtils.isNotEmpty(logCmdForm.getGrepPara()) && StringUtils.isEmpty(logCmdForm.getKeyword1())) {
                         cmd.append(logCmdForm.getGrepPara());
                         cmd.append(" ");
                     }
                     cmd.append("'" + logCmdForm.getKeyword() + "'");
                 }
+                if (StringUtils.isNotEmpty(logCmdForm.getKeyword1())) {
+                    cmd.append("|grep ");
+                    if (StringUtils.isNotEmpty(logCmdForm.getGrepPara())) {
+                        cmd.append(logCmdForm.getGrepPara());
+                        cmd.append(" ");
+                    }
+                    cmd.append("'" + logCmdForm.getKeyword1() + "'");
+                }
+                logs.append("<div class='hostname'>");
                 logs.append(agentConfig.getHostname() + "\n");
+                logs.append("</div>");
+                logs.append("\n");
                 logs.append(iMsgService.sendCMDMsgAndRawResponse(null, agentConfig.getId(), cmd.toString(), 20));
+                logs.append("\n");
             } else {
                 logs.append(iMsgService.sendCMDMsgAndRawResponse(null, agentConfig.getId(), logCmdForm.getCmd(), 20));
             }

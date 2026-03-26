@@ -19,6 +19,9 @@ public class LogCmdForm {
     @NotBlank(message = "关键字不能为空")
     String keyword;
 
+    @ApiModelProperty("关键字1")
+    String keyword1;
+
     String createDate;
     @ApiModelProperty("日志级别")
     @NotBlank(message = "日志级别不能为空")
