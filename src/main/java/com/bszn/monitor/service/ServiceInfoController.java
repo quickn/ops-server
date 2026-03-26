@@ -1,10 +1,6 @@
 package com.bszn.monitor.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.bszn.monitor.service.ServiceInfo;
-import com.bszn.monitor.service.ServiceInfoMapper;
-import com.bszn.monitor.service.ServiceInfoQuery;
-import com.bszn.monitor.service.ServiceInfoService;
 import com.bszn.system.common.result.Result;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;

@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -36,6 +37,10 @@ public class ServiceInfo {
      * 是否开启监控
      */
     private Boolean isMonitor;
+
+
+    @Schema(description = "标签")
+    private String label;
 
     /**
      * 创建时间
