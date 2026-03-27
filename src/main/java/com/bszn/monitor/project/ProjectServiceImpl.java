@@ -139,7 +139,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         }
         StringBuilder result = new StringBuilder();
         StringBuilder command = new StringBuilder();
-        String targetDir = StrUtil.isEmpty(project.getTargetDir()) ? this.jarPath : project.getSourceDir();
+        String targetDir = StrUtil.isEmpty(project.getTargetDir()) ? this.jarPath : project.getTargetDir();
         String sourceDir = StrUtil.isEmpty(project.getSourceDir()) ? this.jarPath : isAuto ? project.getSourceDir() : targetDir;
         // 源服务器 同步至跳板机
         if (syncRequest.getType() == 1) {
