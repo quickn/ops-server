@@ -31,7 +31,7 @@ public class ApiHeathMonitorController {
 
     @Operation(summary = "删除心跳监控")
     @DeleteMapping("/delete/{id}")
-    public Result<Boolean> delete(@PathVariable Integer id) {
+    public Result<Boolean> delete(@PathVariable Long id) {
         heathMonitorService.removeById(id);
         return Result.success();
     }
