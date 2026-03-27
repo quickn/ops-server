@@ -102,9 +102,8 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         if (Objects.isNull(project)) {
             throw new BusinessException("项目不存在");
         }
-        // 手动同步没有源服务 true 自动 false 手动
-        boolean isAuto = Objects.nonNull(syncRequest.getSourceAgentId()) && syncRequest.getType() != 3;
-        if (isAuto) {
+        // 手动同步没有源服务
+        if (Objects.nonNull(syncRequest.getSourceAgentId()) && syncRequest.getType() != 3) {
             AgentConfig agentConfig = agentConfigService.getById(syncRequest.getSourceAgentId());
             if (agentConfig == null) {
                 throw new BusinessException("Agent不存在");
@@ -140,7 +139,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         StringBuilder result = new StringBuilder();
         StringBuilder command = new StringBuilder();
         String targetDir = StrUtil.isEmpty(project.getTargetDir()) ? this.jarPath : project.getTargetDir();
-        String sourceDir = StrUtil.isEmpty(project.getSourceDir()) ? this.jarPath : isAuto ? project.getSourceDir() : targetDir;
+        String sourceDir = StrUtil.isEmpty(project.getSourceDir()) ? this.jarPath : project.getSourceDir();
         // 源服务器 同步至跳板机
         if (syncRequest.getType() == 1) {
             String rsyncCmd = String.format("rsync -azv %s %s@%s:%s",
@@ -154,7 +153,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         }
         // jar包 在命令中添加下载动作
         if (syncRequest.getType() == 2) {
-            String downloadCmd = String.format("curl -L -o %s '%s'", sourceDir + "/" + project.getName() + "/" + project.getName() + ".jar",
+            String downloadCmd = String.format("curl -L -o %s '%s'", targetDir + "/" + project.getName() + "/" + project.getName() + ".jar",
                     syncRequest.getJarDownloadUrl());
             command.append(downloadCmd);
             command.append(" && ");
@@ -162,7 +161,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         for (int i = 0; i < list.size(); i++) {
             AgentConfigVo server = list.get(i);
             String rsyncCmd = String.format("rsync -azv %s %s@%s:%s",
-                    sourceDir + "/" + project.getName(),
+                    targetDir + "/" + project.getName(),
                     syncRequest.getUser() != null ? syncRequest.getUser() : "park",
                     server.getHostname(),
                     targetDir);
