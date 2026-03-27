@@ -102,8 +102,9 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         if (Objects.isNull(project)) {
             throw new BusinessException("项目不存在");
         }
-        // 手动同步没有源服务
-        if (Objects.nonNull(syncRequest.getSourceAgentId()) && syncRequest.getType() != 3) {
+        // 手动同步没有源服务 true 自动 false 手动
+        boolean isAuto = Objects.nonNull(syncRequest.getSourceAgentId()) && syncRequest.getType() != 3;
+        if (isAuto) {
             AgentConfig agentConfig = agentConfigService.getById(syncRequest.getSourceAgentId());
             if (agentConfig == null) {
                 throw new BusinessException("Agent不存在");
@@ -138,8 +139,8 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         }
         StringBuilder result = new StringBuilder();
         StringBuilder command = new StringBuilder();
-        String sourceDir = StrUtil.isEmpty(project.getSourceDir()) ? this.jarPath : project.getSourceDir();
         String targetDir = StrUtil.isEmpty(project.getTargetDir()) ? this.jarPath : project.getSourceDir();
+        String sourceDir = StrUtil.isEmpty(project.getSourceDir()) ? this.jarPath : isAuto ? project.getSourceDir() : targetDir;
         // 源服务器 同步至跳板机
         if (syncRequest.getType() == 1) {
             String rsyncCmd = String.format("rsync -azv %s %s@%s:%s",
