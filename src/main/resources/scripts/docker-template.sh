@@ -79,9 +79,24 @@ EOF
     ENV_TARGET="${BUILD_DIR}/.env"
     ENV_FILE_EXISTS=false
 
+    # 添加调试信息：打印源文件路径和内容
+    log "========== .env 文件调试信息 =========="
+    log "源文件路径: ${ENV_SOURCE}"
+
+    if [ -f "${ENV_SOURCE}" ]; then
+        log "✓ 找到 .env 源文件"
+        log "文件权限: $(ls -l ${ENV_SOURCE})"
+        log "文件大小: $(wc -c < ${ENV_SOURCE}) bytes"
+        log "文件行数: $(wc -l < ${ENV_SOURCE})"
+        log ""
+        log "源文件内容（过滤注释和空行）:"
+        grep -v '^#' "${ENV_SOURCE}" | grep -v '^$' | while IFS= read -r line; do
+            log "  $line"
+        done
+        log ""
+
     if [ -f "${ENV_SOURCE}" ]; then
         log "处理动态 .env 文件"
-        log "${ENV_SOURCE}"
         # 清空目标文件
         > "${ENV_TARGET}"
 
@@ -111,7 +126,6 @@ EOF
 
         ENV_FILE_EXISTS=true
         log_success "环境文件处理完成"
-        log  "${ENV_TARGET}"
         echo "生成的环境变量数量: $(wc -l < "${ENV_TARGET}")"
         echo "示例变量:"
         grep -E "^(UID|GID|os|contextPath)=" "${ENV_TARGET}" || head -5 "${ENV_TARGET}"
