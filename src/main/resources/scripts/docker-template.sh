@@ -81,7 +81,7 @@ EOF
 
     if [ -f "${ENV_SOURCE}" ]; then
         log "处理动态 .env 文件"
-
+        log ENV_SOURCE
         # 清空目标文件
         > "${ENV_TARGET}"
 
