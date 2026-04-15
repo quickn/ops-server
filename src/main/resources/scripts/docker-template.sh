@@ -111,6 +111,7 @@ EOF
 
         ENV_FILE_EXISTS=true
         log_success "环境文件处理完成"
+        log  "${ENV_TARGET}"
         echo "生成的环境变量数量: $(wc -l < "${ENV_TARGET}")"
         echo "示例变量:"
         grep -E "^(UID|GID|os|contextPath)=" "${ENV_TARGET}" || head -5 "${ENV_TARGET}"
