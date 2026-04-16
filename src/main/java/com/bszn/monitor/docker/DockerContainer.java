@@ -3,6 +3,7 @@ package com.bszn.monitor.docker;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.bszn.base.ServiceBaseEntity;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.Date;
@@ -28,6 +29,9 @@ public class DockerContainer extends ServiceBaseEntity {
     private Boolean isMonitor;
 
     private Integer serviceId;
+
+    @Schema(description = "服务器id")
+    private Long agentId;
 
 
     /**

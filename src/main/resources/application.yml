@@ -162,7 +162,7 @@ system:
     # 数据权限开关
     data-permission-enabled: true
     # 定时任务 xxl-job 开关
-    xxl-job-enabled: false
+    xxl-job-enabled: true
     # WebSocket 开关
     websocket-enabled: true
 upgradeClient:
@@ -229,3 +229,18 @@ file:
   upload:
     file-path: /home/park/logs/monitor
     jar-path: /home/park/docker
+
+# xxl-job 定时任务配置
+xxl:
+  job:
+    admin:
+      # 多个地址使用,分割
+      addresses: http://192.168.10.11:9030/xxlJobAdmin
+    accessToken:
+    executor:
+      appname: ${spring.application.name}
+      address:
+      ip:
+      port: 9999
+      logpath: /home/park/xxl-job/jobhandler
+      logretentiondays: 30
