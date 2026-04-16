@@ -241,6 +241,6 @@ xxl:
       appname: ${spring.application.name}
       address:
       ip:
-      port: 9999
+      port: 39999
       logpath: /home/park/xxl-job/jobhandler
       logretentiondays: 30

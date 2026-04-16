@@ -26,7 +26,7 @@ xxl:
   job:
     admin:
       # 多个地址使用,分割
-      addresses: http://bs-job:8080/xxl-job-admin
+      addresses: http://172.16.150.158:9030/xxlJobAdmin
 
 # 文件配置
 file:
