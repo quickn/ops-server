@@ -25,3 +25,8 @@ file:
 security:
   ignore-paths:
     - "/**"
+
+python:
+  path: D:\app\miniconda3\python
+  script: D:\Users\liuyun\IdeaProjects\py-sync\bs
+  url: http://localhost:8989

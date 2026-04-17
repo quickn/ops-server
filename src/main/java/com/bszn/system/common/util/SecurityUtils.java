@@ -39,6 +39,8 @@ public class SecurityUtils {
      * @return
      */
     public static Long getUserId() {
+        if (getUser() == null)
+            return null;
         Long userId = Convert.toLong(getUser().getUserId());
         return userId;
     }

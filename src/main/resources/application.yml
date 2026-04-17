@@ -244,3 +244,7 @@ xxl:
       port: 39999
       logpath: /home/park/xxl-job/jobhandler
       logretentiondays: 30
+
+python:
+  path: /usr/bin/python3
+  script: /home/park/logs/py

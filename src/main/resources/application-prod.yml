@@ -36,3 +36,6 @@ file:
 upgradeClient:
   url: http://monitor.bisenpark.com/monitor/static/monitor-agent.jar
   version: 1.0.0
+
+python:
+  url: http://monitor.bisenpark.com/monitor

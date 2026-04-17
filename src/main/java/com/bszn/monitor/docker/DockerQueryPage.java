@@ -6,6 +6,7 @@ import com.bszn.base.sql.annotation.OrderBy;
 import com.bszn.base.sql.annotation.SelectSql;
 import com.bszn.base.sql.annotation.Where;
 import com.bszn.base.sql.enums.MySqlKeyword;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
@@ -22,10 +23,14 @@ public class DockerQueryPage extends PageForm implements IQuery {
     @Where
     private String serviceName;
 
-    @Where
+    @Where(sqlkeyWord = MySqlKeyword.EQ)
     private String hostname;
 
     @Where(sqlkeyWord = MySqlKeyword.LIKE)
     private String names;
+
+    @Schema(description = "名称全等")
+    @Where(sqlkeyWord = MySqlKeyword.EQ,columnName = "names")
+    private String namesEq;
 
 }
