@@ -104,4 +104,10 @@ public class ProjectController {
         return Result.success(projectService.sync(id, SecurityUtils.getUserId(), syncRequest));
     }
 
+    @PostMapping("/backup")
+    @Operation(summary = "备份/恢复")
+    public Result<Boolean> backup(@RequestBody @Validated BackupRequest backupRequest) {
+        return Result.success(projectService.backup(SecurityUtils.getUserId(), backupRequest));
+    }
+
 }

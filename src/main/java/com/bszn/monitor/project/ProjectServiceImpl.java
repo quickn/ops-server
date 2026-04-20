@@ -177,6 +177,83 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
     }
 
     /**
+     * 备份/恢复
+     *
+     * @param userId        用户id
+     * @param backupRequest 请求参数
+     * @return 结果
+     */
+    @Override
+    public Boolean backup(Long userId, BackupRequest backupRequest) {
+        // 获取环境下的服务器列表
+        List<AgentConfigVo> list = agentConfigService.list(
+                AgentConfigQuery.builder()
+                        .serviceId(backupRequest.getServiceId())
+                        .build()
+        );
+
+        // 获取跳板机
+        AgentConfigVo jump = null;
+        for (AgentConfigVo agentConfigVo : list) {
+            if (agentConfigVo.getIsJumpServer()) {
+                jump = agentConfigVo;
+                break;
+            }
+        }
+        if (Objects.isNull(jump)) {
+            throw new BusinessException("该环境没有设置跳板机！");
+        }
+
+        // 移除跳板机，剩余为目标服务器
+        list.remove(jump);
+        if (list.isEmpty()) {
+            throw new BusinessException("未找到目标服务器");
+        }
+
+        String sourceDir = StrUtil.isEmpty(backupRequest.getSourceDir()) ?
+                "/home/park/docker" : backupRequest.getSourceDir();
+        String targetDir = StrUtil.isEmpty(backupRequest.getTargetDir()) ?
+                "/home/park/docker_bak" : backupRequest.getTargetDir();
+
+        // 根据类型决定复制方向
+        String fromDir, toDir;
+        String operation;
+        if (backupRequest.getType() == 1) {
+            // 备份：docker -> docker_bak
+            fromDir = sourceDir;
+            toDir = targetDir;
+            operation = "备份";
+        } else {
+            // 恢复：docker_bak -> docker
+            fromDir = targetDir;
+            toDir = sourceDir;
+            operation = "恢复";
+        }
+
+        StringBuilder result = new StringBuilder();
+
+        // 对每台目标服务器执行操作
+        for (AgentConfigVo server : list) {
+            String cmd = String.format("rm -rf %s && cp -r %s %s", toDir, fromDir, toDir);
+
+            String cmdResult = msgService.sendCMDMsgAndResponse(
+                    userId,
+                    jump.getId(),
+                    cmd,
+                    300
+            );
+
+            result.append("服务器 ").append(server.getHostname())
+                    .append(" ").append(operation).append("结果：").append(cmdResult)
+                    .append(" === 分隔线 === ");
+        }
+
+        log.info("{}结果：{}", operation, result);
+        return true;
+    }
+
+
+    /**
      * 部署
      *
      * @param projectId  项目id

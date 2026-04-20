@@ -50,4 +50,13 @@ public interface IProjectService extends IService<Project> {
      * @return 结果
      */
     Boolean sync(Long id, Long userId, SyncRequest syncRequest);
+
+    /**
+     * 备份
+     *
+     * @param userId        用户id
+     * @param backupRequest 请求参数
+     * @return 结果
+     */
+    Boolean backup(Long userId, BackupRequest backupRequest);
 }
