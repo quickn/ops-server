@@ -17,12 +17,15 @@ public class ProjectDto extends PageForm<Project> implements IQuery {
     @Schema(description = "项目名")
     private String name;
 
+    @Schema(description = "全等项目名")
+    private String nameEq;
+
     /**
      * 链式wrapper构建
      */
     public LambdaQueryWrapper<Project> buildLambda() {
         return Wrappers.<Project>lambdaQuery()
-                .like(StrUtil.isNotEmpty(name), Project::getName, name).orderByDesc(Project::getUpdateTime);
+                .like(StrUtil.isNotEmpty(name), Project::getName, name).eq(StrUtil.isNotEmpty(nameEq), Project::getName, nameEq).orderByDesc(Project::getUpdateTime);
     }
 
 }

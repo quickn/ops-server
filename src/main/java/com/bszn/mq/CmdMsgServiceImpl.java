@@ -9,6 +9,7 @@ import com.bszn.monitor.msg.IMsgService;
 import com.bszn.system.common.exception.BusinessException;
 import com.bszn.utils.IpUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -35,6 +36,10 @@ public class CmdMsgServiceImpl implements IMsgService {
         String ip = IpUtil.getIPv4Ip();
         final String messageId = MyIdWorker.getId() + "";
         log.info("发送指令 {} ", msg);
+        if (StringUtils.isEmpty(msg)) {
+            log.warn("指令为空 agentId:{}", agentId);
+            return null;
+        }
         try {
             // 加密
             msg = cryptoService.encrypt(EncryptRequest.builder().userId(userId).plainText(msg).build());

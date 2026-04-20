@@ -1,0 +1,100 @@
+package com.bszn.job;
+
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
+import com.bszn.monitor.agent.AgentConfig;
+import com.bszn.monitor.agent.AgentConfigService;
+import com.bszn.monitor.docker.DockerContainer;
+import com.bszn.monitor.docker.IDockerContainerService;
+import com.bszn.monitor.msg.IMsgService;
+import com.bszn.system.common.exception.BusinessException;
+import com.bszn.utils.CmdUtil;
+import com.xxl.job.core.context.XxlJobHelper;
+import com.xxl.job.core.handler.annotation.XxlJob;
+import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import java.util.Base64;
+import java.util.List;
+
+@Component
+@Slf4j
+public class ClientJobHandler {
+
+    @Resource
+    IMsgService iMsgService;
+    @Resource
+    IDockerContainerService iDockerContainerService;
+    @Resource
+    AgentConfigService agentConfigService;
+
+    @Value("${python.path}")
+    String pythonPath;
+    @Value("${python.script}")
+    String pythonScript;
+    @Value("${python.url:}")
+    String pythonUrl;
+
+    @XxlJob("cmdJobHandler")
+    public void cmdJobHandler() {
+        String jobParam = XxlJobHelper.getJobParam();
+        log.info("cmdJobHandler {}", jobParam);
+        if (StringUtils.isEmpty(jobParam)) {
+            return;
+        }
+        JSONObject jsonObject = JSONObject.parseObject(jobParam);
+        Long agentId = jsonObject.getLong("agentId");
+        String cmd = jsonObject.getString("cmd");
+        Integer serviceId = jsonObject.getInteger("serviceId");
+        String hostname = jsonObject.getString("hostname");
+        if (agentId != null) {
+            iMsgService.sendMsg(null, agentId, cmd, "cmd", null);
+            return;
+        }
+        if (StringUtils.isNotEmpty(hostname) && serviceId != null) {
+            AgentConfig agentConfig = agentConfigService.getByServiceIdAndHost(serviceId, hostname);
+            if (agentConfig == null) {
+                log.warn("agent 不存在 hostname:{}", hostname);
+                return;
+            }
+            iMsgService.sendMsg(null, agentConfig.getId(), cmd, "cmd", null);
+            return;
+        }
+        String dockerName = jsonObject.getString("dockerName");
+        if (StringUtils.isNotEmpty(dockerName) && serviceId != null) {
+            List<DockerContainer> list = iDockerContainerService.getByServiceIdAndDockerName(serviceId, dockerName);
+            for (DockerContainer dockerContainer : list) {
+                iMsgService.sendMsg(null, dockerContainer.getAgentId(), cmd, "cmd", null);
+            }
+            return;
+        }
+    }
+
+    /**
+     * 发布job
+     */
+    @XxlJob("deployJobHandler")
+    public void deployJobHandler() throws Exception {
+        String jobParam = XxlJobHelper.getJobParam();
+        log.info("pythonJobHandler jobParam{}", jobParam);
+        JSONObject jsonObject = JSONObject.parseObject(jobParam);
+        Integer serviceId = jsonObject.getInteger("serviceId");
+        JSONArray projectNames = jsonObject.getJSONArray("projectNames");
+        if (serviceId == null) {
+            throw new BusinessException("serviceId不能为空");
+        }
+        if (projectNames == null || projectNames.isEmpty()) {
+            throw new BusinessException("projectNames不能为空");
+        }
+        if (StringUtils.isNotEmpty(pythonUrl)) {
+            jsonObject.put("url", pythonUrl);
+        }
+        String encodedParams = Base64.getEncoder().encodeToString(jsonObject.toJSONString().getBytes());
+        String[] arr = {pythonPath, pythonScript + "/deploy.py", encodedParams};
+        CmdUtil.exec(false, 120, false, arr);
+    }
+
+}

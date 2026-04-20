@@ -24,19 +24,9 @@ mybatis-plus:
 # xxl-job 定时任务配置
 xxl:
   job:
-    # xxl-job 开关
-    enabled: false
     admin:
       # 多个地址使用,分割
-      addresses: http://127.0.0.1:8080/xxl-job-admin
-    accessToken: default_token
-    executor:
-      appname: xxl-job-executor-${spring.application.name}
-      address:
-      ip:
-      port: 9999
-      logpath: /data/applogs/xxl-job/jobhandler
-      logretentiondays: 30
+      addresses: http://172.16.150.158:9030/xxlJobAdmin
 
 # 文件配置
 file:
@@ -46,3 +36,6 @@ file:
 upgradeClient:
   url: http://monitor.bisenpark.com/monitor/static/monitor-agent.jar
   version: 1.0.0
+
+python:
+  url: http://monitor.bisenpark.com/monitor
