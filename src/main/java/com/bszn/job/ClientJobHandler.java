@@ -89,11 +89,15 @@ public class ClientJobHandler {
         if (projectNames == null || projectNames.isEmpty()) {
             throw new BusinessException("projectNames不能为空");
         }
+        String script = jsonObject.getString("script");
+        if (script == null || script.isEmpty()) {
+            throw new BusinessException("script不能为空");
+        }
         if (StringUtils.isNotEmpty(pythonUrl)) {
             jsonObject.put("url", pythonUrl);
         }
         String encodedParams = Base64.getEncoder().encodeToString(jsonObject.toJSONString().getBytes());
-        String[] arr = {pythonPath, pythonScript + "/deploy.py", encodedParams};
+        String[] arr = {pythonPath, pythonScript + "/" + script, encodedParams};
         CmdUtil.exec(false, 120, false, arr);
     }
 
