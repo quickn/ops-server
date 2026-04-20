@@ -49,6 +49,9 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
     @Value("${file.upload.down-path}")
     private String downPath;
 
+    @Value("${file.upload.work-path}")
+    private String workPath;
+
     /**
      * 部署
      *
@@ -138,8 +141,8 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         }
         StringBuilder result = new StringBuilder();
         StringBuilder command = new StringBuilder();
-        String targetDir = StrUtil.isEmpty(project.getTargetDir()) ? this.jarPath : project.getTargetDir();
-        String sourceDir = StrUtil.isEmpty(project.getSourceDir()) ? this.jarPath : project.getSourceDir();
+        String targetDir = StrUtil.isEmpty(project.getTargetDir()) ? workPath + this.jarPath : project.getTargetDir();
+        String sourceDir = StrUtil.isEmpty(project.getSourceDir()) ? workPath + this.jarPath : project.getSourceDir();
         // 源服务器 同步至跳板机
         if (syncRequest.getType() == 1) {
             String rsyncCmd = String.format("rsync -azv %s %s@%s:%s",
@@ -211,9 +214,9 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         }
 
         String sourceDir = StrUtil.isEmpty(backupRequest.getSourceDir()) ?
-                "/home/park/docker" : backupRequest.getSourceDir();
+                workPath + jarPath : backupRequest.getSourceDir();
         String targetDir = StrUtil.isEmpty(backupRequest.getTargetDir()) ?
-                "/home/park/docker_bak" : backupRequest.getTargetDir();
+                workPath + jarPath + "_bak" : backupRequest.getTargetDir();
 
         // 根据类型决定复制方向
         String fromDir, toDir;
@@ -334,13 +337,13 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
             }
             // 2. 生成重新部署脚本
             int type = project.getType() == 1 ? 3 : project.getType();
-            String jarPath = StrUtil.isEmpty(project.getTargetDir()) ? this.jarPath : project.getTargetDir();
+            String jarPath = StrUtil.isEmpty(project.getTargetDir()) ? workPath + this.jarPath : project.getTargetDir();
             String redeployScript = ScriptUtil.deployScript(project.getName(), project.getDockerfileContent(), project.getDockerComposeContent(), jarPath, type);
 
 
             // 3. 将脚本保存为可下载文件
             String scriptFileName = "redeploy_" + project.getName() + "_" + System.currentTimeMillis() + ".sh";
-            String scriptPath = filePath + File.separator + scriptFileName;
+            String scriptPath = workPath + filePath + File.separator + scriptFileName;
             try (FileWriter writer = new FileWriter(scriptPath)) {
                 writer.write(redeployScript);
             }
@@ -395,12 +398,12 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
     private Boolean deployWithDockerfile(Project project, Long agentId, Long recordId, Long userId) {
         try {
             // 获取脚本
-            String jarPath = StrUtil.isEmpty(project.getTargetDir()) ? this.jarPath : project.getTargetDir();
+            String jarPath = StrUtil.isEmpty(project.getTargetDir()) ? workPath + this.jarPath : project.getTargetDir();
             String deployScript = ScriptUtil.deployScript(project.getName(), project.getDockerfileContent(), project.getDockerComposeContent(), jarPath, project.getType());
 
             // 将脚本保存为可下载文件
             String scriptFileName = "deploy_" + project.getName() + "_simple_" + System.currentTimeMillis() + ".sh";
-            String scriptPath = filePath + File.separator + scriptFileName;
+            String scriptPath = workPath + filePath + File.separator + scriptFileName;
             try (FileWriter writer = new FileWriter(scriptPath)) {
                 writer.write(deployScript);
             }

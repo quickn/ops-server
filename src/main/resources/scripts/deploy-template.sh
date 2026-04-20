@@ -17,6 +17,7 @@ IMAGE_NAME="${IMAGE_NAME}"
 CONTAINER_NAME="${CONTAINER_NAME}"
 PORT="${PORT}"
 BUILD_DIR="/tmp/build-${CONTAINER_NAME}-$(date +%s)"
+ENV_PATH="${ENV_PATH}"
 
 # Docker Compose 相关变量
 USE_DOCKER_COMPOSE="${USE_DOCKER_COMPOSE}"
@@ -109,7 +110,7 @@ EOF
 
     # 使用 docker-compose 构建
     echo "# 处理 .env 文件（支持动态变量）"
-    ENV_SOURCE="/home/park/docker/.env"
+    ENV_SOURCE=${ENV_PATH}"/.env"
     ENV_TARGET="${BUILD_DIR}/.env"
     ENV_FILE_EXISTS=false
 

@@ -116,6 +116,7 @@ public class ScriptUtil {
             Map<String, String> variables = new HashMap<>();
 
             // 基本变量
+            variables.put("ENV_PATH", jarPath);
             variables.put("JAR_URL", downloadUrl);
             variables.put("JAR_NAME", fileName + "-" + version + ".jar");
             variables.put("LOCAL_JAR_PATH", jarPath + "/" + containerName + "/" + fileName + ".jar");

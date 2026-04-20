@@ -227,8 +227,9 @@ decrypt:
 # 文件配置
 file:
   upload:
-    file-path: /home/park/logs/monitor
-    jar-path: /home/park/docker
+    file-path: /logs/monitor
+    jar-path: /docker
+    work-path: /home/park
 
 # xxl-job 定时任务配置
 xxl:
