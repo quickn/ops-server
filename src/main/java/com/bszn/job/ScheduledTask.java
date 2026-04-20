@@ -1,4 +1,4 @@
-package com.bszn.task;
+package com.bszn.job;
 
 import com.bszn.monitor.heath.ApiHeathMonitorService;
 import com.bszn.system.common.exception.BusinessException;
