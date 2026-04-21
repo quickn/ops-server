@@ -235,21 +235,23 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
 
         StringBuilder result = new StringBuilder();
 
-        // 对每台目标服务器执行操作
-        for (AgentConfigVo server : list) {
-            String cmd = String.format("rm -rf %s && cp -r %s %s", toDir, fromDir, toDir);
-
-            String cmdResult = msgService.sendCMDMsgAndResponse(
-                    userId,
-                    jump.getId(),
-                    cmd,
-                    300
-            );
-
-            result.append("服务器 ").append(server.getHostname())
-                    .append(" ").append(operation).append("结果：").append(cmdResult)
-                    .append(" === 分隔线 === ");
+        StringBuilder cmd = new StringBuilder();
+        // 备份才需要删除原目录
+        if (backupRequest.getType() == 1) {
+            cmd.append(String.format("rm -rf %s && ", toDir));
         }
+        cmd.append(String.format("cp -r %s %s", fromDir, toDir));
+
+        String cmdResult = msgService.sendCMDMsgAndResponse(
+                userId,
+                jump.getId(),
+                cmd.toString(),
+                300
+        );
+
+        result.append("服务器 ").append(jump.getHostname())
+                .append(" ").append(operation).append("结果：").append(cmdResult)
+                .append(" === 分隔线 === ");
 
         log.info("{}结果：{}", operation, result);
         return true;
