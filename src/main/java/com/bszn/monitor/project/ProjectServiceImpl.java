@@ -188,30 +188,8 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
      */
     @Override
     public Boolean backup(Long userId, BackupRequest backupRequest) {
-        // 获取环境下的服务器列表
-        List<AgentConfigVo> list = agentConfigService.list(
-                AgentConfigQuery.builder()
-                        .serviceId(backupRequest.getServiceId())
-                        .build()
-        );
-
         // 获取跳板机
-        AgentConfigVo jump = null;
-        for (AgentConfigVo agentConfigVo : list) {
-            if (agentConfigVo.getIsJumpServer()) {
-                jump = agentConfigVo;
-                break;
-            }
-        }
-        if (Objects.isNull(jump)) {
-            throw new BusinessException("该环境没有设置跳板机！");
-        }
-
-        // 移除跳板机，剩余为目标服务器
-        list.remove(jump);
-        if (list.isEmpty()) {
-            throw new BusinessException("未找到目标服务器");
-        }
+        AgentConfig jump = agentConfigService.getjumpServers(backupRequest.getServiceId());
 
         String sourceDir = StrUtil.isEmpty(backupRequest.getSourceDir()) ?
                 workPath + jarPath : backupRequest.getSourceDir();

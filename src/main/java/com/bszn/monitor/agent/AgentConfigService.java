@@ -32,4 +32,12 @@ public interface AgentConfigService extends IService<AgentConfig> {
      * @return 服务器列表
      */
     List<AgentConfigVo> list(AgentConfigQuery dto);
+
+    /**
+     * 获取跳板机
+     *
+     * @param serviceId
+     * @return
+     */
+    AgentConfig getjumpServers(Integer serviceId);
 }

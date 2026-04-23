@@ -14,6 +14,7 @@ import com.bszn.monitor.constant.MonitorCmdC;
 import com.bszn.monitor.docker.DockerContainer;
 import com.bszn.monitor.docker.DockerContainerMapper;
 import com.bszn.monitor.msg.IMsgService;
+import com.bszn.system.common.exception.BusinessException;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -81,6 +82,18 @@ public class AgentConfigServiceImpl extends ServiceImpl<AgentConfigMapper, Agent
             }
         }
         return query.stream().map(AgentConfigVo::new).collect(Collectors.toList());
+    }
+
+    @Override
+    public AgentConfig getjumpServers(Integer serviceId) {
+        List<AgentConfig> jumpServers = baseMapper.selectList(Wrappers.<AgentConfig>lambdaQuery().eq(AgentConfig::getIsJumpServer, true));
+        if (jumpServers.isEmpty()) {
+            throw new BusinessException("未设置跳板机");
+        }
+        if (jumpServers.size() > 1) {
+            throw new BusinessException("设置了多个跳板机");
+        }
+        return jumpServers.get(0);
     }
 
     /**
