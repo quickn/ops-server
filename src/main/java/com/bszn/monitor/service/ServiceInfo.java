@@ -42,6 +42,9 @@ public class ServiceInfo {
     @Schema(description = "标签")
     private String label;
 
+    @Schema(description = "工作目录")
+    private String workPath;
+
     /**
      * 创建时间
      */
