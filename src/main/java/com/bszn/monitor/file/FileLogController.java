@@ -38,7 +38,7 @@ public class FileLogController {
     public Result analyzer(@RequestParam Long agentId, @RequestParam String logFilePath) {
         AgentConfig agentConfig = agentConfigService.getById(agentId);
         AgentConfig jump = agentConfigService.getjumpServers(agentConfig.getServiceId());
-        String cmd = String.format("curl -F \"file=@%s\" http://%s:18080/pyApi/log/analyzer", logFilePath, jump.getHostname());
+        String cmd = String.format("curl -F \"file=@%s\" -sS http://%s:18080/pyApi/log/analyzer", logFilePath, jump.getHostname());
         String cmdResult = iMsgService.sendCMDMsgAndResponse(
                 SecurityUtils.getUserId(),
                 agentId,
