@@ -8,6 +8,7 @@ import com.bszn.monitor.agent.AgentConfigService;
 import com.bszn.monitor.agent.AgentConfigVo;
 import com.bszn.monitor.msg.IMsgService;
 import com.bszn.system.common.exception.BusinessException;
+import com.bszn.utils.IpUtil;
 import com.bszn.utils.ScriptUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -382,12 +383,15 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
             String deployScript = ScriptUtil.deployScript(project.getName(), project.getDockerfileContent(), project.getDockerComposeContent(), jarPath, project.getType());
 
             // 将脚本保存为可下载文件
-            String scriptFileName = "deploy_" + project.getName() + "_simple_" + System.currentTimeMillis() + ".sh";
+            String scriptFileName = "deploy_" + project.getName() + ".sh";
             String scriptPath = workPath + filePath + File.separator + scriptFileName;
+            new File(scriptPath).delete();
             try (FileWriter writer = new FileWriter(scriptPath)) {
                 writer.write(deployScript);
             }
-
+            if (downPath.contains("$ip")) {
+                downPath = downPath.replace("$ip", IpUtil.getIPv4Ip());
+            }
             // 生成脚本下载URL
             String scriptDownloadUrl = String.format(downPath + "/%s", scriptFileName);
 
@@ -407,8 +411,6 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
 
             String scriptResult = msgService.sendCMDMsgAndResponse(userId, agentId, combinedCmd);
 
-            // 清理本地脚本文件
-            new File(scriptPath).delete();
 
             // 解析脚本执行结果
             if (scriptResult.contains("DEPLOY_SUCCESS")) {

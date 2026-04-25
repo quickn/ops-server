@@ -1,4 +1,10 @@
 spring:
+  web:
+    resources:
+      # 添加自定义静态资源路径
+      static-locations:
+        - file:D:/home/park/logs/monitor/
+      static-path-pattern: /static/**
   devtools:
     #livereload:
     # enabled: true
@@ -6,27 +12,15 @@ spring:
       enabled: true
       # classloader加载会更改的类
       additional-exclude: src/main/java
-  thymeleaf:
-    cache: false
-  datasource:
-    type: com.alibaba.druid.pool.DruidDataSource
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://bs-mysql:3306/bs_monitor?characterEncoding=utf-8&characterSetResults=utf8&autoReconnect=true&useSSL=false&allowMultiQueries=true
-    username: parking
-    password: BSzn@1999@2022
-  data:
-    redis:
-      password: baisheng123
 # 文件配置
 file:
   upload:
-    down-path: http://192.168.10.11:90/monitor/static
-
-security:
-  ignore-paths:
-    - "/**"
-
+    down-path: http://$ip:8989/static
 python:
   path: D:\app\miniconda3\python
   script: D:\Users\liuyun\IdeaProjects\py-sync\bs
   url: http://localhost:8989
+
+#security:
+#  ignore-paths:
+#    - "/**"

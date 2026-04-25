@@ -94,10 +94,8 @@ EOF
             log "  $line"
         done
         log ""
-
-    if [ -f "${ENV_SOURCE}" ]; then
-        log "处理动态 .env 文件"
-        # 清空目标文件
+        # 处理动态 .env 文件（修复：合并到同一个if块中）
+        echo "清空目标文件"
         > "${ENV_TARGET}"
 
         # 使用 source 命令加载并重新导出变量
@@ -202,7 +200,7 @@ if [ "${USE_DOCKER_COMPOSE}" = "true" ]; then
         exit 1
     fi
 
-    log "6. 等待doker启动"
+    log "6. 等待Docker启动"
 else
     # 使用 Docker 直接运行
     log "5. 运行容器"
@@ -223,7 +221,7 @@ else
         exit 1
     fi
 
-    log "6. 等待doker启动"
+    log "6. 等待Docker启动"
 fi
 
 # 等待Spring Boot启动完成
@@ -244,17 +242,17 @@ for i in {1..120}; do
     # 获取容器日志
     CONTAINER_LOGS=$(docker logs "${CONTAINER_NAME}" 2>&1 || true)
 
-    # 检查Spring Boot启动关键词
-    if echo "$CONTAINER_LOGS" | grep -q "python"; then
+    # 检查Spring Boot启动关键词（修复：将python改为Spring Boot关键词）
+    if echo "$CONTAINER_LOGS" | grep -q "Started .*Application in\|Tomcat started on port"; then
         log_success "检测到Spring Boot启动成功"
         SUCCESS=true
         break
     fi
 
     if [ "${USE_DOCKER_COMPOSE}" = "true" ]; then
-        echo "  [$i/120] 等待docker启动 (Docker Compose)..."
+        echo "  [$i/120] 等待服务启动 (Docker Compose)..."
     else
-        echo "  [$i/120] 等待docker启动..."
+        echo "  [$i/120] 等待服务启动..."
     fi
 done
 

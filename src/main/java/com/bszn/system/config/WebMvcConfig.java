@@ -16,6 +16,7 @@ import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.validation.beanvalidation.SpringConstraintValidatorFactory;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.math.BigInteger;
@@ -26,6 +27,7 @@ import java.util.TimeZone;
 @Configuration
 @Slf4j
 public class WebMvcConfig implements WebMvcConfigurer {
+
 
     @Override
     public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
@@ -56,5 +58,13 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 .buildValidatorFactory();
 
         return validatorFactory.getValidator();
+    }
+
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        // 将 /files/** 映射到外部目录
+        registry.addResourceHandler("/static/**")
+                .addResourceLocations("file:/home/park/logs/monitor/")  // 外部绝对路径
+                .setCachePeriod(1);  // 缓存1小时
     }
 }
