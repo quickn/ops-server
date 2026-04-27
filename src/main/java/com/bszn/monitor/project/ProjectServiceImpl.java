@@ -399,15 +399,15 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
             updateDeployRecord(recordId, 1, "执行部署脚本...");
 
             // 执行命令
-            String remoteScriptPath = "/tmp/deploy.sh";
+            String remoteScriptPath = String.format("/tmp/deploy_%s.sh", project.getName());
             String downloadCmd = String.format("curl -s -L -o %s '%s'", remoteScriptPath, scriptDownloadUrl);
             String chmodCmd = String.format("chmod +x %s", remoteScriptPath);
             String executeCmd = String.format("bash -c '%s 2>&1'", remoteScriptPath);
             String cleanupCmd = String.format("rm -f %s", remoteScriptPath);
 
             // 组合命令（添加超时控制）
-            String combinedCmd = String.format("timeout 300 %s && %s && %s && %s",
-                    downloadCmd, chmodCmd, executeCmd, cleanupCmd);
+            String combinedCmd = String.format("%s && timeout 300 %s && %s && %s ",
+                    cleanupCmd, downloadCmd, chmodCmd, executeCmd);
 
             String scriptResult = msgService.sendCMDMsgAndResponse(userId, agentId, combinedCmd);
 

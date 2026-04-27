@@ -12,7 +12,11 @@ set -o pipefail
 IMAGE_NAME="${IMAGE_NAME}"
 CONTAINER_NAME="${CONTAINER_NAME}"
 PORT="${PORT}"
-BUILD_DIR="/tmp/build-${CONTAINER_NAME}-$(date +%s)"
+BUILD_DIR="/tmp/docker-${CONTAINER_NAME}"
+
+if [ -d "${BUILD_DIR}" ]; then
+  rm -rf "${BUILD_DIR}"
+fi
 
 # Docker Compose 相关变量
 USE_DOCKER_COMPOSE="${USE_DOCKER_COMPOSE}"
@@ -23,6 +27,76 @@ log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"; }
 log_success() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] ✓ $1"; }
 log_error() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] ✗ $1" >&2; }
 
+
+get_container_uptime_seconds() {
+    local container_name=$1
+    local status=$(docker ps --filter "name=${container_name}" --format "{{.Status}}" 2>/dev/null)
+    if [ -z "$status" ]; then
+        echo "0"
+        return
+    fi
+    # 解析 status 字符串，格式示例：
+    # "Up 2 minutes"    -> 120秒
+    # "Up 3 hours"      -> 10800秒
+    # "Up 5 days"       -> 432000秒
+    # "Up 45 seconds"   -> 45秒
+    # "Up About a minute" -> 60秒（近似）
+    if [[ "$status" =~ ^Up[[:space:]]+([0-9]+)[[:space:]]+seconds? ]]; then
+        # Up 45 seconds
+        echo "${BASH_REMATCH[1]}"
+    elif [[ "$status" =~ ^Up[[:space:]]+([0-9]+)[[:space:]]+minutes? ]]; then
+        # Up 2 minutes
+        echo "$((${BASH_REMATCH[1]} * 60))"
+    elif [[ "$status" =~ ^Up[[:space:]]+([0-9]+)[[:space:]]+hours? ]]; then
+        # Up 3 hours
+        echo "$((${BASH_REMATCH[1]} * 3600))"
+    elif [[ "$status" =~ ^Up[[:space:]]+([0-9]+)[[:space:]]+days? ]]; then
+        # Up 5 days
+        echo "$((${BASH_REMATCH[1]} * 86400))"
+    elif [[ "$status" =~ ^Up[[:space:]]+([0-9]+)[[:space:]]+weeks? ]]; then
+        # Up 2 weeks
+        echo "$((${BASH_REMATCH[1]} * 604800))"
+    elif echo "$status" | grep -qi "about.*minute"; then
+        # Up About a minute
+        echo "60"
+    else
+        # 无法解析，返回0
+        echo "0"
+    fi
+}
+
+# 等待容器启动完成完成
+wait_for_container_startup(){
+  local max_wait_time=90        # 最大等待时间（秒）
+  local check_interval=2        # 检查间隔（秒）
+  local elapsed_time=0
+  while [ $elapsed_time -lt $max_wait_time ]; do
+        sleep $check_interval
+        elapsed_time=$((elapsed_time + check_interval))
+      # 检查容器是否还在运行
+      if ! docker ps --filter "name=${CONTAINER_NAME}" | grep -q "${CONTAINER_NAME}"; then
+          log_error "容器已停止运行"
+          if [ "${USE_DOCKER_COMPOSE}" = "true" ]; then
+              # 尝试获取Docker Compose日志
+              $DOCKER_COMPOSE_CMD logs 2>/dev/null || true
+          fi
+          return 1
+      fi
+       # 获取启动时长（秒）
+      UPTIME_SECONDS=$(get_container_uptime_seconds "$CONTAINER_NAME")
+      echo "容器已运行: ${UPTIME_SECONDS} 秒"
+      if [ "$UPTIME_SECONDS" -ge 15 ]; then
+           return 0
+      fi
+      echo "✗ 容器运行不足15秒，还需等待"
+      if [ "${USE_DOCKER_COMPOSE}" = "true" ]; then
+          echo "  [$elapsed_time] 等待服务启动 (Docker Compose)..."
+      else
+          echo "  [$elapsed_time] 等待服务启动..."
+      fi
+  done
+  return 0
+}
 
 # 步骤1: 清理环境
 log "1. 清理环境"
@@ -38,7 +112,9 @@ docker ps -a --format "{{.Names}}" | grep "${CONTAINER_NAME}" | xargs -r docker 
 docker ps -a --format "{{.Names}}" | grep "${CONTAINER_NAME}" | xargs -r docker rm -f 2>/dev/null || true
 
 # 强制清理网络
-docker network ls --filter "name=${CONTAINER_NAME}" --format "{{.Name}}" | xargs -r docker network rm 2>/dev/null || true
+#docker network ls --filter "name=${CONTAINER_NAME}" --format "{{.Name}}" | xargs -r docker network rm 2>/dev/null || true
+docker network ls --filter name="${CONTAINER_NAME}" -q | xargs docker network rm 2>/dev/null || true
+
 sleep 3
 log_success "环境清理完成"
 
@@ -224,41 +300,8 @@ else
     log "6. 等待Docker启动"
 fi
 
-# 等待Spring Boot启动完成
-SUCCESS=false
-for i in {1..120}; do
-    sleep 1
-
-    # 检查容器是否还在运行
-    if ! docker ps --filter "name=${CONTAINER_NAME}" | grep -q "${CONTAINER_NAME}"; then
-        log_error "容器已停止运行"
-        if [ "${USE_DOCKER_COMPOSE}" = "true" ]; then
-            # 尝试获取Docker Compose日志
-            $DOCKER_COMPOSE_CMD logs 2>/dev/null || true
-        fi
-        break
-    fi
-
-    # 获取容器日志
-    CONTAINER_LOGS=$(docker logs "${CONTAINER_NAME}" 2>&1 || true)
-
-    # 检查Spring Boot启动关键词（修复：将python改为Spring Boot关键词）
-    if echo "$CONTAINER_LOGS" | grep -q "Started .*Application in\|Tomcat started on port"; then
-        log_success "检测到Spring Boot启动成功"
-        SUCCESS=true
-        break
-    fi
-
-    if [ "${USE_DOCKER_COMPOSE}" = "true" ]; then
-        echo "  [$i/120] 等待服务启动 (Docker Compose)..."
-    else
-        echo "  [$i/120] 等待服务启动..."
-    fi
-done
-
-# 步骤7: 输出结果
 log "7. 部署结果"
-if [ "$SUCCESS" = true ]; then
+if wait_for_container_startup; then
     echo ""
     echo "========================================"
     echo "           🎉 部署成功！🎉"
@@ -334,21 +377,3 @@ else
 
     exit 1
 fi
-
-# 清理临时文件
-log "清理临时文件..."
-if [ -d "${BUILD_DIR}" ]; then
-    echo "删除构建目录: ${BUILD_DIR}"
-    rm -rf "${BUILD_DIR}" 2>/dev/null || true
-    if [ $? -eq 0 ]; then
-        log_success "构建目录已删除"
-    else
-        log "警告: 构建目录删除失败，但可以忽略"
-    fi
-else
-    log "构建目录不存在，无需清理"
-fi
-
-# 清理临时JAR文件
-rm -f /tmp/*.jar 2>/dev/null || true
-log_success "所有临时文件已清理"

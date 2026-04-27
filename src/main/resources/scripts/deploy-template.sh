@@ -16,7 +16,13 @@ JAR_PATH="/tmp/${JAR_NAME}"
 IMAGE_NAME="${IMAGE_NAME}"
 CONTAINER_NAME="${CONTAINER_NAME}"
 PORT="${PORT}"
-BUILD_DIR="/tmp/build-${CONTAINER_NAME}-$(date +%s)"
+BUILD_DIR="/tmp/build-${CONTAINER_NAME}"
+
+if [ -d "${BUILD_DIR}" ]; then
+  rm -rf "${BUILD_DIR}"
+  echo "删除构建目录: ${BUILD_DIR}"
+fi
+
 ENV_PATH="${ENV_PATH}"
 
 # Docker Compose 相关变量
@@ -357,20 +363,6 @@ else
     docker rm -f "${CONTAINER_NAME}" 2>/dev/null || true
 
     exit 1
-fi
-
-# 清理临时文件
-log "清理临时文件..."
-if [ -d "${BUILD_DIR}" ]; then
-    echo "删除构建目录: ${BUILD_DIR}"
-    rm -rf "${BUILD_DIR}" 2>/dev/null || true
-    if [ $? -eq 0 ]; then
-        log_success "构建目录已删除"
-    else
-        log "警告: 构建目录删除失败，但可以忽略"
-    fi
-else
-    log "构建目录不存在，无需清理"
 fi
 
 # 清理临时JAR文件
