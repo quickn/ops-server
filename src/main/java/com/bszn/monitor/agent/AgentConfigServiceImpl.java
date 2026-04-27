@@ -86,7 +86,8 @@ public class AgentConfigServiceImpl extends ServiceImpl<AgentConfigMapper, Agent
 
     @Override
     public AgentConfig getjumpServers(Integer serviceId) {
-        List<AgentConfig> jumpServers = baseMapper.selectList(Wrappers.<AgentConfig>lambdaQuery().eq(AgentConfig::getIsJumpServer, true));
+        List<AgentConfig> jumpServers = baseMapper.selectList(Wrappers.<AgentConfig>lambdaQuery().eq(AgentConfig::getServiceId, serviceId)
+                .eq(AgentConfig::getIsJumpServer, true));
         if (jumpServers.isEmpty()) {
             throw new BusinessException("未设置跳板机");
         }
