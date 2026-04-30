@@ -25,6 +25,12 @@ public class CmdLogInfoQueryDto extends PageForm<CmdLogInfo> implements IQuery {
     @Schema(description = "用户id")
     private Long userId;
 
+    @Schema(description = "开始时间")
+    private String startTime;
+
+    @Schema(description = "接收时间")
+    private String endTime;
+
 
     @Override
     public LambdaQueryWrapper<CmdLogInfo> buildLambda() {
@@ -32,6 +38,8 @@ public class CmdLogInfoQueryDto extends PageForm<CmdLogInfo> implements IQuery {
                 .eq(Objects.nonNull(serviceId), CmdLogInfo::getServiceId, serviceId)
                 .eq(Objects.nonNull(agentId), CmdLogInfo::getAgentId, agentId)
                 .eq(Objects.nonNull(userId), CmdLogInfo::getUserId, userId)
+                .gt(Objects.nonNull(startTime), CmdLogInfo::getCreateTime, startTime)
+                .lt(Objects.nonNull(endTime) && !endTime.equals(startTime), CmdLogInfo::getCreateTime, endTime)
                 .orderByDesc(CmdLogInfo::getId);
     }
 }

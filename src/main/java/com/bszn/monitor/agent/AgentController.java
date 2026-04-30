@@ -3,7 +3,6 @@ package com.bszn.monitor.agent;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.bszn.monitor.agent.*;
 import com.bszn.monitor.cmd.ClientMsgForm;
 import com.bszn.monitor.cmd.LogCmdForm;
 import com.bszn.monitor.service.ServiceInfo;
@@ -17,7 +16,6 @@ import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Objects;
 
 
 @Tag(name = "终端")
@@ -92,6 +90,16 @@ public class AgentController {
     @GetMapping("/handleAgent/{agentId}")
     public Result handleAgent(@PathVariable Long agentId, @RequestParam String cmd) {
         iAgentConfigService.handleAgent(agentId, cmd);
+        return Result.success();
+    }
+
+    @PostMapping("/batchHandleAgent")
+    public Result batchHandleAgent(@RequestBody JSONObject jsonObject) {
+        Long[] ids = jsonObject.getJSONArray("ids").toArray(new Long[0]);
+        String cmd = jsonObject.getStr("cmd");
+        for (Long agentId : ids) {
+            iAgentConfigService.handleAgent(agentId, cmd);
+        }
         return Result.success();
     }
 

@@ -239,7 +239,7 @@ public class AgentConfigServiceImpl extends ServiceImpl<AgentConfigMapper, Agent
         jsonObject.putOnce("handle", "agentManagerHandle");
         jsonObject.putOnce("cmd", cmd);
         jsonObject.putOnce("url", upgradeClientUrl);
-        iMsgService.sendMsgAndResponse(null, agentId, jsonObject.toString(), MonitorMsgType.TASK, 30);
+        iMsgService.sendMsgAndResponse(null, agentId, jsonObject.toString(), MonitorMsgType.TASK, 3);
     }
 
 }
