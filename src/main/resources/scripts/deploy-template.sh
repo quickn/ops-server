@@ -116,7 +116,7 @@ EOF
 
     # 使用 docker-compose 构建
     echo "# 处理 .env 文件（支持动态变量）"
-    ENV_SOURCE=${ENV_PATH}"/.env"
+    ENV_SOURCE="${ENV_PATH}/.env"
     ENV_TARGET="${BUILD_DIR}/.env"
     ENV_FILE_EXISTS=false
 
