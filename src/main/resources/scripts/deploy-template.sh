@@ -16,7 +16,7 @@ JAR_PATH="/tmp/${JAR_NAME}"
 IMAGE_NAME="${IMAGE_NAME}"
 CONTAINER_NAME="${CONTAINER_NAME}"
 PORT="${PORT}"
-BUILD_DIR="/tmp/build-${CONTAINER_NAME}"
+BUILD_DIR="/tmp/docker-${CONTAINER_NAME}"
 
 if [ -d "${BUILD_DIR}" ]; then
   rm -rf "${BUILD_DIR}"
@@ -170,14 +170,11 @@ ENV_EOF
     fi
 
     # 构建命令
-    if [ "$ENV_FILE_EXISTS" = true ]; then
-        DOCKER_COMPOSE_CMD="docker-compose --env-file .env -f docker-compose.yml -p $CONTAINER_NAME"
-    else
-        DOCKER_COMPOSE_CMD="docker-compose -f docker-compose.yml -p $CONTAINER_NAME"
-    fi
+    DOCKER_COMPOSE_CMD="docker compose"
+    echo "使用命令: $DOCKER_COMPOSE_CMD"
 
     # 使用 docker-compose 构建镜像
-    if $DOCKER_COMPOSE_CMD build; then
+    if $DOCKER_COMPOSE_CMD up -d --build; then
         log_success "镜像构建成功 (通过 Docker Compose)"
     else
         log_error "镜像构建失败"
