@@ -137,9 +137,9 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         // 删除跳板机 剩下的即是指向服务器
         list.remove(jump);
         // 获取目标服务器信息
-        if (list.isEmpty()) {
-            throw new BusinessException("未找到指向服务器信息");
-        }
+//        if (list.isEmpty()) {
+//            throw new BusinessException("未找到指向服务器信息");
+//        }
         StringBuilder result = new StringBuilder();
         StringBuilder command = new StringBuilder();
         String targetDir = StrUtil.isEmpty(project.getTargetDir()) ? workPath + this.jarPath : project.getTargetDir();
@@ -155,28 +155,31 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
             result.append(msgService.sendCMDMsgAndResponse(userId, syncRequest.getSourceAgentId(), rsyncCmd, 300))
                     .append(" === 第一段结果集结束 === ");
         }
-        // jar包 在命令中添加下载动作
-        if (syncRequest.getType() == 2) {
-            String downloadCmd = String.format("curl -L -o %s '%s'", targetDir + "/" + project.getName() + "/" + project.getName() + ".jar",
-                    syncRequest.getJarDownloadUrl());
-            command.append(downloadCmd);
-            command.append(" && ");
-        }
-        for (int i = 0; i < list.size(); i++) {
-            AgentConfigVo server = list.get(i);
-            String rsyncCmd = String.format("rsync -azv %s %s@%s:%s",
-                    targetDir + "/" + project.getName(),
-                    syncRequest.getUser() != null ? syncRequest.getUser() : "park",
-                    server.getHostname(),
-                    targetDir);
-            command.append(rsyncCmd);
-            // 如果不是最后一条命令，添加 &&
-            if (i < list.size() - 1) {
+        // 指向服务器不为空 才同步至指向服务器
+        if (!list.isEmpty()) {
+            // jar包 在命令中添加下载动作
+            if (syncRequest.getType() == 2) {
+                String downloadCmd = String.format("curl -L -o %s '%s'", targetDir + "/" + project.getName() + "/" + project.getName() + ".jar",
+                        syncRequest.getJarDownloadUrl());
+                command.append(downloadCmd);
                 command.append(" && ");
             }
+            for (int i = 0; i < list.size(); i++) {
+                AgentConfigVo server = list.get(i);
+                String rsyncCmd = String.format("rsync -azv %s %s@%s:%s",
+                        targetDir + "/" + project.getName(),
+                        syncRequest.getUser() != null ? syncRequest.getUser() : "park",
+                        server.getHostname(),
+                        targetDir);
+                command.append(rsyncCmd);
+                // 如果不是最后一条命令，添加 &&
+                if (i < list.size() - 1) {
+                    command.append(" && ");
+                }
+            }
+            result.append(msgService.sendCMDMsgAndResponse(userId, agentId, command.toString(), 300));
+            log.info("同步结果：{}", result);
         }
-        result.append(msgService.sendCMDMsgAndResponse(userId, agentId, command.toString(), 300));
-        log.info("同步结果：{}", result);
         return true;
     }
 
