@@ -65,37 +65,100 @@ get_container_uptime_seconds() {
     fi
 }
 
+# 根据容器 ID 获取运行时长（秒）
+get_container_uptime_seconds_by_id() {
+    local container_id=$1
+    local status=$(docker ps --filter "id=${container_id}" --format "{{.Status}}" 2>/dev/null)
+    if [ -z "$status" ]; then
+        echo "0"
+        return
+    fi
+    if [[ "$status" =~ ^Up[[:space:]]+([0-9]+)[[:space:]]+seconds? ]]; then
+        echo "${BASH_REMATCH[1]}"
+    elif [[ "$status" =~ ^Up[[:space:]]+([0-9]+)[[:space:]]+minutes? ]]; then
+        echo "$((${BASH_REMATCH[1]} * 60))"
+    elif [[ "$status" =~ ^Up[[:space:]]+([0-9]+)[[:space:]]+hours? ]]; then
+        echo "$((${BASH_REMATCH[1]} * 3600))"
+    elif [[ "$status" =~ ^Up[[:space:]]+([0-9]+)[[:space:]]+days? ]]; then
+        echo "$((${BASH_REMATCH[1]} * 86400))"
+    elif [[ "$status" =~ ^Up[[:space:]]+([0-9]+)[[:space:]]+weeks? ]]; then
+        echo "$((${BASH_REMATCH[1]} * 604800))"
+    elif echo "$status" | grep -qi "about.*minute"; then
+        echo "60"
+    else
+        echo "0"
+    fi
+}
+
 # 等待容器启动完成完成
-wait_for_container_startup(){
-  local max_wait_time=90        # 最大等待时间（秒）
-  local check_interval=2        # 检查间隔（秒）
-  local elapsed_time=0
-  while [ $elapsed_time -lt $max_wait_time ]; do
+wait_for_container_startup() {
+    local max_wait_time=90
+    local check_interval=2
+    local elapsed_time=0
+    local container_to_check
+    local check_by_id=false
+
+    if [ "${USE_DOCKER_COMPOSE}" = "true" ]; then
+        local actual_id
+        actual_id=$($DOCKER_COMPOSE_CMD ps -q 2>/dev/null | head -1)
+        if [ -z "$actual_id" ]; then
+            log_error "无法获取 Docker Compose 容器 ID"
+            return 1
+        fi
+        CONTAINER_ID="$actual_id"
+        container_to_check="$actual_id"
+        check_by_id=true
+        log "Docker Compose 模式，检测容器 ID: ${actual_id:0:12}"
+    else
+        container_to_check="${CONTAINER_NAME}"
+        check_by_id=false
+    fi
+
+    while [ $elapsed_time -lt $max_wait_time ]; do
         sleep $check_interval
         elapsed_time=$((elapsed_time + check_interval))
-      # 检查容器是否还在运行
-      if ! docker ps --filter "name=${CONTAINER_NAME}" | grep -q "${CONTAINER_NAME}"; then
-          log_error "容器已停止运行"
-          if [ "${USE_DOCKER_COMPOSE}" = "true" ]; then
-              # 尝试获取Docker Compose日志
-              $DOCKER_COMPOSE_CMD logs 2>/dev/null || true
-          fi
-          return 1
-      fi
-       # 获取启动时长（秒）
-      UPTIME_SECONDS=$(get_container_uptime_seconds "$CONTAINER_NAME")
-      echo "容器已运行: ${UPTIME_SECONDS} 秒"
-      if [ "$UPTIME_SECONDS" -ge 15 ]; then
-           return 0
-      fi
-      echo "✗ 容器运行不足15秒，还需等待"
-      if [ "${USE_DOCKER_COMPOSE}" = "true" ]; then
-          echo "  [$elapsed_time] 等待服务启动 (Docker Compose)..."
-      else
-          echo "  [$elapsed_time] 等待服务启动..."
-      fi
-  done
-  return 0
+
+        # 检查容器是否还在运行（修正：用 -q 输出完整 ID 并检查是否非空）
+        if $check_by_id; then
+            # 用短 ID 也能匹配运行的容器
+            if ! docker ps -q --filter "id=${container_to_check}" | grep -q .; then
+                log_error "容器已停止运行"
+                if [ "${USE_DOCKER_COMPOSE}" = "true" ]; then
+                    $DOCKER_COMPOSE_CMD logs 2>/dev/null || true
+                fi
+                return 1
+            fi
+        else
+            # Docker 模式直接检查名字
+            if ! docker ps -q --filter "name=${container_to_check}" | grep -q .; then
+                log_error "容器已停止运行"
+                return 1
+            fi
+        fi
+
+        # 获取启动时长
+        local uptime_seconds
+        if $check_by_id; then
+            uptime_seconds=$(get_container_uptime_seconds_by_id "$container_to_check")
+        else
+            uptime_seconds=$(get_container_uptime_seconds "$container_to_check")
+        fi
+        echo "容器已运行: ${uptime_seconds} 秒"
+
+        if [ "$uptime_seconds" -ge 15 ]; then
+            return 0
+        fi
+
+        echo "✗ 容器运行不足15秒，还需等待"
+        if [ "${USE_DOCKER_COMPOSE}" = "true" ]; then
+            echo "  [$elapsed_time] 等待服务启动 (Docker Compose)..."
+        else
+            echo "  [$elapsed_time] 等待服务启动..."
+        fi
+    done
+
+    log_error "等待容器启动超时"
+    return 1
 }
 
 # 步骤1: 清理环境
@@ -337,8 +400,8 @@ if wait_for_container_startup; then
     echo "🔹 启动时间: $(date '+%Y-%m-%d %H:%M:%S')"
     echo ""
 
-    echo "📝 应用启动日志:"
-    docker logs "${CONTAINER_NAME}" 2>&1 | grep -E "Starting|Tomcat started|Started .*Application" | tail -5
+    echo "📝 应用启动日志（最后10行）:"
+    docker logs "${CONTAINER_NAME}" --tail 10 2>&1
     echo ""
     echo "✅ DEPLOY_SUCCESS"
 else
