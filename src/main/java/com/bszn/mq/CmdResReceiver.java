@@ -59,8 +59,8 @@ public class CmdResReceiver {
         String messageId = msg.getMessageProperties().getMessageId();
         Long tag = msg.getMessageProperties().getDeliveryTag();
         log.info("指令响应 {}", message);
-        monitorCmdMsgHandle.handle(messageId, message);
         channel.basicAck(tag, false);
+        monitorCmdMsgHandle.handle(messageId, message);
     }
 
 }
