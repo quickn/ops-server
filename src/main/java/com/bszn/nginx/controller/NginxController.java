@@ -1,15 +1,13 @@
 package com.bszn.nginx.controller;
 
+import com.bszn.monitor.msg.IMsgService;
 import com.bszn.nginx.NginxConf;
 import com.bszn.nginx.NginxFile;
 import com.bszn.nginx.NginxFileQuery;
 import com.bszn.nginx.NginxFileService;
-import com.bszn.nginx.NginxUtils;
 import com.bszn.system.common.nginx.Vali;
 import com.bszn.system.common.result.Result;
-import com.bszn.system.manager.NginxManager;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.validation.ValidationException;
@@ -18,66 +16,71 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-
-/**
- * @Auther: liuyun
- * @Date: 2023-09-06 15:11
- * @Email 719348277@qq.com
- * @Description: nginx
- */
 @Tag(name = "Nginx")
 @RestController
-@RequestMapping("/config/nginx")
+@RequestMapping("/nginx")
 public class NginxController {
-
-    @Resource
-    private NginxManager nginxManager;
 
     @Resource
     NginxFileService nginxFileService;
 
-    @Operation(summary = "nginx文件列表", security = {@SecurityRequirement(name = "Authorization")})
+    @Resource
+    IMsgService iMsgService;
+
+    @Operation(summary = "nginx文件列表")
     @GetMapping("/listFiles")
     public Result<List<NginxFile>> listFiles(@ParameterObject NginxFileQuery nginxFileQuery) {
         List<NginxFile> list = nginxFileService.listFiles(nginxFileQuery);
         return Result.success(list);
     }
 
-    @GetMapping("/getConfig")
-    public Result<String> getConfig(@ParameterObject NginxFileQuery nginxFileQuery) {
-        String str = NginxUtils.toString(NginxUtils.read(nginxFileQuery.getFilePath()));
-        return Result.success(str);
-    }
-
-    @PostMapping("/check")
+    @PostMapping("/test")
+    @Operation(summary = "测试配置文件")
     @ResponseBody
-    public Result check(@RequestBody NginxConf nginxConf) {
+    public Result test(@RequestBody NginxConf nginxConf) {
         if (Vali.isEpt(nginxConf.getConf())) {
             throw new ValidationException("配置文件内容不能为空");
         }
-        NginxUtils.check(nginxConf.getConf(), nginxConf.getFilePath());
-        return Result.success();
+        String confText = nginxConf.getConf();
+        StringBuffer stringBuffer = new StringBuffer();
+        stringBuffer.append("cat > " + nginxConf.getFileNamePath() + " <<'ENDOFSTRING'");
+        stringBuffer.append(" && sudo /usr/local/nginx/sbin/nginx -t ");
+        stringBuffer.append("\n");
+        stringBuffer.append(confText);
+        stringBuffer.append("ENDOFSTRING");
+        String str = iMsgService.sendCMDMsgAndResponse(null, nginxConf.getAgentId(), stringBuffer.toString());
+        if (str.contains("语法错误") || str.contains("test failed")) {
+            return Result.failed(str);
+        }
+        return Result.success(str);
     }
 
-    @PutMapping("/save")
+    @PostMapping("/reload")
+    @Operation(summary = "重新加载配置文件")
     @ResponseBody
-    public Result save(@RequestBody NginxConf conf) {
-        String confStr = conf.getConf();
-        String backConf = NginxUtils.toString(NginxUtils.read(conf.getFilePath()));
-        if (Vali.isEpt(confStr)) {
-            throw new ValidationException("配置文件内容不能为空");
+    public Result reload(@RequestBody NginxConf nginxConf) {
+        Result result = test(nginxConf);
+        if (result.getCode().equals(Result.failed().getCode())) {
+            return result;
         }
-        //尝试写到Nginx配置文件
-        try {
-            NginxUtils.save(confStr, conf.getFilePath());
-            //重启Nginx
-            nginxManager.reload();
-        } catch (Exception e) {
-            //恢复到上一次配置
-            NginxUtils.save(backConf, conf.getFilePath());
-            throw new ValidationException("已取消保存操作:" + e.getMessage(), e);
-        }
-        return Result.success();
+        String str = iMsgService.sendCMDMsgAndResponse(null, nginxConf.getAgentId(), "sudo /usr/local/nginx/sbin/nginx -s reload");
+        return Result.success(str);
+    }
+
+    @PostMapping("/stop")
+    @Operation(summary = "停止Nginx")
+    @ResponseBody
+    public Result stop(@RequestBody NginxConf nginxConf) {
+        String str = iMsgService.sendCMDMsgAndResponse(null, nginxConf.getAgentId(), "sudo /usr/local/nginx/sbin/nginx -s stop");
+        return Result.success(str);
+    }
+
+    @PostMapping("/start")
+    @Operation(summary = "启动Nginx")
+    @ResponseBody
+    public Result start(@RequestBody NginxConf nginxConf) {
+        String str = iMsgService.sendCMDMsgAndResponse(null, nginxConf.getAgentId(), "sudo /usr/local/nginx/sbin/nginx");
+        return Result.success(str);
     }
 
     @PostMapping("/addConfig")
