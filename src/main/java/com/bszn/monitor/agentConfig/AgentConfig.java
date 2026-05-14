@@ -33,6 +33,9 @@ public class AgentConfig implements Serializable {
     @NotBlank(message = "服务名不能为空")
     private String serviceName;
 
+    @NotBlank(message = "hostname")
+    private String hostname;
+
     @Schema(description = "工作路径")
     private String workPath;
 

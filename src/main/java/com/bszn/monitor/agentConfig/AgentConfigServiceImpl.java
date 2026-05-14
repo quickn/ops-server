@@ -17,7 +17,7 @@ import java.util.List;
 public class AgentConfigServiceImpl extends ServiceImpl<AgentConfigMapper, AgentConfig> implements AgentConfigService {
 
     @Override
-    public List<AgentServerConfigVO> listConfigs(AgentConfigQuery query) {
+    public List<AgentConfigVO> listConfigs(AgentConfigQuery query) {
         LambdaQueryWrapper<AgentConfig> queryWrapper = new LambdaQueryWrapper<>();
         
         // 关键字搜索（服务名）
@@ -38,10 +38,10 @@ public class AgentConfigServiceImpl extends ServiceImpl<AgentConfigMapper, Agent
         List<AgentConfig> entityList = baseMapper.selectList(queryWrapper);
         
         // 转换为 VO
-        List<AgentServerConfigVO> voList = new ArrayList<>();
+        List<AgentConfigVO> voList = new ArrayList<>();
         if (CollUtil.isNotEmpty(entityList)) {
             for (AgentConfig entity : entityList) {
-                AgentServerConfigVO vo = new AgentServerConfigVO();
+                AgentConfigVO vo = new AgentConfigVO();
                 BeanUtils.copyProperties(entity, vo);
                 voList.add(vo);
             }

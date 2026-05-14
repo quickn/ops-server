@@ -26,10 +26,10 @@ public class AgentConfigController {
 
     @Operation(summary = "获取代理服务配置列表", security = {@SecurityRequirement(name = "Authorization")})
     @GetMapping
-    public Result<List<AgentServerConfigVO>> listConfigs(
+    public Result<List<AgentConfigVO>> listConfigs(
             @ParameterObject AgentConfigQuery queryParams
     ) {
-        List<AgentServerConfigVO> list = configService.listConfigs(queryParams);
+        List<AgentConfigVO> list = configService.listConfigs(queryParams);
         return Result.success(list);
     }
 

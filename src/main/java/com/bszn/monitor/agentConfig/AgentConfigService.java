@@ -12,7 +12,7 @@ public interface AgentConfigService extends IService<AgentConfig> {
     /**
      * 获取代理服务配置列表
      */
-    List<AgentServerConfigVO> listConfigs(AgentConfigQuery query);
+    List<AgentConfigVO> listConfigs(AgentConfigQuery query);
 
     /**
      * 删除代理服务配置

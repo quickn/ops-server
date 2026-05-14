@@ -1,6 +1,7 @@
 package com.bszn.monitor.agentConfig;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 /**
@@ -8,7 +9,7 @@ import lombok.Data;
  */
 @Schema(description = "代理服务配置视图对象")
 @Data
-public class AgentServerConfigVO {
+public class AgentConfigVO {
 
     @Schema(description = "主键ID")
     private Integer id;
@@ -24,6 +25,9 @@ public class AgentServerConfigVO {
 
     @Schema(description = "服务名")
     private String serviceName;
+
+    @NotBlank(message = "hostname")
+    private String hostname;
 
     @Schema(description = "工作路径")
     private String workPath;
