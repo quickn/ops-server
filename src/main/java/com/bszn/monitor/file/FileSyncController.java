@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -77,7 +76,7 @@ public class FileSyncController {
      */
     @GetMapping("/list-files")
     public Result<List<FileInfo>> listFiles(@RequestParam("agentId") Long agentId,
-                                            @RequestParam(value = "path", defaultValue = "/home/park") String path) {
+                                            @RequestParam(value = "filePath", defaultValue = "/home/park") String filePath) {
         try {
             Long userId = SecurityUtils.getUserId();
             AgentConfig server = agentConfigService.getById(agentId);
@@ -85,7 +84,7 @@ public class FileSyncController {
                 return Result.failed("服务器不存在");
             }
             // 构建查看目录的命令
-            String cmd = String.format("ls -l %s", path);
+            String cmd = String.format("ls -l %s", filePath);
             // 发送命令获取文件列表
             String result = msgService.sendCMDMsgAndResponse(userId, agentId, cmd, 30);
             // 解析结果

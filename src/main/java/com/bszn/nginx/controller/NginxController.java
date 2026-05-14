@@ -43,11 +43,14 @@ public class NginxController {
         }
         String confText = nginxConf.getConf();
         StringBuffer stringBuffer = new StringBuffer();
-        stringBuffer.append("cat > " + nginxConf.getFileNamePath() + " <<'ENDOFSTRING'");
+        stringBuffer.append("cat > ");
+        stringBuffer.append(nginxConf.getFileNamePath());
+        stringBuffer.append(" <<'NGINX_TEST_CONFIG'");
         stringBuffer.append(" && sudo /usr/local/nginx/sbin/nginx -t ");
         stringBuffer.append("\n");
         stringBuffer.append(confText);
-        stringBuffer.append("ENDOFSTRING");
+        stringBuffer.append("\n");
+        stringBuffer.append("NGINX_TEST_CONFIG");
         String str = iMsgService.sendCMDMsgAndResponse(null, nginxConf.getAgentId(), stringBuffer.toString());
         if (str.contains("语法错误") || str.contains("test failed")) {
             return Result.failed(str);
