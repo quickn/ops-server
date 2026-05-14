@@ -9,13 +9,13 @@ import java.util.List;
 /**
  * Created by Liuyun on 2023-07-26 11:16
  **/
-public interface AgentConfigService extends IService<AgentConfig> {
+public interface AgentService extends IService<Agent> {
 
-    AgentConfig getByMac(String mac, String hostname);
+    Agent getByMac(String mac, String hostname);
 
-    AgentConfig getServiceIdAndHostname(Integer serviceId, String hostname);
+    Agent getServiceIdAndHostname(Integer serviceId, String hostname);
 
-    AgentConfig getByServiceIdAndHost(Integer serviceId, String hostname);
+    Agent getByServiceIdAndHost(Integer serviceId, String hostname);
 
     String getLogsByServiceId(LogCmdForm logCmdForm);
 
@@ -31,7 +31,7 @@ public interface AgentConfigService extends IService<AgentConfig> {
      * @param dto 查询参数
      * @return 服务器列表
      */
-    List<AgentConfigVo> list(AgentConfigQuery dto);
+    List<AgentVo> list(AgentConfigQuery dto);
 
     /**
      * 获取跳板机
@@ -39,5 +39,5 @@ public interface AgentConfigService extends IService<AgentConfig> {
      * @param serviceId
      * @return
      */
-    AgentConfig getjumpServers(Integer serviceId);
+    Agent getjumpServers(Integer serviceId);
 }

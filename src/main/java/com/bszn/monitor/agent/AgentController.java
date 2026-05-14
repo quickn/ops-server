@@ -24,26 +24,26 @@ import java.util.List;
 @RequestMapping("/agent")
 public class AgentController {
     @Resource
-    AgentConfigService iAgentConfigService;
+    AgentService iAgentConfigService;
     @Resource
-    AgentConfigMapper agentConfigMapper;
+    AgentMapper agentMapper;
     @Resource
     ServiceInfoService serviceInfoService;
 
     @GetMapping("/listPage")
     public Result listPage(@ParameterObject AgentConfigQuery agentConfigQuery) {
-        Page<AgentConfig> list = agentConfigMapper.queryPage(agentConfigQuery, agentConfigMapper.getPage());
+        Page<Agent> list = agentMapper.queryPage(agentConfigQuery, agentMapper.getPage());
         return Result.success(list);
     }
 
     @GetMapping("/list")
     @Operation(summary = "获取服务器列表")
-    public Result<List<AgentConfigVo>> list(@ParameterObject AgentConfigQuery agentConfigQuery) {
+    public Result<List<AgentVo>> list(@ParameterObject AgentConfigQuery agentConfigQuery) {
         return Result.success(iAgentConfigService.list(agentConfigQuery));
     }
 
     @PostMapping("/save")
-    public Result save(@RequestBody AgentConfig agentConfig) {
+    public Result save(@RequestBody Agent agentConfig) {
         if (agentConfig.getServiceId() != null) {
             ServiceInfo serviceInfo = serviceInfoService.getById(agentConfig.getServiceId());
             agentConfig.setServiceName(serviceInfo.getName());
@@ -58,7 +58,7 @@ public class AgentController {
     public JSONObject getConf(@RequestBody JSONObject jsonObject) {
         String mac = jsonObject.getStr("mac");
         String hostname = jsonObject.getStr("hostname");
-        AgentConfig agentConfig = iAgentConfigService.getByMac(mac, hostname);
+        Agent agentConfig = iAgentConfigService.getByMac(mac, hostname);
         if (agentConfig == null) {
             return null;
         }

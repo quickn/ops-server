@@ -3,8 +3,8 @@ package com.bszn.monitor.file;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.bszn.monitor.agent.AgentConfig;
-import com.bszn.monitor.agent.AgentConfigService;
+import com.bszn.monitor.agent.Agent;
+import com.bszn.monitor.agent.AgentService;
 import com.bszn.monitor.msg.IMsgService;
 import com.bszn.system.common.result.Result;
 import com.bszn.system.common.util.SecurityUtils;
@@ -25,7 +25,7 @@ public class FileSyncController {
 
     private final IMsgService msgService;
 
-    private final AgentConfigService agentConfigService;
+    private final AgentService agentConfigService;
 
     @Value("${file.upload.file-path}")
     private String filePath;
@@ -38,9 +38,9 @@ public class FileSyncController {
      * 获取所有跳板机列表
      */
     @GetMapping("/jump-servers")
-    public Result<List<AgentConfig>> getJumpServers() {
+    public Result<List<Agent>> getJumpServers() {
         try {
-            List<AgentConfig> jumpServers = agentConfigService.list(Wrappers.<AgentConfig>lambdaQuery().eq(AgentConfig::getIsJumpServer, true));
+            List<Agent> jumpServers = agentConfigService.list(Wrappers.<Agent>lambdaQuery().eq(Agent::getIsJumpServer, true));
             return Result.success(jumpServers);
         } catch (Exception e) {
             log.error("获取跳板机列表失败", e);
@@ -52,18 +52,18 @@ public class FileSyncController {
      * 获取所有服务器列表（目标服务器）
      */
     @GetMapping("/all-servers")
-    public Result<List<AgentConfig>> getAllServers(@RequestParam(required = false) String hostname,
-                                                   @RequestParam(required = false) Integer serviceId) {
+    public Result<List<Agent>> getAllServers(@RequestParam(required = false) String hostname,
+                                             @RequestParam(required = false) Integer serviceId) {
         try {
-            LambdaQueryWrapper<AgentConfig> queryWrapper = Wrappers.lambdaQuery();
+            LambdaQueryWrapper<Agent> queryWrapper = Wrappers.lambdaQuery();
             if (StrUtil.isNotBlank(hostname)) {
-                queryWrapper.like(AgentConfig::getHostname, hostname);
+                queryWrapper.like(Agent::getHostname, hostname);
             }
             if (serviceId != null) {
-                queryWrapper.eq(AgentConfig::getServiceId, serviceId);
+                queryWrapper.eq(Agent::getServiceId, serviceId);
             }
-            queryWrapper.orderByDesc(AgentConfig::getId);
-            List<AgentConfig> servers = agentConfigService.list(queryWrapper);
+            queryWrapper.orderByDesc(Agent::getId);
+            List<Agent> servers = agentConfigService.list(queryWrapper);
             return Result.success(servers);
         } catch (Exception e) {
             log.error("获取服务器列表失败", e);
@@ -79,7 +79,7 @@ public class FileSyncController {
                                             @RequestParam(value = "filePath", defaultValue = "/home/park") String filePath) {
         try {
             Long userId = SecurityUtils.getUserId();
-            AgentConfig server = agentConfigService.getById(agentId);
+            Agent server = agentConfigService.getById(agentId);
             if (server == null) {
                 return Result.failed("服务器不存在");
             }
@@ -108,7 +108,7 @@ public class FileSyncController {
             if (file.isEmpty()) {
                 return Result.failed("文件不能为空");
             }
-            AgentConfig jumpServer = agentConfigService.getById(agentId);
+            Agent jumpServer = agentConfigService.getById(agentId);
             if (jumpServer == null || !jumpServer.getIsJumpServer()) {
                 return Result.failed("指定的服务器不是跳板机");
             }
@@ -162,7 +162,7 @@ public class FileSyncController {
     @PostMapping("/sync-with-command")
     public Result<String> syncWithCommand(@RequestBody CMDRequest cmdRequest) {
         try {
-            AgentConfig jumpServer = agentConfigService.getById(cmdRequest.getAgentId());
+            Agent jumpServer = agentConfigService.getById(cmdRequest.getAgentId());
             if (jumpServer == null || !jumpServer.getIsJumpServer()) {
                 return Result.failed("指定的服务器不是跳板机");
             }
@@ -189,14 +189,14 @@ public class FileSyncController {
                 return Result.failed("请指定源文件路径");
             }
             // 获取目标服务器信息
-            List<AgentConfig> targetServers = agentConfigService.listByIds(request.getTargetServers());
+            List<Agent> targetServers = agentConfigService.listByIds(request.getTargetServers());
             if (targetServers.isEmpty()) {
                 return Result.failed("未找到选中的服务器信息");
             }
             // 构建组合命令
             StringBuilder command = new StringBuilder();
             for (int i = 0; i < targetServers.size(); i++) {
-                AgentConfig server = targetServers.get(i);
+                Agent server = targetServers.get(i);
                 String rsyncCmd = String.format("rsync -azv %s %s@%s:%s",
                         request.getSourcePath(),
                         request.getUser() != null ? request.getUser() : "park",

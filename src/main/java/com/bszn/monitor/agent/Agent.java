@@ -2,6 +2,7 @@ package com.bszn.monitor.agent;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import com.bszn.base.ServiceBaseEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -11,7 +12,8 @@ import lombok.Data;
  **/
 
 @Data
-public class AgentConfig extends ServiceBaseEntity {
+@TableName("agent")
+public class Agent extends ServiceBaseEntity {
 
     @TableId(type = IdType.AUTO)
     private Long id;

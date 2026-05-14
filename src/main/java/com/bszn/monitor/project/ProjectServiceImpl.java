@@ -2,10 +2,10 @@ package com.bszn.monitor.project;
 
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.bszn.monitor.agent.AgentConfig;
+import com.bszn.monitor.agent.Agent;
 import com.bszn.monitor.agent.AgentConfigQuery;
-import com.bszn.monitor.agent.AgentConfigService;
-import com.bszn.monitor.agent.AgentConfigVo;
+import com.bszn.monitor.agent.AgentService;
+import com.bszn.monitor.agent.AgentVo;
 import com.bszn.monitor.msg.IMsgService;
 import com.bszn.system.common.exception.BusinessException;
 import com.bszn.utils.IpUtil;
@@ -37,7 +37,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
 
     private final ProjectDeployRecordMapper projectDeployRecordMapper;
 
-    private final AgentConfigService agentConfigService;
+    private final AgentService agentConfigService;
 
     private final IMsgService msgService;
 
@@ -108,7 +108,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         }
         // 手动同步没有源服务
         if (Objects.nonNull(syncRequest.getSourceAgentId()) && syncRequest.getType() != 3) {
-            AgentConfig agentConfig = agentConfigService.getById(syncRequest.getSourceAgentId());
+            Agent agentConfig = agentConfigService.getById(syncRequest.getSourceAgentId());
             if (agentConfig == null) {
                 throw new BusinessException("Agent不存在");
             }
@@ -121,9 +121,9 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
             }
         }
         // 拿到环境下的服务器
-        List<AgentConfigVo> list = agentConfigService.list(AgentConfigQuery.builder().serviceId(syncRequest.getServiceId()).build());
-        AgentConfigVo jump = null;
-        for (AgentConfigVo agentConfigVo : list) {
+        List<AgentVo> list = agentConfigService.list(AgentConfigQuery.builder().serviceId(syncRequest.getServiceId()).build());
+        AgentVo jump = null;
+        for (AgentVo agentConfigVo : list) {
             if (agentConfigVo.getIsJumpServer()) {
                 jump = agentConfigVo;
             }
@@ -165,7 +165,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
                 command.append(" && ");
             }
             for (int i = 0; i < list.size(); i++) {
-                AgentConfigVo server = list.get(i);
+                AgentVo server = list.get(i);
                 String rsyncCmd = String.format("rsync -azv %s %s@%s:%s",
                         targetDir + "/" + project.getName(),
                         syncRequest.getUser() != null ? syncRequest.getUser() : "park",
@@ -193,7 +193,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
     @Override
     public Boolean backup(Long userId, BackupRequest backupRequest) {
         // 获取跳板机
-        AgentConfig jump = agentConfigService.getjumpServers(backupRequest.getServiceId());
+        Agent jump = agentConfigService.getjumpServers(backupRequest.getServiceId());
 
         String sourceDir = StrUtil.isEmpty(backupRequest.getSourceDir()) ?
                 workPath + jarPath : backupRequest.getSourceDir();
@@ -462,7 +462,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
      * @return 部署记录
      */
     private ProjectDeployRecord createDeployRecord(Long projectId, Long agentId, String containerName) {
-        AgentConfig byId = agentConfigService.getById(agentId);
+        Agent byId = agentConfigService.getById(agentId);
         ProjectDeployRecord record = new ProjectDeployRecord();
         record.setProjectId(projectId);
         record.setAgentId(agentId);

@@ -13,7 +13,7 @@ import lombok.Data;
  * Created by Liuyun on 2024-01-09 11:51
  **/
 @Data
-@SelectSql(" * from agent_config ")
+@SelectSql(" * from agent ")
 @OrderBy(" id ")
 @Builder
 public class AgentConfigQuery extends PageForm implements IQuery {

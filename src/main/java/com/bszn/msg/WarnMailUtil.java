@@ -1,7 +1,7 @@
 package com.bszn.msg;
 
 import cn.hutool.extra.spring.SpringUtil;
-import com.bszn.monitor.agent.AgentConfig;
+import com.bszn.monitor.agent.Agent;
 import com.bszn.monitor.email.MailConfig;
 import com.bszn.monitor.email.MailConfigService;
 import com.bszn.monitor.heath.ApiHeathMonitor;
@@ -22,7 +22,7 @@ public class WarnMailUtil {
     private static LogInfoService logInfoService = SpringUtil.getBean(LogInfoService.class);
     private static MailConfigService mailService = SpringUtil.getBean(MailConfigService.class);
 
-    public static void sendWarnMail(AgentConfig agentConfig, String title, String commContent) {
+    public static void sendWarnMail(Agent agentConfig, String title, String commContent) {
         if (StaticKeys.mailConfig == null) {
             return;
         }

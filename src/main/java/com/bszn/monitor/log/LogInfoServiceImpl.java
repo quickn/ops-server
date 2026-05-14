@@ -1,8 +1,8 @@
 package com.bszn.monitor.log;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.bszn.monitor.agent.AgentConfig;
-import com.bszn.monitor.agent.AgentConfigService;
+import com.bszn.monitor.agent.Agent;
+import com.bszn.monitor.agent.AgentService;
 import com.bszn.monitor.email.MailConfig;
 import com.bszn.msg.WarnMailUtil;
 import com.bszn.server.StaticKeys;
@@ -24,7 +24,7 @@ public class LogInfoServiceImpl extends ServiceImpl<LogInfoMapper, LogInfo> impl
     @Autowired
     private LogInfoMapper logInfoMapper;
     @Resource
-    AgentConfigService iAgentConfigService;
+    AgentService iAgentConfigService;
 
     public void save(String hostname, String infoContent, String state) {
         LogInfo logInfo = new LogInfo();
@@ -52,7 +52,7 @@ public class LogInfoServiceImpl extends ServiceImpl<LogInfoMapper, LogInfo> impl
     }
 
 
-    public boolean saveErrorLog(String title, String infoContent, String emailContent, AgentConfig agentConfig) {
+    public boolean saveErrorLog(String title, String infoContent, String emailContent, Agent agentConfig) {
         if (StringUtils.isEmpty(title)) {
             return false;
         }
@@ -97,7 +97,7 @@ public class LogInfoServiceImpl extends ServiceImpl<LogInfoMapper, LogInfo> impl
         if (StringUtils.isEmpty(title)) {
             return;
         }
-        AgentConfig agentConfig = iAgentConfigService.getServiceIdAndHostname(systemInfo.getServiceId(), systemInfo.getHostname());
+        Agent agentConfig = iAgentConfigService.getServiceIdAndHostname(systemInfo.getServiceId(), systemInfo.getHostname());
         if (agentConfig == null) {
             return;
         }

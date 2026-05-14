@@ -1,8 +1,8 @@
 package com.bszn.monitor.docker;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.bszn.monitor.agent.AgentConfig;
-import com.bszn.monitor.agent.AgentConfigService;
+import com.bszn.monitor.agent.Agent;
+import com.bszn.monitor.agent.AgentService;
 import com.bszn.monitor.msg.IMsgService;
 import com.bszn.system.common.result.Result;
 import com.bszn.system.common.util.SecurityUtils;
@@ -25,7 +25,7 @@ public class DockerContainerController {
     DockerContainerMapper dockerContainerMapper;
 
     @Resource
-    AgentConfigService agentConfigService;
+    AgentService agentConfigService;
 
     @Resource
     IMsgService iMsgService;
@@ -53,7 +53,7 @@ public class DockerContainerController {
     @GetMapping(value = "/restart/{id}")
     public Result restart(@PathVariable Long id) {
         DockerContainer dockerContainer = dockerContainerMapper.selectById(id);
-        AgentConfig agentConfig = agentConfigService.getByServiceIdAndHost(dockerContainer.getServiceId(), dockerContainer.getHostname());
+        Agent agentConfig = agentConfigService.getByServiceIdAndHost(dockerContainer.getServiceId(), dockerContainer.getHostname());
         String msg = iMsgService.sendCMDMsgAndResponse(SecurityUtils.getUserId(), agentConfig.getId(), "docker restart " + dockerContainer.getNames(), 60);
         return Result.success(msg);
     }
@@ -61,7 +61,7 @@ public class DockerContainerController {
     @GetMapping(value = "/stop/{id}")
     public Result stop(@PathVariable Long id) {
         DockerContainer dockerContainer = dockerContainerMapper.selectById(id);
-        AgentConfig agentConfig = agentConfigService.getByServiceIdAndHost(dockerContainer.getServiceId(), dockerContainer.getHostname());
+        Agent agentConfig = agentConfigService.getByServiceIdAndHost(dockerContainer.getServiceId(), dockerContainer.getHostname());
         String msg = iMsgService.sendCMDMsgAndResponse(SecurityUtils.getUserId(), agentConfig.getId(), "docker stop " + dockerContainer.getNames(), 60);
         return Result.success(msg);
     }

@@ -2,8 +2,8 @@ package com.bszn.job;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.bszn.monitor.agent.AgentConfig;
-import com.bszn.monitor.agent.AgentConfigService;
+import com.bszn.monitor.agent.Agent;
+import com.bszn.monitor.agent.AgentService;
 import com.bszn.monitor.docker.DockerContainer;
 import com.bszn.monitor.docker.IDockerContainerService;
 import com.bszn.monitor.msg.IMsgService;
@@ -29,7 +29,7 @@ public class ClientJobHandler {
     @Resource
     IDockerContainerService iDockerContainerService;
     @Resource
-    AgentConfigService agentConfigService;
+    AgentService agentConfigService;
 
     @Value("${python.path}")
     String pythonPath;
@@ -55,7 +55,7 @@ public class ClientJobHandler {
             return;
         }
         if (StringUtils.isNotEmpty(hostname) && serviceId != null) {
-            AgentConfig agentConfig = agentConfigService.getByServiceIdAndHost(serviceId, hostname);
+            Agent agentConfig = agentConfigService.getByServiceIdAndHost(serviceId, hostname);
             if (agentConfig == null) {
                 log.warn("agent 不存在 hostname:{}", hostname);
                 return;

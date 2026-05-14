@@ -33,8 +33,8 @@ import java.util.stream.Collectors;
  **/
 @Service
 @Slf4j
-public class AgentConfigServiceImpl extends ServiceImpl<AgentConfigMapper, AgentConfig>
-        implements AgentConfigService {
+public class AgentServiceImpl extends ServiceImpl<AgentMapper, Agent>
+        implements AgentService {
 
     private final CopyOptions copyOption = CopyOptions.create(null, true);
 
@@ -55,8 +55,8 @@ public class AgentConfigServiceImpl extends ServiceImpl<AgentConfigMapper, Agent
      * @return 服务器列表
      */
     @Override
-    public List<AgentConfigVo> list(AgentConfigQuery dto) {
-        List<AgentConfig> query = getBaseMapper().query(dto);
+    public List<AgentVo> list(AgentConfigQuery dto) {
+        List<Agent> query = getBaseMapper().query(dto);
         // 设置部署状态
         if (StrUtil.isNotEmpty(dto.getDockerName())) {
             // 拿到容器
@@ -68,7 +68,7 @@ public class AgentConfigServiceImpl extends ServiceImpl<AgentConfigMapper, Agent
                 Map<String, DockerContainer> sourceMap = dockerContainers.stream()
                         .collect(Collectors.toMap(DockerContainer::getHostname, user -> user));
                 return query.stream().map(agentConfig -> {
-                    AgentConfigVo agentConfigVo = new AgentConfigVo(agentConfig);
+                    AgentVo agentConfigVo = new AgentVo(agentConfig);
                     if (sourceMap.containsKey(agentConfig.getHostname())) {
                         DockerContainer source = sourceMap.get(agentConfig.getHostname());
                         agentConfigVo.setUpdateTime(source.getUpdateTime());
@@ -81,13 +81,13 @@ public class AgentConfigServiceImpl extends ServiceImpl<AgentConfigMapper, Agent
                 }).sorted(Comparator.comparing(vo -> vo.getStatus() == null ? 1 : 0, Comparator.naturalOrder())).collect(Collectors.toList());
             }
         }
-        return query.stream().map(AgentConfigVo::new).collect(Collectors.toList());
+        return query.stream().map(AgentVo::new).collect(Collectors.toList());
     }
 
     @Override
-    public AgentConfig getjumpServers(Integer serviceId) {
-        List<AgentConfig> jumpServers = baseMapper.selectList(Wrappers.<AgentConfig>lambdaQuery().eq(AgentConfig::getServiceId, serviceId)
-                .eq(AgentConfig::getIsJumpServer, true));
+    public Agent getjumpServers(Integer serviceId) {
+        List<Agent> jumpServers = baseMapper.selectList(Wrappers.<Agent>lambdaQuery().eq(Agent::getServiceId, serviceId)
+                .eq(Agent::getIsJumpServer, true));
         if (jumpServers.isEmpty()) {
             throw new BusinessException("未设置跳板机");
         }
@@ -105,20 +105,20 @@ public class AgentConfigServiceImpl extends ServiceImpl<AgentConfigMapper, Agent
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public boolean saveOrUpdate(AgentConfig entity) {
+    public boolean saveOrUpdate(Agent entity) {
         // 修改跳板机 需要把环境其他的跳板机修正 一个环境只有1个跳板机
         if (Objects.nonNull(entity.getIsJumpServer()) && entity.getIsJumpServer() && Objects.nonNull(entity.getServiceId())) {
-            lambdaUpdate().set(AgentConfig::getIsJumpServer, false).eq(AgentConfig::getServiceId, entity.getServiceId()).update();
+            lambdaUpdate().set(Agent::getIsJumpServer, false).eq(Agent::getServiceId, entity.getServiceId()).update();
 
         }
         return super.saveOrUpdate(entity);
     }
 
     @Override
-    public AgentConfig getByMac(String mac, String hostname) {
-        AgentConfig config = this.baseMapper.selectOne(Wrappers.<AgentConfig>lambdaQuery().eq(AgentConfig::getMac, mac));
+    public Agent getByMac(String mac, String hostname) {
+        Agent config = this.baseMapper.selectOne(Wrappers.<Agent>lambdaQuery().eq(Agent::getMac, mac));
         if (config == null) {
-            config = new AgentConfig();
+            config = new Agent();
             config.setMac(mac);
             config.setHostname(hostname);
             this.baseMapper.insert(config);
@@ -127,8 +127,8 @@ public class AgentConfigServiceImpl extends ServiceImpl<AgentConfigMapper, Agent
         if (config.getServiceId() == null) {
             return config;
         }
-        AgentConfig configCommon = this.baseMapper.selectOne(Wrappers.<AgentConfig>lambdaQuery()
-                .eq(AgentConfig::getServiceId, config.getServiceId()).isNull(AgentConfig::getMac));
+        Agent configCommon = this.baseMapper.selectOne(Wrappers.<Agent>lambdaQuery()
+                .eq(Agent::getServiceId, config.getServiceId()).isNull(Agent::getMac));
         if (configCommon == null) {
             return config;
         }
@@ -138,12 +138,12 @@ public class AgentConfigServiceImpl extends ServiceImpl<AgentConfigMapper, Agent
     }
 
     @Override
-    public AgentConfig getServiceIdAndHostname(Integer serviceId, String hostname) {
-        AgentConfig config = this.baseMapper.selectOne(Wrappers.<AgentConfig>lambdaQuery().eq(AgentConfig::getServiceId, serviceId)
-                .eq(AgentConfig::getHostname, hostname));
-        AgentConfig configCommon = this.baseMapper.selectOne(Wrappers.<AgentConfig>lambdaQuery()
-                .eq(AgentConfig::getServiceId, config.getServiceId())
-                .eq(AgentConfig::getIsMonitor, true).isNull(AgentConfig::getMac));
+    public Agent getServiceIdAndHostname(Integer serviceId, String hostname) {
+        Agent config = this.baseMapper.selectOne(Wrappers.<Agent>lambdaQuery().eq(Agent::getServiceId, serviceId)
+                .eq(Agent::getHostname, hostname));
+        Agent configCommon = this.baseMapper.selectOne(Wrappers.<Agent>lambdaQuery()
+                .eq(Agent::getServiceId, config.getServiceId())
+                .eq(Agent::getIsMonitor, true).isNull(Agent::getMac));
         if (configCommon == null) {
             return config;
         }
@@ -152,16 +152,16 @@ public class AgentConfigServiceImpl extends ServiceImpl<AgentConfigMapper, Agent
     }
 
     @Override
-    public AgentConfig getByServiceIdAndHost(Integer serviceId, String hostname) {
+    public Agent getByServiceIdAndHost(Integer serviceId, String hostname) {
         return this.baseMapper.getByServiceIdAndHost(serviceId, hostname);
     }
 
 
     @Override
     public String getLogsByServiceId(LogCmdForm logCmdForm) {
-        List<AgentConfig> agentConfigs = this.baseMapper.getByServiceId(logCmdForm.getServiceId(), logCmdForm.getDockerName());
+        List<Agent> agentConfigs = this.baseMapper.getByServiceId(logCmdForm.getServiceId(), logCmdForm.getDockerName());
         StringBuffer logs = new StringBuffer();
-        for (AgentConfig agentConfig : agentConfigs) {
+        for (Agent agentConfig : agentConfigs) {
             if (StringUtils.isEmpty(logCmdForm.getCmd())) {
                 StringBuilder cmd = new StringBuilder();
                 if (StringUtils.isNotEmpty(logCmdForm.getKeyword())) {
@@ -214,7 +214,7 @@ public class AgentConfigServiceImpl extends ServiceImpl<AgentConfigMapper, Agent
     @Override
     public void receiveClientMsg(ClientMsgForm clientMsgForm) {
         if (MonitorCmdC.updateClientVersion.equals(clientMsgForm.getCmd())) {
-            AgentConfig agentConfig = new AgentConfig();
+            Agent agentConfig = new Agent();
             agentConfig.setId(clientMsgForm.getAgentId());
             agentConfig.setClientVersion(clientMsgForm.getData());
             this.baseMapper.updateById(agentConfig);
@@ -223,8 +223,8 @@ public class AgentConfigServiceImpl extends ServiceImpl<AgentConfigMapper, Agent
 
     @Override
     public void handleAgentByServiceId(Integer serviceId, String cmd) {
-        List<AgentConfig> agentConfigs = this.baseMapper.getListByServiceId(serviceId);
-        for (AgentConfig agentConfig : agentConfigs) {
+        List<Agent> agentConfigs = this.baseMapper.getListByServiceId(serviceId);
+        for (Agent agentConfig : agentConfigs) {
             JSONObject jsonObject = new JSONObject();
             jsonObject.putOnce("handle", "agentManagerHandle");
             jsonObject.putOnce("url", upgradeClientUrl);

@@ -15,9 +15,9 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class AgentConfigVo extends ServiceBaseEntity {
+public class AgentVo extends ServiceBaseEntity {
 
-    public AgentConfigVo(AgentConfig agentConfig) {
+    public AgentVo(Agent agentConfig) {
         BeanUtil.copyProperties(agentConfig, this);
     }
 

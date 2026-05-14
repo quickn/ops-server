@@ -1,7 +1,7 @@
 package com.bszn.monitor.file;
 
-import com.bszn.monitor.agent.AgentConfig;
-import com.bszn.monitor.agent.AgentConfigService;
+import com.bszn.monitor.agent.Agent;
+import com.bszn.monitor.agent.AgentService;
 import com.bszn.monitor.msg.IMsgService;
 import com.bszn.monitor.service.ServiceInfo;
 import com.bszn.monitor.service.ServiceInfoService;
@@ -26,7 +26,7 @@ import java.util.List;
 public class FileLogController {
 
     @Resource
-    AgentConfigService agentConfigService;
+    AgentService agentConfigService;
     @Resource
     IMsgService iMsgService;
 
@@ -36,8 +36,8 @@ public class FileLogController {
     @GetMapping("/analyzerLog")
     @Operation(summary = "分析日志")
     public Result analyzer(@RequestParam Long agentId, @RequestParam String logFilePath) {
-        AgentConfig agentConfig = agentConfigService.getById(agentId);
-        AgentConfig jump = agentConfigService.getjumpServers(agentConfig.getServiceId());
+        Agent agentConfig = agentConfigService.getById(agentId);
+        Agent jump = agentConfigService.getjumpServers(agentConfig.getServiceId());
         String cmd = String.format("curl -F \"file=@%s\" -sS http://%s:18080/pyApi/log/analyzer", logFilePath, jump.getHostname());
         String cmdResult = iMsgService.sendCMDMsgAndResponse(
                 SecurityUtils.getUserId(),
@@ -54,7 +54,7 @@ public class FileLogController {
             required = false) String path) {
         try {
             Long userId = SecurityUtils.getUserId();
-            AgentConfig agentConfig = agentConfigService.getById(agentId);
+            Agent agentConfig = agentConfigService.getById(agentId);
             if (agentConfig == null) {
                 return Result.failed("Agent不存在");
             }

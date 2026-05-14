@@ -4,8 +4,8 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.bszn.monitor.agent.AgentConfig;
-import com.bszn.monitor.agent.AgentConfigMapper;
+import com.bszn.monitor.agent.Agent;
+import com.bszn.monitor.agent.AgentMapper;
 import com.bszn.monitor.docker.DockerContainer;
 import com.bszn.monitor.docker.DockerContainerMapper;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +29,7 @@ import java.util.Map;
 public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage> {
 
     private final JarPackageMapper jarPackageMapper;
-    private final AgentConfigMapper agentConfigMapper;
+    private final AgentMapper agentConfigMapper;
     private final DockerContainerMapper dockerContainerMapper;
 
     @Value("${file.upload.file-path}")
@@ -90,13 +90,13 @@ public class JarPackageService extends ServiceImpl<JarPackageMapper, JarPackage>
      */
     public List<Map<String, Object>> getAllAgents() {
         // 获取所有Agent
-        List<AgentConfig> allAgents = agentConfigMapper.selectList(
-                new QueryWrapper<AgentConfig>().eq("is_monitor", 1)
+        List<Agent> allAgents = agentConfigMapper.selectList(
+                new QueryWrapper<Agent>().eq("is_monitor", 1)
         );
 
         List<Map<String, Object>> result = new ArrayList<>();
 
-        for (AgentConfig agent : allAgents) {
+        for (Agent agent : allAgents) {
             // 获取该Agent上的容器
             List<DockerContainer> containers = dockerContainerMapper.selectList(
                     new QueryWrapper<DockerContainer>()
