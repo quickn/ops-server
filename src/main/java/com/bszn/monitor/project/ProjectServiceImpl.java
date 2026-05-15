@@ -146,7 +146,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         String sourceDir = StrUtil.isEmpty(project.getSourceDir()) ? workPath + this.jarPath : project.getSourceDir();
         // 源服务器 同步至跳板机
         if (syncRequest.getType() == 1) {
-            String rsyncCmd = String.format("rsync -azv %s %s@%s:%s",
+            String rsyncCmd = String.format("rsync -azv -e 'ssh -o StrictHostKeyChecking=no' %s %s@%s:%s",
                     sourceDir + "/" + project.getName(),
                     syncRequest.getUser() != null ? syncRequest.getUser() : "park",
                     remoteIp,
@@ -166,7 +166,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
             }
             for (int i = 0; i < list.size(); i++) {
                 AgentVo server = list.get(i);
-                String rsyncCmd = String.format("rsync -azv %s %s@%s:%s",
+                String rsyncCmd = String.format("rsync -azv  -e 'ssh -o StrictHostKeyChecking=no' %s %s@%s:%s",
                         targetDir + "/" + project.getName(),
                         syncRequest.getUser() != null ? syncRequest.getUser() : "park",
                         server.getHostname(),
