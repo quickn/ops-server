@@ -1,10 +1,12 @@
 package com.bszn.monitor.file;
 
 import com.bszn.monitor.msg.IMsgService;
+import com.bszn.system.common.nginx.Vali;
 import com.bszn.system.common.result.Result;
 import com.bszn.system.common.util.SecurityUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.annotation.Resource;
+import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -61,6 +63,30 @@ public class FileCmdController {
                 30
         );
         return Result.success(cmdResult);
+    }
+
+
+    @PostMapping("/saveFile")
+    @Operation(summary = "保存文件")
+    @ResponseBody
+    public Result saveFile(@RequestBody FileForm fileForm) {
+        String confText = fileForm.getFileContent();
+        if (Vali.isEpt(confText)) {
+            throw new ValidationException("配置文件内容不能为空");
+        }
+        StringBuffer stringBuffer = new StringBuffer();
+        stringBuffer.append("cat > ");
+        stringBuffer.append(fileForm.getFilePath() + "/" + fileForm.getFileName());
+        stringBuffer.append(" <<'saveFile'");
+        stringBuffer.append("\n");
+        stringBuffer.append(confText);
+        stringBuffer.append("\n");
+        stringBuffer.append("saveFile");
+        String str = iMsgService.sendCMDMsgAndResponse(null, fileForm.getAgentId(), stringBuffer.toString());
+        if (str.contains("语法错误") || str.contains("test failed")) {
+            return Result.failed(str);
+        }
+        return Result.success(str);
     }
 
 }
