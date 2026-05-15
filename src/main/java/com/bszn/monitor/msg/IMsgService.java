@@ -3,6 +3,7 @@ package com.bszn.monitor.msg;
 
 import com.bszn.constant.MonitorMsgType;
 import com.bszn.mq.MsgResult;
+import com.bszn.system.common.util.SecurityUtils;
 
 public interface IMsgService {
 
@@ -33,8 +34,16 @@ public interface IMsgService {
         return sendCMDMsgAndResponse(userId, agentId, msg, 300);
     }
 
+    default String sendCMDMsgAndResponse(Long agentId, String msg) {
+        return sendCMDMsgAndResponse(SecurityUtils.getUserId(), agentId, msg, 300);
+    }
+
     default String sendCMDMsgAndResponse(Long userId, Long agentId, String cmd, Integer timeout) {
         return sendMsgAndResponse(userId, agentId, cmd, MonitorMsgType.CMD, timeout).getData();
+    }
+
+    default String sendCMDMsgAndResponse(Long agentId, String cmd, Integer timeout) {
+        return sendMsgAndResponse(SecurityUtils.getUserId(), agentId, cmd, MonitorMsgType.CMD, timeout).getData();
     }
 
     /**

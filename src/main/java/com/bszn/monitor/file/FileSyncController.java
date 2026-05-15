@@ -74,27 +74,7 @@ public class FileSyncController {
     /**
      * 查看服务器目录文件列表
      */
-    @GetMapping("/list-files")
-    public Result<List<FileInfo>> listFiles(@RequestParam("agentId") Long agentId,
-                                            @RequestParam(value = "filePath", defaultValue = "/home/park") String filePath) {
-        try {
-            Long userId = SecurityUtils.getUserId();
-            Agent server = agentConfigService.getById(agentId);
-            if (server == null) {
-                return Result.failed("服务器不存在");
-            }
-            // 构建查看目录的命令
-            String cmd = String.format("ls -l %s", filePath);
-            // 发送命令获取文件列表
-            String result = msgService.sendCMDMsgAndResponse(userId, agentId, cmd, 30);
-            // 解析结果
-            List<FileInfo> fileList = FileUtils.parseLsResult(result);
-            return Result.success(fileList);
-        } catch (Exception e) {
-            log.error("查看文件列表失败", e);
-            return Result.failed("查看文件列表失败: " + e.getMessage());
-        }
-    }
+
 
     /**
      * 上传文件到跳板机

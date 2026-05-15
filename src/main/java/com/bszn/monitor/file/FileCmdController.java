@@ -3,13 +3,14 @@ package com.bszn.monitor.file;
 import com.bszn.monitor.msg.IMsgService;
 import com.bszn.system.common.nginx.Vali;
 import com.bszn.system.common.result.Result;
-import com.bszn.system.common.util.SecurityUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.annotation.Resource;
 import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/fileCmd")
@@ -25,7 +26,6 @@ public class FileCmdController {
     public Result getFileByPath(@RequestParam Long agentId, @RequestParam String filePath, @RequestParam String fileName) {
         String cmd = String.format("cat %s/%s", filePath, fileName);
         String cmdResult = iMsgService.sendCMDMsgAndResponse(
-                SecurityUtils.getUserId(),
                 agentId,
                 cmd,
                 30
@@ -41,7 +41,6 @@ public class FileCmdController {
             cmd = String.format("touch %s/%s", filePath, fileName);
         }
         String cmdResult = iMsgService.sendCMDMsgAndResponse(
-                SecurityUtils.getUserId(),
                 agentId,
                 cmd,
                 30
@@ -57,7 +56,6 @@ public class FileCmdController {
             cmd = String.format("rm %s/%s", filePath, fileName);
         }
         String cmdResult = iMsgService.sendCMDMsgAndResponse(
-                SecurityUtils.getUserId(),
                 agentId,
                 cmd,
                 30
@@ -82,11 +80,47 @@ public class FileCmdController {
         stringBuffer.append(confText);
         stringBuffer.append("\n");
         stringBuffer.append("saveFile");
-        String str = iMsgService.sendCMDMsgAndResponse(null, fileForm.getAgentId(), stringBuffer.toString());
+        String str = iMsgService.sendCMDMsgAndResponse(fileForm.getAgentId(), stringBuffer.toString());
         if (str.contains("语法错误") || str.contains("test failed")) {
             return Result.failed(str);
         }
         return Result.success(str);
+    }
+
+    /**
+     * 查看服务器目录文件列表
+     *
+     * @param agentId  代理ID
+     * @param filePath 文件路径
+     */
+    @GetMapping("/fileList")
+    public Result<List<FileInfo>> filesList(@RequestParam("agentId") Long agentId,
+                                            @RequestParam(value = "filePath", defaultValue = "/home/park") String filePath,
+                                            @RequestParam(required = false) boolean showHide,
+                                            @RequestParam(required = false) boolean onlyShowFile,
+                                            @RequestParam(required = false) boolean onlyShowDic) {
+        try {
+            String filterMethod = "-l";
+            if (showHide) {
+                filterMethod += "A";
+            }
+            // 构建查看目录的命令
+            String cmd = String.format("ls %s %s", filterMethod, filePath);
+            if (onlyShowFile) {
+                cmd += "| grep \"^-\"";
+            }
+            if (onlyShowDic) {
+                cmd += "| grep \"^d\"";
+            }
+            // 发送命令获取文件列表
+            String result = iMsgService.sendCMDMsgAndResponse(agentId, cmd, 30);
+            // 解析结果
+            List<FileInfo> fileList = FileUtils.parseLsResult(result);
+            return Result.success(fileList);
+        } catch (Exception e) {
+            log.error("查看文件列表失败", e);
+            return Result.failed("查看文件列表失败: " + e.getMessage());
+        }
     }
 
 }
