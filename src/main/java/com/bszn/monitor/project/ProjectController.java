@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springaicommunity.mcp.annotation.McpTool;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -64,6 +65,7 @@ public class ProjectController {
 
     @PostMapping("/deploy/{id}")
     @Operation(summary = "部署")
+    @McpTool(name = "projectDeploy", description = "部署项目")
     public Result<String> deploy(@ApiParam(value = "项目id", required = true) @PathVariable Long id,
                                  @RequestBody @Validated DeployRequest request) {
         if (request.getDeployType() == 2) {

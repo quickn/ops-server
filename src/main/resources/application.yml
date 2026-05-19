@@ -18,6 +18,21 @@ nacos:
       enable: true
       log-enable: true
 spring:
+  ai:
+    mcp:
+      server:
+        enabled: true
+        name: my-weather-streamable-server
+        version: 1.0.0
+        # 【关键】设置为STREAMABLE启用Streamable-HTTP模式
+        protocol: STREAMABLE
+        streamable-http:
+          # 可自定义MCP交互端点，默认是/mcp
+          mcp-endpoint: /api/mcp
+        annotation-scanner:
+          enabled: true  # 启用注解扫描
+        capabilities:
+          tool: true     # 声明服务器提供工具能力
   main:
     #开启快速启动模式
     lazy-initialization: false
@@ -185,6 +200,7 @@ security:
     - "/swagger-ui/**"
     - "/ws/**"
     - "/jar/download/**"
+    - "/api/mcp/**"
 
 docker:
   base:
@@ -231,7 +247,6 @@ file:
     file-path: /logs/monitor
     jar-path: /docker
     work-path: /home/park
-
 # xxl-job 定时任务配置
 xxl:
   job:

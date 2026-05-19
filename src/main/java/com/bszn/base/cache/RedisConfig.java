@@ -1,5 +1,6 @@
 package com.bszn.base.cache;
 
+import io.lettuce.core.api.StatefulConnection;
 import io.lettuce.core.resource.ClientResources;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
@@ -32,10 +33,10 @@ public class RedisConfig {
 
 
     // 1. 连接池基础参数
-    private GenericObjectPoolConfig<?> poolConfig() {
+    private GenericObjectPoolConfig<StatefulConnection<?,?>> poolConfig() {
         RedisProperties.Pool pool = redisProperties.getLettuce().getPool();
         // 连接池配置
-        GenericObjectPoolConfig<Object> poolConfig = new GenericObjectPoolConfig<>();
+        GenericObjectPoolConfig<StatefulConnection<?,?>> poolConfig = new GenericObjectPoolConfig<>();
         poolConfig.setMaxTotal(pool.getMaxActive());//连接池最大连接数
         poolConfig.setMaxIdle(pool.getMaxIdle()); //最大空闲连接
         poolConfig.setMinIdle(pool.getMinIdle()); //最小空闲连接

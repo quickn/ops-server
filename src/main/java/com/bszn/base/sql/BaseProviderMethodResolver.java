@@ -3,10 +3,10 @@ package com.bszn.base.sql;
 import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.enums.SqlKeyword;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.bszn.base.sql.annotation.*;
 import com.bszn.base.sql.enums.MySqlKeyword;
 import jodd.util.StringUtil;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.builder.annotation.ProviderMethodResolver;
 import org.apache.ibatis.jdbc.SQL;
 
