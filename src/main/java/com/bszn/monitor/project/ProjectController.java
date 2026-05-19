@@ -30,6 +30,7 @@ public class ProjectController {
 
     @GetMapping("/page")
     @Operation(summary = "获取项目列表（分页）")
+    @McpTool(name = "projectList", description = "项目列表")
     public Result<IPage<Project>> page(ProjectDto dto) {
         return Result.success(projectService.page(dto.getPage(), dto.buildLambda()));
     }
@@ -65,7 +66,7 @@ public class ProjectController {
 
     @PostMapping("/deploy/{id}")
     @Operation(summary = "部署")
-    @McpTool(name = "projectDeploy", description = "部署项目")
+    @McpTool(name = "projectDeploy", description = "项目部署")
     public Result<String> deploy(@ApiParam(value = "项目id", required = true) @PathVariable Long id,
                                  @RequestBody @Validated DeployRequest request) {
         if (request.getDeployType() == 2) {
@@ -101,6 +102,7 @@ public class ProjectController {
 
     @PostMapping("/sync/{id}")
     @Operation(summary = "同步")
+    @McpTool(name = "projectSync", description = "项目同步")
     public Result<Boolean> sync(@ApiParam(value = "项目id", required = true) @PathVariable Long id,
                                 @RequestBody @Validated SyncRequest syncRequest) {
         return Result.success(projectService.sync(id, SecurityUtils.getUserId(), syncRequest));
@@ -108,6 +110,7 @@ public class ProjectController {
 
     @PostMapping("/backup")
     @Operation(summary = "备份/恢复")
+    @McpTool(name = "projectBackup", description = "项目备份/恢复")
     public Result<Boolean> backup(@RequestBody @Validated BackupRequest backupRequest) {
         return Result.success(projectService.backup(SecurityUtils.getUserId(), backupRequest));
     }

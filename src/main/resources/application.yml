@@ -28,7 +28,7 @@ spring:
         protocol: STREAMABLE
         streamable-http:
           # 可自定义MCP交互端点，默认是/mcp
-          mcp-endpoint: /api/mcp
+          mcp-endpoint: /mcp/message
         annotation-scanner:
           enabled: true  # 启用注解扫描
         capabilities:
@@ -200,7 +200,7 @@ security:
     - "/swagger-ui/**"
     - "/ws/**"
     - "/jar/download/**"
-    - "/api/mcp/**"
+    - "/mcp/**"
 
 docker:
   base:

@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springaicommunity.mcp.annotation.McpTool;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.web.bind.annotation.*;
 
@@ -38,6 +39,7 @@ public class AgentController {
 
     @GetMapping("/list")
     @Operation(summary = "获取服务器列表")
+    @McpTool(name = "agentList", description = "agent列表")
     public Result<List<AgentVo>> list(@ParameterObject AgentConfigQuery agentConfigQuery) {
         return Result.success(iAgentConfigService.list(agentConfigQuery));
     }

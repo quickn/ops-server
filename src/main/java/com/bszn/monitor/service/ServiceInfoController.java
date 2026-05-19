@@ -5,6 +5,7 @@ import com.bszn.system.common.result.Result;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springaicommunity.mcp.annotation.McpTool;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,6 +32,7 @@ public class ServiceInfoController {
 
     @ResponseBody
     @GetMapping("/listPage")
+    @McpTool(name = "envList", description = "环境列表")
     public Result listPage(@ParameterObject ServiceInfoQuery systemInfoQuery) {
         Page<ServiceInfo> list = serviceInfoMapper.queryPage(systemInfoQuery, serviceInfoMapper.getPage());
         return Result.success(list);
