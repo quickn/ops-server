@@ -181,6 +181,10 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         String targetDir = StrUtil.isEmpty(backupRequest.getTargetDir()) ?
                 workPath + jarPath + "_bak" : backupRequest.getTargetDir();
 
+        if (backupRequest.getType() == 1 && Objects.equals(sourceDir, targetDir)) {
+            throw new BusinessException("2个目录相同无法备份");
+        }
+
         // 根据类型决定复制方向
         String fromDir, toDir;
         String operation;
