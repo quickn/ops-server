@@ -55,7 +55,7 @@ public class AgentServiceImpl extends ServiceImpl<AgentMapper, Agent>
      * @return 服务器列表
      */
     @Override
-    public List<AgentVo> list(AgentConfigQuery dto) {
+    public List<AgentVo> list(AgentQuery dto) {
         List<Agent> query = getBaseMapper().query(dto);
         // 设置部署状态
         if (StrUtil.isNotEmpty(dto.getDockerName())) {

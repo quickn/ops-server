@@ -22,13 +22,13 @@ spring:
     mcp:
       server:
         enabled: true
-        name: my-weather-streamable-server
+        name: monitor-mcp
         version: 1.0.0
         # 【关键】设置为STREAMABLE启用Streamable-HTTP模式
         protocol: STREAMABLE
         streamable-http:
           # 可自定义MCP交互端点，默认是/mcp
-          mcp-endpoint: /mcp/message
+          mcp-endpoint: /mcp
         annotation-scanner:
           enabled: true  # 启用注解扫描
         capabilities:

@@ -32,16 +32,17 @@ public class AgentController {
     ServiceInfoService serviceInfoService;
 
     @GetMapping("/listPage")
-    public Result listPage(@ParameterObject AgentConfigQuery agentConfigQuery) {
-        Page<Agent> list = agentMapper.queryPage(agentConfigQuery, agentMapper.getPage());
+    public Result listPage(@ParameterObject AgentQuery agentQuery) {
+        Page<Agent> list = agentMapper.queryPage(agentQuery, agentMapper.getPage());
         return Result.success(list);
     }
 
     @GetMapping("/list")
     @Operation(summary = "获取服务器列表")
     @McpTool(name = "agentList", description = "agent列表")
-    public Result<List<AgentVo>> list(@ParameterObject AgentConfigQuery agentConfigQuery) {
-        return Result.success(iAgentConfigService.list(agentConfigQuery));
+    public Result<List<AgentVo>> list(@ParameterObject AgentQuery agentQuery) {
+        log.info("list: {}", agentQuery);
+        return Result.success(iAgentConfigService.list(agentQuery));
     }
 
     @PostMapping("/save")

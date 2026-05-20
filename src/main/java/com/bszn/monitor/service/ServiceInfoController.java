@@ -31,9 +31,9 @@ public class ServiceInfoController {
     }
 
     @ResponseBody
-    @GetMapping("/listPage")
-    @McpTool(name = "envList", description = "环境列表")
-    public Result listPage(@ParameterObject ServiceInfoQuery systemInfoQuery) {
+    @GetMapping("/serviceList")
+    @McpTool(name = "serviceList", description = "服务列表")
+    public Result serviceList(@ParameterObject ServiceInfoQuery systemInfoQuery) {
         Page<ServiceInfo> list = serviceInfoMapper.queryPage(systemInfoQuery, serviceInfoMapper.getPage());
         return Result.success(list);
     }

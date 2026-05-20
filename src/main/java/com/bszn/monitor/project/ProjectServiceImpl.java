@@ -4,7 +4,7 @@ import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.bszn.monitor.agent.Agent;
-import com.bszn.monitor.agent.AgentConfigQuery;
+import com.bszn.monitor.agent.AgentQuery;
 import com.bszn.monitor.agent.AgentService;
 import com.bszn.monitor.agent.AgentVo;
 import com.bszn.monitor.msg.IMsgService;
@@ -102,7 +102,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
             }
         }
         // 拿到环境下的服务器
-        List<AgentVo> list = agentConfigService.list(AgentConfigQuery.builder().serviceId(syncRequest.getServiceId()).build());
+        List<AgentVo> list = agentConfigService.list(new AgentQuery(syncRequest.getServiceId()));
         AgentVo jump = null;
         for (AgentVo agentConfigVo : list) {
             if (agentConfigVo.getIsJumpServer()) {
@@ -173,8 +173,6 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
      */
     @Override
     public Boolean backup(Long userId, BackupRequest backupRequest) {
-        // 获取跳板机
-        Agent jump = agentConfigService.getjumpServers(backupRequest.getServiceId());
 
         String sourceDir = StrUtil.isEmpty(backupRequest.getSourceDir()) ?
                 workPath + jarPath : backupRequest.getSourceDir();
@@ -184,6 +182,8 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         if (backupRequest.getType() == 1 && Objects.equals(sourceDir, targetDir)) {
             throw new BusinessException("2个目录相同无法备份");
         }
+        // 获取跳板机
+        Agent jump = agentConfigService.getjumpServers(backupRequest.getServiceId());
 
         // 根据类型决定复制方向
         String fromDir, toDir;

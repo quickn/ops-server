@@ -31,7 +31,7 @@ public interface AgentService extends IService<Agent> {
      * @param dto 查询参数
      * @return 服务器列表
      */
-    List<AgentVo> list(AgentConfigQuery dto);
+    List<AgentVo> list(AgentQuery dto);
 
     /**
      * 获取跳板机

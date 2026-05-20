@@ -32,6 +32,7 @@ public class ProjectController {
     @Operation(summary = "获取项目列表（分页）")
     @McpTool(name = "projectList", description = "项目列表")
     public Result<IPage<Project>> page(ProjectDto dto) {
+        log.info("dto: {}", dto);
         return Result.success(projectService.page(dto.getPage(), dto.buildLambda()));
     }
 
@@ -68,6 +69,7 @@ public class ProjectController {
     @Operation(summary = "部署")
     @McpTool(name = "projectDeploy", description = "项目部署")
     public Result<String> deploy(@RequestBody @Validated DeployRequest request) {
+        log.info("request: {}", request);
         if (request.getDeployType() == 2 || request.getDeployType() == 1) {
             projectService.deploy(request);
         } else {
