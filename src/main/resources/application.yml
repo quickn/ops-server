@@ -22,7 +22,7 @@ spring:
     mcp:
       server:
         enabled: true
-        name: monitor-mcp
+        name: ops-mcp
         version: 1.0.0
         # 【关键】设置为STREAMABLE启用Streamable-HTTP模式
         protocol: STREAMABLE
