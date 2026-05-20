@@ -1,6 +1,7 @@
 package com.bszn.monitor.project;
 
 import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.bszn.monitor.agent.Agent;
 import com.bszn.monitor.agent.AgentConfigQuery;
@@ -8,6 +9,7 @@ import com.bszn.monitor.agent.AgentService;
 import com.bszn.monitor.agent.AgentVo;
 import com.bszn.monitor.msg.IMsgService;
 import com.bszn.system.common.exception.BusinessException;
+import com.bszn.system.common.util.SecurityUtils;
 import com.bszn.utils.IpUtil;
 import com.bszn.utils.ScriptUtil;
 import lombok.RequiredArgsConstructor;
@@ -53,32 +55,13 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
     @Value("${file.upload.work-path}")
     private String workPath;
 
-    /**
-     * 部署
-     *
-     * @param projectId 项目id
-     * @param agentIds  服务器id
-     * @param userId    用户id
-     * @return 结果
-     */
     @SneakyThrows
     @Override
-    public CompletableFuture<Boolean> deploy(Long projectId, List<Long> agentIds, Long userId) {
-        return deploy(projectId, agentIds, userId, 1);
-    }
-
-
-    /**
-     * 重新部署（只替换JAR包）
-     *
-     * @param projectId 项目id
-     * @param agentIds  服务器id
-     * @param userId    用户id
-     * @return 结果
-     */
-    @Override
-    public CompletableFuture<Boolean> redeploy(Long projectId, List<Long> agentIds, Long userId) {
-        return deploy(projectId, agentIds, userId, 2);
+    public CompletableFuture<Boolean> deploy(DeployRequest deployRequest) {
+        if (deployRequest.getProjectId() == null && StringUtils.isEmpty(deployRequest.getProjectName())) {
+            throw new BusinessException("项目ID或项目名称不能为空");
+        }
+        return deploy(deployRequest.getProjectId(), deployRequest.getProjectName(), deployRequest.getAgentIds(), SecurityUtils.getUserId(), deployRequest.getDeployType());
     }
 
     /**
@@ -95,14 +78,12 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
     /**
      * 同步
      *
-     * @param id          项目id
-     * @param userId      用户id
      * @param syncRequest 请求参数
      * @return 结果
      */
     @Override
-    public Boolean sync(Long id, Long userId, SyncRequest syncRequest) {
-        Project project = getById(id);
+    public Boolean sync(SyncRequest syncRequest) {
+        Project project = getByIdOrName(syncRequest.getProjectId(), syncRequest.getProjectName());
         if (Objects.isNull(project)) {
             throw new BusinessException("项目不存在");
         }
@@ -152,7 +133,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
                     remoteIp,
                     targetDir);
             // 直接在源服务器上执行rsync命令
-            result.append(msgService.sendCMDMsgAndResponse(userId, syncRequest.getSourceAgentId(), rsyncCmd, 300))
+            result.append(msgService.sendCMDMsgAndResponse(SecurityUtils.getUserId(), syncRequest.getSourceAgentId(), rsyncCmd, 300))
                     .append(" === 第一段结果集结束 === ");
         }
         // 指向服务器不为空 才同步至指向服务器
@@ -177,7 +158,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
                     command.append(" && ");
                 }
             }
-            result.append(msgService.sendCMDMsgAndResponse(userId, agentId, command.toString(), 300));
+            result.append(msgService.sendCMDMsgAndResponse(SecurityUtils.getUserId(), agentId, command.toString(), 300));
             log.info("同步结果：{}", result);
         }
         return true;
@@ -239,6 +220,9 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         return true;
     }
 
+    private Project getByIdOrName(Long projectId, String projectName) {
+        return projectId != null ? getById(projectId) : getOne(new LambdaQueryWrapper<Project>().eq(Project::getName, projectName));
+    }
 
     /**
      * 部署
@@ -249,8 +233,8 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
      * @param deployType 部署类型 1 构建容器 2 替换jar包
      * @return 结果
      */
-    private CompletableFuture<Boolean> deploy(Long projectId, List<Long> agentIds, Long userId, Integer deployType) {
-        Project project = getById(projectId);
+    private CompletableFuture<Boolean> deploy(Long projectId, String projectName, List<Long> agentIds, Long userId, Integer deployType) {
+        Project project = getByIdOrName(projectId, projectName);
         if (Objects.isNull(project)) {
             throw new BusinessException("项目不存在");
         }

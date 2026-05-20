@@ -12,26 +12,7 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface IProjectService extends IService<Project> {
 
-    /**
-     * 部署
-     *
-     * @param projectId 项目id
-     * @param agentIds  服务器id
-     * @param userId    用户id
-     * @return 结果
-     */
-    CompletableFuture<Boolean> deploy(Long projectId, List<Long> agentIds, Long userId);
-
-
-    /**
-     * 重新部署（只替换JAR包）
-     *
-     * @param projectId 项目id
-     * @param agentIds  服务器id
-     * @param userId    用户id
-     * @return 结果
-     */
-    CompletableFuture<Boolean> redeploy(Long projectId, List<Long> agentIds, Long userId);
+    CompletableFuture<Boolean> deploy(DeployRequest deployRequest);
 
     /**
      * 获取部署记录
@@ -44,12 +25,10 @@ public interface IProjectService extends IService<Project> {
     /**
      * 同步
      *
-     * @param id          项目id
-     * @param userId      用户id
      * @param syncRequest 请求参数
      * @return 结果
      */
-    Boolean sync(Long id, Long userId, SyncRequest syncRequest);
+    Boolean sync(SyncRequest syncRequest);
 
     /**
      * 备份

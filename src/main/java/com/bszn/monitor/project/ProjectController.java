@@ -64,26 +64,23 @@ public class ProjectController {
         return Result.success(projectService.removeById(id));
     }
 
-    @PostMapping("/deploy/{id}")
+    @PostMapping("/deploy")
     @Operation(summary = "部署")
     @McpTool(name = "projectDeploy", description = "项目部署")
-    public Result<String> deploy(@ApiParam(value = "项目id", required = true) @PathVariable Long id,
-                                 @RequestBody @Validated DeployRequest request) {
-        if (request.getDeployType() == 2) {
-            projectService.redeploy(id, request.getAgentIds(), SecurityUtils.getUserId());
-        } else if (request.getDeployType() == 1) {
-            projectService.deploy(id, request.getAgentIds(), SecurityUtils.getUserId());
+    public Result<String> deploy(@RequestBody @Validated DeployRequest request) {
+        if (request.getDeployType() == 2 || request.getDeployType() == 1) {
+            projectService.deploy(request);
         } else {
             return Result.failed("无效的部署方式");
         }
         return Result.success("开始部署，查看日志关注部署状态！");
     }
 
-    @PostMapping("/redeploy/{id}")
+    @PostMapping("/redeploy")
     @Operation(summary = "重新部署（只替换JAR包）")
-    public Result<String> redeploy(@ApiParam(value = "项目id", required = true) @PathVariable Long id,
-                                   @RequestBody DeployRequest request) {
-        projectService.redeploy(id, request.getAgentIds(), SecurityUtils.getUserId());
+    public Result<String> redeploy(@RequestBody DeployRequest request) {
+        request.setDeployType(2);
+        projectService.deploy(request);
         return Result.success("开始部署，查看日志关注部署状态！");
     }
 
@@ -100,12 +97,11 @@ public class ProjectController {
         }
     }
 
-    @PostMapping("/sync/{id}")
+    @PostMapping("/sync")
     @Operation(summary = "同步")
     @McpTool(name = "projectSync", description = "项目同步")
-    public Result<Boolean> sync(@ApiParam(value = "项目id", required = true) @PathVariable Long id,
-                                @RequestBody @Validated SyncRequest syncRequest) {
-        return Result.success(projectService.sync(id, SecurityUtils.getUserId(), syncRequest));
+    public Result<Boolean> sync(@RequestBody @Validated SyncRequest syncRequest) {
+        return Result.success(projectService.sync(syncRequest));
     }
 
     @PostMapping("/backup")

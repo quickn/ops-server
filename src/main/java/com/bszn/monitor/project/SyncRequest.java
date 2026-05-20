@@ -12,6 +12,13 @@ import lombok.Data;
 @Data
 public class SyncRequest {
 
+    @Schema(description = "项目id")
+    private Long projectId;
+
+    @Schema(description = "项目名称")
+    private String projectName;
+
+
     @Schema(description = "源服务器id")
     private Long sourceAgentId;
 

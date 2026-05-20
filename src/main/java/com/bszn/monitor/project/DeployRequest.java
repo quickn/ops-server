@@ -14,6 +14,13 @@ import java.util.List;
 @Data
 public class DeployRequest {
 
+    @Schema(description = "项目id")
+    private Long projectId;
+
+    @Schema(description = "项目名称")
+    private String projectName;
+
+
     @NotEmpty(message = "服务器id不能为空")
     @Schema(description = "服务器id")
     private List<Long> agentIds;
