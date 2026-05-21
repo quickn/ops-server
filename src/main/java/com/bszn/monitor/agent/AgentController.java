@@ -5,6 +5,7 @@ import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.bszn.monitor.cmd.ClientMsgForm;
 import com.bszn.monitor.cmd.LogCmdForm;
+import com.bszn.monitor.msg.IMsgService;
 import com.bszn.monitor.service.ServiceInfo;
 import com.bszn.monitor.service.ServiceInfoService;
 import com.bszn.system.common.result.Result;
@@ -19,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 
-@Tag(name = "终端")
+@Tag(name = "Agent管理")
 @Slf4j
 @RestController
 @RequestMapping("/agent")
@@ -30,6 +31,9 @@ public class AgentController {
     AgentMapper agentMapper;
     @Resource
     ServiceInfoService serviceInfoService;
+
+    @Resource
+    IMsgService iMsgService;
 
     @GetMapping("/listPage")
     public Result listPage(@ParameterObject AgentQuery agentQuery) {
@@ -81,6 +85,16 @@ public class AgentController {
     public Result getLogsByServiceId(@ParameterObject LogCmdForm logCmdForm) {
         String log = iAgentConfigService.getLogsByServiceId(logCmdForm);
         return Result.success(log);
+    }
+
+    @GetMapping("/sendCmd")
+    @Operation(summary = "发送指令")
+    public Result sendCmd(@RequestParam Long agentId, @RequestParam String cmd,
+                          @RequestParam(required = false) Integer timeout) {
+        if (timeout == null) {
+            timeout = 60;
+        }
+        return Result.success(iMsgService.sendCMDMsgAndResponse(agentId, cmd, timeout));
     }
 
     @GetMapping("/handleAgentByServiceId/{serviceId}")

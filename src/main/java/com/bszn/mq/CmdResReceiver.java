@@ -2,7 +2,6 @@ package com.bszn.mq;
 
 import com.bszn.monitor.msg.CmdCacheMsgService;
 import com.bszn.utils.IpUtil;
-import com.rabbitmq.client.Channel;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.*;
@@ -12,7 +11,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 /***
@@ -38,7 +36,7 @@ public class CmdResReceiver {
     @Bean
     public Queue monitorCmdDirectQueue() {
         String dynamicQueueName = "queue.monitor.cmd.server." + IpUtil.getIPv4Ip();
-        return new Queue(dynamicQueueName, true);
+        return new Queue(dynamicQueueName, false);
     }
 
     @Bean
@@ -53,13 +51,11 @@ public class CmdResReceiver {
                 .with(routingKey);
     }
 
-    @RabbitListener(queues = "#{monitorCmdDirectQueue.name}", concurrency = "${rabbitmq.cmd.concurrency}")
-    public void onReceiver(Message msg, Channel channel) throws IOException {
+    @RabbitListener(queues = "#{monitorCmdDirectQueue.name}", concurrency = "${rabbitmq.cmd.concurrency}", ackMode = "NONE")
+    public void onReceiver(Message msg) {
         String message = new String(msg.getBody(), StandardCharsets.UTF_8);
         String messageId = msg.getMessageProperties().getMessageId();
-        Long tag = msg.getMessageProperties().getDeliveryTag();
         log.info("指令响应 {}", message);
-        channel.basicAck(tag, false);
         monitorCmdMsgHandle.handle(messageId, message);
     }
 
