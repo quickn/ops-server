@@ -64,5 +64,7 @@ public class Agent extends ServiceBaseEntity {
     @Schema(description = "是否docker统计")
     private Boolean isDockerStats;
 
+    @Schema(description = "操作用户")
+    private String user;
 
 }

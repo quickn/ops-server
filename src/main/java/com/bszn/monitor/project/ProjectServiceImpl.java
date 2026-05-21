@@ -4,14 +4,15 @@ import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.bszn.monitor.agent.Agent;
-import com.bszn.monitor.agent.AgentQuery;
 import com.bszn.monitor.agent.AgentService;
-import com.bszn.monitor.agent.AgentVo;
+import com.bszn.monitor.file.IFileService;
+import com.bszn.monitor.file.SyncFileParam;
 import com.bszn.monitor.msg.IMsgService;
 import com.bszn.system.common.exception.BusinessException;
 import com.bszn.system.common.util.SecurityUtils;
 import com.bszn.utils.IpUtil;
 import com.bszn.utils.ScriptUtil;
+import jakarta.annotation.Resource;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -55,6 +56,9 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
     @Value("${file.upload.work-path}")
     private String workPath;
 
+    @Resource
+    IFileService fileService;
+
     @SneakyThrows
     @Override
     public CompletableFuture<Boolean> deploy(DeployRequest deployRequest) {
@@ -87,80 +91,13 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         if (Objects.isNull(project)) {
             throw new BusinessException("项目不存在");
         }
-        // 手动同步没有源服务
-        if (Objects.nonNull(syncRequest.getSourceAgentId()) && syncRequest.getType() != 3) {
-            Agent agentConfig = agentConfigService.getById(syncRequest.getSourceAgentId());
-            if (agentConfig == null) {
-                throw new BusinessException("Agent不存在");
-            }
-            if (!agentConfig.getOnline()) {
-                throw new BusinessException("源服务Agent不在线");
-            }
-            // 源服务跟同步服务一样，无需同步
-            if (syncRequest.getServiceId().equals(agentConfig.getServiceId())) {
-                return true;
-            }
-        }
-        // 拿到环境下的服务器
-        List<AgentVo> list = agentConfigService.list(new AgentQuery(syncRequest.getServiceId()));
-        AgentVo jump = null;
-        for (AgentVo agentConfigVo : list) {
-            if (agentConfigVo.getIsJumpServer()) {
-                jump = agentConfigVo;
-            }
-        }
-        if (Objects.isNull(jump)) {
-            throw new BusinessException("该环境没有设置跳板机！");
-        }
-        String remoteIp = jump.getRemoteIp();
-        Long agentId = jump.getId();
-
-        // 删除跳板机 剩下的即是指向服务器
-        list.remove(jump);
-        // 获取目标服务器信息
-//        if (list.isEmpty()) {
-//            throw new BusinessException("未找到指向服务器信息");
-//        }
-        StringBuilder result = new StringBuilder();
-        StringBuilder command = new StringBuilder();
-        String targetDir = StrUtil.isEmpty(project.getTargetDir()) ? workPath + this.jarPath : project.getTargetDir();
-        String sourceDir = StrUtil.isEmpty(project.getSourceDir()) ? workPath + this.jarPath : project.getSourceDir();
-        // 源服务器 同步至跳板机
-        if (syncRequest.getType() == 1) {
-            String rsyncCmd = String.format("rsync -azv -e 'ssh -o StrictHostKeyChecking=no' %s %s@%s:%s",
-                    sourceDir + "/" + project.getName(),
-                    syncRequest.getUser() != null ? syncRequest.getUser() : "park",
-                    remoteIp,
-                    targetDir);
-            // 直接在源服务器上执行rsync命令
-            result.append(msgService.sendCMDMsgAndResponse(SecurityUtils.getUserId(), syncRequest.getSourceAgentId(), rsyncCmd, 300))
-                    .append(" === 第一段结果集结束 === ");
-        }
-        // 指向服务器不为空 才同步至指向服务器
-        if (!list.isEmpty()) {
-            // jar包 在命令中添加下载动作
-            if (syncRequest.getType() == 2) {
-                String downloadCmd = String.format("curl -L -o %s '%s'", targetDir + "/" + project.getName() + "/" + project.getName() + ".jar",
-                        syncRequest.getJarDownloadUrl());
-                command.append(downloadCmd);
-                command.append(" && ");
-            }
-            for (int i = 0; i < list.size(); i++) {
-                AgentVo server = list.get(i);
-                String rsyncCmd = String.format("rsync -azv  -e 'ssh -o StrictHostKeyChecking=no' %s %s@%s:%s",
-                        targetDir + "/" + project.getName(),
-                        syncRequest.getUser() != null ? syncRequest.getUser() : "park",
-                        server.getHostname(),
-                        targetDir);
-                command.append(rsyncCmd);
-                // 如果不是最后一条命令，添加 &&
-                if (i < list.size() - 1) {
-                    command.append(" && ");
-                }
-            }
-            result.append(msgService.sendCMDMsgAndResponse(SecurityUtils.getUserId(), agentId, command.toString(), 300));
-            log.info("同步结果：{}", result);
-        }
+        String sourceDir = StrUtil.isEmpty(project.getSourceDir()) ? workPath + this.jarPath : project.getSourceDir() + File.separator + project.getName();
+        SyncFileParam syncFileParam = new SyncFileParam();
+        syncFileParam.setSourceAgentId(syncRequest.getSourceAgentId());
+        syncFileParam.setJumpServiceId(syncRequest.getServiceId());
+        syncFileParam.setSourcePath(sourceDir);
+        syncFileParam.setSyncType(syncRequest.getType());
+        fileService.syncFileByJumpServer(syncFileParam);
         return true;
     }
 

@@ -20,6 +20,8 @@ public class FileCmdController {
 
     @Resource
     IMsgService iMsgService;
+    @Resource
+    IFileService iFileService;
 
     @GetMapping("/getFileByPath")
     @Operation(summary = "获取文件通过路径")
@@ -121,6 +123,14 @@ public class FileCmdController {
             log.error("查看文件列表失败", e);
             return Result.failed("查看文件列表失败: " + e.getMessage());
         }
+    }
+
+
+    @GetMapping("/syncFileByJumpServer")
+    @Operation(summary = "通过跳板机同步文件")
+    public Result<Boolean> syncFileByJumpServer(SyncFileParam syncFileParam) {
+        Boolean result = iFileService.syncFileByJumpServer(syncFileParam);
+        return Result.success(result);
     }
 
 }
