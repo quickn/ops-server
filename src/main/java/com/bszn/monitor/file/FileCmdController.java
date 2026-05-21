@@ -126,9 +126,9 @@ public class FileCmdController {
     }
 
 
-    @GetMapping("/syncFileByJumpServer")
+    @PostMapping("/syncFileByJumpServer")
     @Operation(summary = "通过跳板机同步文件")
-    public Result<Boolean> syncFileByJumpServer(SyncFileParam syncFileParam) {
+    public Result<Boolean> syncFileByJumpServer(@ModelAttribute SyncFileParam syncFileParam) {
         Boolean result = iFileService.syncFileByJumpServer(syncFileParam);
         return Result.success(result);
     }
