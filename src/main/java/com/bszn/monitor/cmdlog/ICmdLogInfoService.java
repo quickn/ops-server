@@ -15,9 +15,10 @@ public interface ICmdLogInfoService extends IService<CmdLogInfo> {
      * @param userId  用户id
      * @param agentId 服务id
      * @param cmd     指令
-     * @param result  结果
      * @return 结果
      */
-    boolean save(Long userId, Long agentId, String cmd, String result);
+    Long save(Long userId, Long agentId, String cmd, String msgType);
+
+    boolean updateResult(Long id, String result, Integer timeConsuming, Boolean isError);
 
 }

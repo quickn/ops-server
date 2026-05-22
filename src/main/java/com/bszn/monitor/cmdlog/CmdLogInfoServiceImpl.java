@@ -25,25 +25,37 @@ public class CmdLogInfoServiceImpl extends ServiceImpl<CmdLogInfoMapper, CmdLogI
      * @param userId  用户id
      * @param agentId 服务id
      * @param cmd     指令
-     * @param result  结果
-     * @return 结果
+     * @param msgType 消息类型
      */
     @Override
-    public boolean save(Long userId, Long agentId, String cmd, String result) {
-        if (result != null && result.length() >= 2000) {
-            result = result.substring(0, 2000);
-        }
+    public Long save(Long userId, Long agentId, String cmd, String msgType) {
         // 拿到服务
         Agent byId = agentConfigService.getById(agentId);
-        return save(CmdLogInfo.builder()
+        CmdLogInfo cmdLogInfo = CmdLogInfo.builder()
                 .serviceId(byId.getServiceId())
                 .serviceName(byId.getServiceName())
                 .agentId(agentId)
                 .agentIp(byId.getHostname())
                 .cmd(cmd)
-                .result(result)
+                .msgType(msgType)
                 .userId(userId)
                 .createTime(LocalDateTime.now())
+                .build();
+        save(cmdLogInfo);
+        return cmdLogInfo.getId();
+    }
+
+    @Override
+    public boolean updateResult(Long id, String result, Integer timeConsuming, Boolean isError) {
+        if (result != null && result.length() >= 2000) {
+            result = result.substring(0, 2000);
+        }
+        updateById(CmdLogInfo.builder()
+                .id(id)
+                .result(result)
+                .isError(isError)
+                .timeConsuming(timeConsuming)
                 .build());
+        return true;
     }
 }

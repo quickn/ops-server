@@ -65,20 +65,24 @@ public class CmdMsgServiceImpl implements IMsgService {
 
     @Override
     public MsgResult sendMsgAndResponse(Long userId, Long agentId, String msg, String msgType, Integer timeout) {
+        Long msgId = cmdLogInfoService.save(userId, agentId, msg, msgType);
+        long startTime = System.currentTimeMillis();
         String messageId = sendMsg(userId, agentId, msg, msgType, timeout);
         MsgResult msgResult = null;
         try {
             msgResult = cmdCacheMsgService.getMsgResult(messageId, timeout);
         } catch (Exception exception) {
             log.error("发送消息异常", exception);
-            cmdLogInfoService.save(userId, agentId, msg, exception.getMessage());
+            int timeConsuming = (int) ((System.currentTimeMillis() - startTime) / 1000);
+            cmdLogInfoService.updateResult(msgId, exception.getMessage(), timeConsuming, true);
             throw new BusinessException(exception.getMessage());
         }
         String result = "返回结果为空";
         if (msgResult != null) {
             result = msgResult.getData();
         }
-        cmdLogInfoService.save(userId, agentId, msg, result);
+        int timeConsuming = (int) ((System.currentTimeMillis() - startTime) / 1000);
+        cmdLogInfoService.updateResult(msgId, result, timeConsuming, false);
         // 保存日志
         return msgResult;
     }
