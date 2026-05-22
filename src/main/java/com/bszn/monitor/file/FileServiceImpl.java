@@ -30,9 +30,13 @@ public class FileServiceImpl implements IFileService {
 
     @Override
     public Boolean syncFileByJumpServer(SyncFileParam syncFileParam) {
-        Path parentPath = Paths.get(syncFileParam.getSourcePath()).getParent();
-        if (parentPath == null) {
-            throw new RuntimeException("文件路径不能为空");
+        String targetPath = syncFileParam.getTargetPath();
+        if (StringUtils.isEmpty(targetPath)) {
+            Path parentPath = Paths.get(syncFileParam.getSourcePath()).getParent();
+            if (parentPath == null) {
+                throw new RuntimeException("文件路径不能为空");
+            }
+            targetPath = parentPath.toString();
         }
         // 获取跳板机
         Agent jumpServerAgent = null;
@@ -63,12 +67,11 @@ public class FileServiceImpl implements IFileService {
         if (StringUtils.isEmpty(user)) {
             user = "park";
         }
-        String targetPath = parentPath.toString();
-
         StringBuilder result = new StringBuilder();
         if (syncFileParam.getSyncType() == 1) {
             // 从源服务器 rsync 到跳板机
-            String rsyncCmd = String.format("rsync -azv -e 'ssh -o StrictHostKeyChecking=no' %s %s@%s:%s",
+            String rsyncCmd = String.format("mkdir -p %s && rsync -azv -e 'ssh -o StrictHostKeyChecking=no' %s %s@%s:%s",
+                    targetPath,
                     syncFileParam.getSourcePath(),
                     user,
                     jumpServerAgent.getRemoteIp(),
@@ -86,7 +89,8 @@ public class FileServiceImpl implements IFileService {
             for (int i = 0; i < list.size(); i++) {
                 AgentVo agentVo = list.get(i);
                 String hostname = agentVo.getHostname();
-                String rsyncCmd = String.format("rsync -azv  -e 'ssh -o StrictHostKeyChecking=no' %s %s@%s:%s",
+                String rsyncCmd = String.format("mkdir -p %s && rsync -azv  -e 'ssh -o StrictHostKeyChecking=no' %s %s@%s:%s",
+                        targetPath,
                         syncFileParam.getSourcePath(),
                         user,
                         hostname,
@@ -96,7 +100,7 @@ public class FileServiceImpl implements IFileService {
                     command.append(" && ");
                 }
             }
-            result.append(msgService.sendCMDMsgAndResponse(syncFileParam.getJumpAgentId(), command.toString(), 60));
+            result.append(msgService.sendCMDMsgAndResponse(jumpServerAgent.getId(), command.toString(), 120));
             log.info("同步结果：{}", result);
         }
         return true;

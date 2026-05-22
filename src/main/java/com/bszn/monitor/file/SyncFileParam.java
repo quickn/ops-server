@@ -29,6 +29,9 @@ public class SyncFileParam {
     private String sourcePath;
 
 
+    private String targetPath;
+
+
     /**
      * 同步类型：1=从源服务器 rsync 到跳板机，2=jar包下载 + rsync，3=仅从跳板机 rsync
      */
