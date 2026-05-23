@@ -30,16 +30,27 @@ public class FileServiceImpl implements IFileService {
 
     @Override
     public Boolean syncFileByJumpServer(SyncFileParam syncFileParam) {
-        String targetPath = syncFileParam.getTargetPath();
-        if (StringUtils.isEmpty(targetPath)) {
-            Path parentPath = Paths.get(syncFileParam.getSourcePath()).getParent();
-            if (parentPath == null) {
-                throw new RuntimeException("文件路径不能为空");
-            }
-            targetPath = parentPath.toString();
+        if (StringUtils.isEmpty(syncFileParam.getTargetPath())) {
+            throw new RuntimeException("目标路径不能为空");
         }
+        Path parentPath = Paths.get(syncFileParam.getTargetPath()).getParent();
+        if (parentPath == null) {
+            throw new RuntimeException("文件路径不能为空");
+        }
+        // 获取目录路径的上级目录
+        String targetPath = parentPath.toString();
         // 获取跳板机
         Agent jumpServerAgent = null;
+        if (syncFileParam.getJumpServiceId() != null) {
+            jumpServerAgent = agentService.getjumpServers(syncFileParam.getJumpServiceId());
+        }
+        if (jumpServerAgent == null && syncFileParam.getJumpAgentId() != null) {
+            jumpServerAgent = agentService.getById(syncFileParam.getJumpAgentId());
+        }
+        if (Objects.isNull(jumpServerAgent)) {
+            throw new BusinessException("该环境没有设置跳板机！");
+        }
+        // 获取跳板机
         if (syncFileParam.getJumpServiceId() != null) {
             jumpServerAgent = agentService.getjumpServers(syncFileParam.getJumpServiceId());
         }
@@ -69,9 +80,10 @@ public class FileServiceImpl implements IFileService {
         }
         StringBuilder result = new StringBuilder();
         if (syncFileParam.getSyncType() == 1) {
+            // 先创建目标目录
+            result.append(msgService.sendCMDMsgAndResponse(jumpServerAgent.getId(), String.format("mkdir -p %s", targetPath), 10));
             // 从源服务器 rsync 到跳板机
-            String rsyncCmd = String.format("mkdir -p %s && rsync -azv -e 'ssh -o StrictHostKeyChecking=no' %s %s@%s:%s",
-                    targetPath,
+            String rsyncCmd = String.format("rsync -azv -e 'ssh -o StrictHostKeyChecking=no' %s %s@%s:%s",
                     syncFileParam.getSourcePath(),
                     user,
                     jumpServerAgent.getRemoteIp(),
@@ -89,9 +101,8 @@ public class FileServiceImpl implements IFileService {
             for (int i = 0; i < list.size(); i++) {
                 AgentVo agentVo = list.get(i);
                 String hostname = agentVo.getHostname();
-                String rsyncCmd = String.format("mkdir -p %s && rsync -azv  -e 'ssh -o StrictHostKeyChecking=no' %s %s@%s:%s",
-                        targetPath,
-                        syncFileParam.getSourcePath(),
+                String rsyncCmd = String.format("rsync -azv  -e 'ssh -o StrictHostKeyChecking=no' %s %s@%s:%s",
+                        syncFileParam.getTargetPath(),
                         user,
                         hostname,
                         targetPath);
