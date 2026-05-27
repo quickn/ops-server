@@ -36,7 +36,8 @@ public class CmdResReceiver {
     @Bean
     public Queue monitorCmdDirectQueue() {
         String dynamicQueueName = "queue.monitor.cmd.server." + IpUtil.getIPv4Ip();
-        return new Queue(dynamicQueueName, false);
+        // durable=false: 非持久化队列，与RabbitMQ服务器上现有队列配置保持一致
+        return new Queue(dynamicQueueName, false, false, true);
     }
 
     @Bean
