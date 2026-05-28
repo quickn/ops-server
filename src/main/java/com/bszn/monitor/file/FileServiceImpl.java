@@ -81,7 +81,7 @@ public class FileServiceImpl implements IFileService {
         StringBuilder result = new StringBuilder();
         if (syncFileParam.getSyncType() == 1) {
             // 先创建目标目录
-            result.append(msgService.sendCMDMsgAndResponse(jumpServerAgent.getId(), String.format("mkdir -p %s", targetPath), 10));
+//            result.append(msgService.sendCMDMsgAndResponse(jumpServerAgent.getId(), String.format("mkdir -p %s", targetPath), 10));
             // 从源服务器 rsync 到跳板机
             String rsyncCmd = String.format("rsync -azv -e 'ssh -o StrictHostKeyChecking=no' %s %s@%s:%s",
                     syncFileParam.getSourcePath(),
