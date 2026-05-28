@@ -34,7 +34,7 @@ file:
     down-path: http://monitor.bisenpark.com/monitor/static
 
 upgradeClient:
-  url: http://monitor.bisenpark.com/monitor/static/monitor-agent.jar
+  url: http://monitor.bisenpark.com/monitor/static/ops-agent-go
   version: 1.0.0
 
 python:

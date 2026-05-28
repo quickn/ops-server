@@ -143,7 +143,7 @@ system:
     # WebSocket 开关
     websocket-enabled: true
 upgradeClient:
-  url: http://192.168.10.11:90/monitor/static/monitor-agent.jar
+  url: http://192.168.10.11:90/monitor/static/ops-agent-go
   version: 1.0.0
 logging:
   config: classpath:logback-nacos.xml
