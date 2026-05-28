@@ -13,6 +13,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
+import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -71,7 +72,7 @@ public class FileServiceImpl implements IFileService {
             }
             // 源服务跟同步服务一样，无需同步
             if (agent.getServiceId().equals(jumpServerAgent.getServiceId())) {
-                return true;
+                //return true;
             }
         }
         String user = jumpServerAgent.getUser();
@@ -80,14 +81,12 @@ public class FileServiceImpl implements IFileService {
         }
         StringBuilder result = new StringBuilder();
         if (syncFileParam.getSyncType() == 1) {
-            // 先创建目标目录
-//            result.append(msgService.sendCMDMsgAndResponse(jumpServerAgent.getId(), String.format("mkdir -p %s", targetPath), 10));
             // 从源服务器 rsync 到跳板机
-            String rsyncCmd = String.format("rsync -azv -e 'ssh -o StrictHostKeyChecking=no' %s %s@%s:%s",
+            String rsyncCmd = String.format("rsync -azv -e 'ssh -o StrictHostKeyChecking=no' --mkpath %s %s@%s:%s",
                     syncFileParam.getSourcePath(),
                     user,
                     jumpServerAgent.getRemoteIp(),
-                    targetPath);
+                    targetPath + File.separator);
             result.append(msgService.sendCMDMsgAndResponse(syncFileParam.getSourceAgentId(), rsyncCmd, 300))
                     .append(" === 第一段结果集结束 === ");
         }
@@ -101,11 +100,11 @@ public class FileServiceImpl implements IFileService {
             for (int i = 0; i < list.size(); i++) {
                 AgentVo agentVo = list.get(i);
                 String hostname = agentVo.getHostname();
-                String rsyncCmd = String.format("rsync -azv  -e 'ssh -o StrictHostKeyChecking=no' %s %s@%s:%s",
+                String rsyncCmd = String.format("rsync -azv  -e 'ssh -o StrictHostKeyChecking=no' --mkpath %s %s@%s:%s",
                         syncFileParam.getTargetPath(),
                         user,
                         hostname,
-                        targetPath);
+                        targetPath + File.separator);
                 command.append(rsyncCmd);
                 if (i < list.size() - 1) {
                     command.append(" && ");

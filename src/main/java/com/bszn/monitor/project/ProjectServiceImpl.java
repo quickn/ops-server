@@ -97,7 +97,8 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         syncFileParam.setJumpServiceId(syncRequest.getServiceId());
         syncFileParam.setSourcePath(sourceDir);
         syncFileParam.setSyncType(syncRequest.getType());
-        syncFileParam.setTargetPath(project.getTargetDir());
+        String targetPath = StrUtil.isEmpty(project.getSourceDir()) ? workPath + this.jarPath : project.getTargetDir() + File.separator + project.getName();
+        syncFileParam.setTargetPath(targetPath);
         fileService.syncFileByJumpServer(syncFileParam);
         return true;
     }
