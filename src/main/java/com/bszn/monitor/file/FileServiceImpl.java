@@ -72,7 +72,7 @@ public class FileServiceImpl implements IFileService {
             }
             // 源服务跟同步服务一样，无需同步
             if (agent.getServiceId().equals(jumpServerAgent.getServiceId())) {
-                //return true;
+                return true;
             }
         }
         String user = jumpServerAgent.getUser();
