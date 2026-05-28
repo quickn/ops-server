@@ -82,7 +82,7 @@ public class FileServiceImpl implements IFileService {
         StringBuilder result = new StringBuilder();
         if (syncFileParam.getSyncType() == 1) {
             // 从源服务器 rsync 到跳板机
-            String rsyncCmd = String.format("rsync -azv -e 'ssh -o StrictHostKeyChecking=no' --mkpath %s %s@%s:%s",
+            String rsyncCmd = String.format("rsync -azv -e 'ssh -o StrictHostKeyChecking=no' %s %s@%s:%s",
                     syncFileParam.getSourcePath(),
                     user,
                     jumpServerAgent.getRemoteIp(),
@@ -100,7 +100,7 @@ public class FileServiceImpl implements IFileService {
             for (int i = 0; i < list.size(); i++) {
                 AgentVo agentVo = list.get(i);
                 String hostname = agentVo.getHostname();
-                String rsyncCmd = String.format("rsync -azv  -e 'ssh -o StrictHostKeyChecking=no' --mkpath %s %s@%s:%s",
+                String rsyncCmd = String.format("rsync -azv  -e 'ssh -o StrictHostKeyChecking=no' %s %s@%s:%s",
                         syncFileParam.getTargetPath(),
                         user,
                         hostname,
