@@ -8,10 +8,9 @@ import jakarta.annotation.Resource;
 import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 
 @RestController
@@ -131,8 +130,9 @@ public class FileCmdController {
     @PostMapping("/syncFileByJumpServer")
     @Operation(summary = "通过跳板机同步文件")
     public Result<Boolean> syncFileByJumpServer(@ModelAttribute SyncFileParam syncFileParam) {
-
-        syncFileParam.setTargetPath(syncFileParam.getSourcePath());
+        if (StringUtils.isEmpty(syncFileParam.getTargetPath())) {
+            syncFileParam.setTargetPath(syncFileParam.getSourcePath());
+        }
         Boolean result = iFileService.syncFileByJumpServer(syncFileParam);
         return Result.success(result);
     }
