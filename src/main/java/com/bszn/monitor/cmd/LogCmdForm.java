@@ -9,18 +9,23 @@ import lombok.Data;
  **/
 @Data
 public class LogCmdForm {
+    @ApiModelProperty("服务Id")
     Integer serviceId;
 
     @ApiModelProperty("容器名称")
-    @NotBlank(message = "容器名称不能为空")
     String dockerName;
 
+    @ApiModelProperty("文件路径")
+    String filePath;
+
     @ApiModelProperty("关键字")
-    @NotBlank(message = "关键字不能为空")
     String keyword;
 
     @ApiModelProperty("关键字1")
     String keyword1;
+
+    @ApiModelProperty("agentId")
+    Long agentId;
 
     String createDate;
     @ApiModelProperty("日志级别")
@@ -29,4 +34,7 @@ public class LogCmdForm {
 
     String cmd;
     String grepPara;
+
+    @ApiModelProperty("超时时间")
+    Integer timeout = 60;
 }

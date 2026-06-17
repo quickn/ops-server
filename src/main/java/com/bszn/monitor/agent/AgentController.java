@@ -4,7 +4,6 @@ import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.bszn.monitor.cmd.ClientMsgForm;
-import com.bszn.monitor.cmd.LogCmdForm;
 import com.bszn.monitor.msg.IMsgService;
 import com.bszn.monitor.service.ServiceInfo;
 import com.bszn.monitor.service.ServiceInfoService;
@@ -80,12 +79,6 @@ public class AgentController {
         return Result.success();
     }
 
-    @GetMapping("/getLogsByServiceId")
-    @Operation(summary = "实时日志查询")
-    public Result getLogsByServiceId(@ParameterObject LogCmdForm logCmdForm) {
-        String log = iAgentConfigService.getLogsByServiceId(logCmdForm);
-        return Result.success(log);
-    }
 
     @GetMapping("/sendCmd")
     @Operation(summary = "发送指令")
@@ -93,6 +86,12 @@ public class AgentController {
                           @RequestParam(required = false) Integer timeout) {
         if (timeout == null) {
             timeout = 60;
+        }
+        if (timeout > 300) {
+            timeout = 300;
+        }
+        if (cmd.startsWith("{")) {
+            return Result.success(iMsgService.sendTaskMsgResponse(agentId, cmd, timeout));
         }
         return Result.success(iMsgService.sendCMDMsgAndResponse(agentId, cmd, timeout));
     }

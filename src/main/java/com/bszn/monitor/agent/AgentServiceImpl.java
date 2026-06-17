@@ -158,60 +158,6 @@ public class AgentServiceImpl extends ServiceImpl<AgentMapper, Agent>
 
 
     @Override
-    public String getLogsByServiceId(LogCmdForm logCmdForm) {
-        List<Agent> agentConfigs = this.baseMapper.getByServiceId(logCmdForm.getServiceId(), logCmdForm.getDockerName());
-        StringBuffer logs = new StringBuffer();
-        for (Agent agentConfig : agentConfigs) {
-            if (StringUtils.isEmpty(logCmdForm.getCmd())) {
-                StringBuilder cmd = new StringBuilder();
-                if (StringUtils.isNotEmpty(logCmdForm.getKeyword())) {
-                    cmd.append("cat");
-                } else {
-                    cmd.append("tail -n200 ");
-                }
-                cmd.append(" /home/park/logs/");
-                cmd.append(logCmdForm.getDockerName());
-                cmd.append("/");
-                if (StringUtils.isNotEmpty(logCmdForm.getCreateDate())) {
-                    cmd.append(logCmdForm.getLogLevel() + "/");
-                }
-                cmd.append(logCmdForm.getLogLevel());
-                if (StringUtils.isEmpty(logCmdForm.getCreateDate())) {
-                    cmd.append(".log");
-                } else {
-                    String createDate = logCmdForm.getCreateDate().substring(0, 10);
-                    cmd.append("-" + createDate + ".*.log");
-                }
-                if (StringUtils.isNotEmpty(logCmdForm.getKeyword())) {
-                    cmd.append("|grep ");
-                    if (StringUtils.isNotEmpty(logCmdForm.getGrepPara()) && StringUtils.isEmpty(logCmdForm.getKeyword1())) {
-                        cmd.append(logCmdForm.getGrepPara());
-                        cmd.append(" ");
-                    }
-                    cmd.append("'" + logCmdForm.getKeyword() + "'");
-                }
-                if (StringUtils.isNotEmpty(logCmdForm.getKeyword1())) {
-                    cmd.append("|grep ");
-                    if (StringUtils.isNotEmpty(logCmdForm.getGrepPara())) {
-                        cmd.append(logCmdForm.getGrepPara());
-                        cmd.append(" ");
-                    }
-                    cmd.append("'" + logCmdForm.getKeyword1() + "'");
-                }
-                logs.append("<div class='hostname'>");
-                logs.append(agentConfig.getHostname() + "\n");
-                logs.append("</div>");
-                logs.append("\n");
-                logs.append(iMsgService.sendCMDMsgAndRawResponse(null, agentConfig.getId(), cmd.toString(), 20));
-                logs.append("\n");
-            } else {
-                logs.append(iMsgService.sendCMDMsgAndRawResponse(null, agentConfig.getId(), logCmdForm.getCmd(), 20));
-            }
-        }
-        return logs.toString();
-    }
-
-    @Override
     public void receiveClientMsg(ClientMsgForm clientMsgForm) {
         if (MonitorCmdC.updateClientVersion.equals(clientMsgForm.getCmd())) {
             Agent agentConfig = new Agent();

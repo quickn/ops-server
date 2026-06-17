@@ -17,8 +17,6 @@ public interface AgentService extends IService<Agent> {
 
     Agent getByServiceIdAndHost(Integer serviceId, String hostname);
 
-    String getLogsByServiceId(LogCmdForm logCmdForm);
-
     void receiveClientMsg(ClientMsgForm clientMsgForm);
 
     void handleAgentByServiceId(Integer serviceId, String cmd);

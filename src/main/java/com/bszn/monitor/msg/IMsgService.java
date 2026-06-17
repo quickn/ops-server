@@ -57,4 +57,8 @@ public interface IMsgService {
     default MsgResult sendCMDMsgAndRawResponse(Long userId, Long agentId, String cmd, Integer timeout) {
         return sendMsgAndResponse(userId, agentId, cmd, MonitorMsgType.CMD, timeout);
     }
+
+    default MsgResult sendTaskMsgResponse(Long agentId, String msg, Integer timeout) {
+        return sendMsgAndResponse(SecurityUtils.getUserId(), agentId, msg, MonitorMsgType.TASK, timeout);
+    }
 }
