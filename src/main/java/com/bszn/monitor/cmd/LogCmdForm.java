@@ -28,9 +28,19 @@ public class LogCmdForm {
     Long agentId;
 
     String createDate;
+
     @ApiModelProperty("日志级别")
     @NotBlank(message = "日志级别不能为空")
     String logLevel = "info";
+
+    @ApiModelProperty("动作(analyze,stats)")
+    String action;
+
+    @ApiModelProperty("开始时间")
+    String startTime;
+
+    @ApiModelProperty("结束时间")
+    String endTime;
 
     String cmd;
     String grepPara;

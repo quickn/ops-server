@@ -32,6 +32,11 @@ public class LogServiceImpl implements ILogService {
 
     public List<MsgResult> analysis(LogCmdForm logCmdForm) {
         List<MsgResult> list = new ArrayList<>();
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("handle", "logAnalysisHandle");
+        jsonObject.put("action", logCmdForm.getAction());
+        jsonObject.put("startTime", logCmdForm.getStartTime());
+        jsonObject.put("endTime", logCmdForm.getEndTime());
         if (StringUtils.isEmpty(logCmdForm.getFilePath())) {
             if (StringUtils.isEmpty(logCmdForm.getDockerName())) {
                 throw new BusinessException("dockerName不能为空");
@@ -55,14 +60,10 @@ public class LogServiceImpl implements ILogService {
                     String createDate = logCmdForm.getCreateDate().substring(0, 10);
                     cmd.append("-" + createDate + ".*.log");
                 }
-                JSONObject jsonObject = new JSONObject();
-                jsonObject.put("handle", "logAnalysisHandle");
                 jsonObject.put("filePath", cmd.toString());
                 list.add(iMsgService.sendTaskMsgResponse(agentConfig.getId(), jsonObject.toJSONString(), logCmdForm.getTimeout()));
             }
         } else {
-            JSONObject jsonObject = new JSONObject();
-            jsonObject.put("handle", "logAnalysisHandle");
             jsonObject.put("filePath", logCmdForm.getFilePath());
             list.add(iMsgService.sendTaskMsgResponse(logCmdForm.getAgentId(), jsonObject.toJSONString(), logCmdForm.getTimeout()));
         }
