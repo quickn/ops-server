@@ -56,17 +56,18 @@ public class ScriptUtil {
      * @param dockerComposeContent docker编排文件
      * @param jarPath              jar包路径
      * @param type                 类型 1 jar部署脚本 2 docker部署脚本 3 替换jar包部署脚本
+     * @param workPath
      * @return 部署脚本
      */
     public static String deployScript(String projectName, String dockerfileContent,
-                                      String dockerComposeContent, String jarPath, Integer type) {
+                                      String dockerComposeContent, String jarPath, Integer type, String workPath) {
         switch (type) {
             case 1:
                 return deployScript(projectName, dockerfileContent, dockerComposeContent, jarPath);
             case 2:
                 return deployDockerScript(projectName, dockerfileContent, dockerComposeContent);
             case 3:
-                return redeployScript(projectName, dockerfileContent, jarPath);
+                return redeployScript(projectName, dockerfileContent, jarPath, workPath);
             default:
                 return null;
         }
@@ -93,9 +94,9 @@ public class ScriptUtil {
     /**
      * 重新部署脚本（只替换JAR包）
      */
-    public static String redeployScript(String projectName, String dockerfileContent, String jarPath) {
+    public static String redeployScript(String projectName, String dockerfileContent, String jarPath, String workPath) {
         String str = "";
-        return redeployScript(str, projectName, str, projectName, dockerfileContent, jarPath);
+        return redeployScript(str, projectName, str, projectName, dockerfileContent, jarPath, workPath);
     }
 
     /**
@@ -175,7 +176,7 @@ public class ScriptUtil {
      */
     public static String redeployScript(String downloadUrl, String fileName, String version,
                                         String containerName, String dockerfileContent,
-                                        String jarPath) {
+                                        String jarPath, String workPath) {
         try {
             Map<String, String> dockerInfo = parseDockerfileInfo(dockerfileContent);
             String workdir = dockerInfo.get(InstructionConstant.WORKDIR);
@@ -192,7 +193,7 @@ public class ScriptUtil {
             variables.put("LOCAL_JAR_PATH", jarPath + "/" + containerName + "/" + fileName + ".jar");
             variables.put("CONTAINER_NAME", containerName);
             variables.put("FILE_NAME", fileName);
-            variables.put("DEFAULT_WORKDIR", StringUtils.defaultString(workdir, "/app"));
+            variables.put("DEFAULT_WORKDIR", StringUtils.defaultString(workdir, workPath));
             variables.put("VERSION", version);
 
             return replaceVariables(template, variables);

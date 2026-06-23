@@ -249,7 +249,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
             // 2. 生成重新部署脚本
             int type = project.getType() == 1 ? 3 : project.getType();
             String jarPath = StrUtil.isEmpty(project.getTargetDir()) ? workPath + this.jarPath : project.getTargetDir();
-            String redeployScript = ScriptUtil.deployScript(project.getName(), project.getDockerfileContent(), project.getDockerComposeContent(), jarPath, type);
+            String redeployScript = ScriptUtil.deployScript(project.getName(), project.getDockerfileContent(), project.getDockerComposeContent(), jarPath, type, workPath);
 
 
             // 3. 将脚本保存为可下载文件
@@ -310,7 +310,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         try {
             // 获取脚本
             String jarPath = StrUtil.isEmpty(project.getTargetDir()) ? workPath + this.jarPath : project.getTargetDir();
-            String deployScript = ScriptUtil.deployScript(project.getName(), project.getDockerfileContent(), project.getDockerComposeContent(), jarPath, project.getType());
+            String deployScript = ScriptUtil.deployScript(project.getName(), project.getDockerfileContent(), project.getDockerComposeContent(), jarPath, project.getType(), workPath);
 
             // 将脚本保存为可下载文件
             String scriptFileName = "deploy_" + project.getName() + ".sh";
