@@ -193,7 +193,7 @@ public class ScriptUtil {
             variables.put("LOCAL_JAR_PATH", jarPath + "/" + containerName + "/" + fileName + ".jar");
             variables.put("CONTAINER_NAME", containerName);
             variables.put("FILE_NAME", fileName);
-            variables.put("DEFAULT_WORKDIR", StringUtils.defaultString(workdir, workPath));
+            variables.put("DEFAULT_WORKDIR", StringUtils.isNotEmpty(workdir) && !workdir.startsWith("$") ? workdir : workPath);
             variables.put("VERSION", version);
 
             return replaceVariables(template, variables);
