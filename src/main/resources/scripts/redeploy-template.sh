@@ -30,7 +30,15 @@ is_container_executable() {
 ensure_workdir_exists() {
     log_info "确保工作目录存在: $CONTAINER_WORKDIR"
 
-    # 如果容器可以执行命令，直接创建目录
+    # 方法1: 使用临时容器创建目录（最佳方案，不依赖容器状态）
+    log_info "使用临时容器创建目录..."
+    if docker run --rm --entrypoint sh "${CONTAINER_IMAGE}" -c "mkdir -p '$CONTAINER_WORKDIR' && echo 'success'" 2>/dev/null | grep -q "success"; then
+        log_info "✓ 目录创建成功"
+        return 0
+    fi
+    log_warn "临时容器创建失败，尝试其他方法..."
+
+    # 方法2: 如果容器可以执行命令，直接创建目录
     if is_container_executable; then
         docker exec "$CONTAINER_NAME" mkdir -p "$CONTAINER_WORKDIR" 2>/dev/null || {
             log_error "无法创建目录（容器可执行）"
@@ -38,53 +46,53 @@ ensure_workdir_exists() {
         }
         log_info "✓ 目录创建成功"
         return 0
-    else
-        # 容器不可执行，需要启动容器后创建
-        log_info "容器不可执行，尝试启动容器后创建目录..."
+    fi
 
-        # 保存当前重启策略
-        local current_restart
-        current_restart=$(docker inspect -f '{{.HostConfig.RestartPolicy.Name}}' "$CONTAINER_NAME" 2>/dev/null || echo "no")
+    # 方法3: 容器不可执行，启动容器后创建
+    log_info "容器不可执行，尝试启动容器后创建目录..."
 
-        # 临时禁用重启
-        docker update --restart=no "$CONTAINER_NAME" >/dev/null 2>&1 || true
+    # 保存当前重启策略
+    local current_restart
+    current_restart=$(docker inspect -f '{{.HostConfig.RestartPolicy.Name}}' "$CONTAINER_NAME" 2>/dev/null || echo "no")
 
-        # 启动容器
-        if docker start "$CONTAINER_NAME" >/dev/null 2>&1; then
-            sleep 3
+    # 临时禁用重启
+    docker update --restart=no "$CONTAINER_NAME" >/dev/null 2>&1 || true
 
-            # 等待容器可执行
-            local wait_time=10
-            for i in $(seq 1 $wait_time); do
-                if is_container_executable; then
-                    # 创建目录
-                    if docker exec "$CONTAINER_NAME" mkdir -p "$CONTAINER_WORKDIR" 2>/dev/null; then
-                        log_info "✓ 容器启动后目录创建成功"
-                        # 停止容器
-                        docker stop "$CONTAINER_NAME" >/dev/null 2>&1 || true
-                        sleep 2
-                        # 恢复重启策略
-                        docker update --restart="$current_restart" "$CONTAINER_NAME" >/dev/null 2>&1 || true
-                        return 0
-                    else
-                        log_error "容器启动后仍无法创建目录"
-                        docker stop "$CONTAINER_NAME" >/dev/null 2>&1 || true
-                        docker update --restart="$current_restart" "$CONTAINER_NAME" >/dev/null 2>&1 || true
-                        return 1
-                    fi
+    # 启动容器
+    if docker start "$CONTAINER_NAME" >/dev/null 2>&1; then
+        sleep 3
+
+        # 等待容器可执行
+        local wait_time=10
+        for i in $(seq 1 $wait_time); do
+            if is_container_executable; then
+                # 创建目录
+                if docker exec "$CONTAINER_NAME" mkdir -p "$CONTAINER_WORKDIR" 2>/dev/null; then
+                    log_info "✓ 容器启动后目录创建成功"
+                    # 停止容器
+                    docker stop "$CONTAINER_NAME" >/dev/null 2>&1 || true
+                    sleep 2
+                    # 恢复重启策略
+                    docker update --restart="$current_restart" "$CONTAINER_NAME" >/dev/null 2>&1 || true
+                    return 0
+                else
+                    log_error "容器启动后仍无法创建目录"
+                    docker stop "$CONTAINER_NAME" >/dev/null 2>&1 || true
+                    docker update --restart="$current_restart" "$CONTAINER_NAME" >/dev/null 2>&1 || true
+                    return 1
                 fi
-                sleep 1
-            done
+            fi
+            sleep 1
+        done
 
-            log_error "容器启动但无法执行命令"
-            docker stop "$CONTAINER_NAME" >/dev/null 2>&1 || true
-            docker update --restart="$current_restart" "$CONTAINER_NAME" >/dev/null 2>&1 || true
-            return 1
-        else
-            log_error "无法启动容器"
-            docker update --restart="$current_restart" "$CONTAINER_NAME" >/dev/null 2>&1 || true
-            return 1
-        fi
+        log_error "容器启动但无法执行命令"
+        docker stop "$CONTAINER_NAME" >/dev/null 2>&1 || true
+        docker update --restart="$current_restart" "$CONTAINER_NAME" >/dev/null 2>&1 || true
+        return 1
+    else
+        log_error "无法启动容器"
+        docker update --restart="$current_restart" "$CONTAINER_NAME" >/dev/null 2>&1 || true
+        return 1
     fi
 }
 
