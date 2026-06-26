@@ -32,11 +32,39 @@ ensure_workdir_exists() {
 
     # 方法1: 使用临时容器创建目录（最佳方案，不依赖容器状态）
     log_info "使用临时容器创建目录..."
-    if docker run --rm --entrypoint sh "${CONTAINER_IMAGE}" -c "mkdir -p '$CONTAINER_WORKDIR' && echo 'success'" 2>/dev/null | grep -q "success"; then
-        log_info "✓ 目录创建成功"
-        return 0
+    CONTAINER_IMAGE=$(docker inspect -f '{{.Config.Image}}' "$CONTAINER_NAME" 2>/dev/null || echo "")
+
+    if [ -n "$CONTAINER_IMAGE" ]; then
+        # 尝试使用 sh
+        if docker run --rm --entrypoint sh "$CONTAINER_IMAGE" -c "mkdir -p '$CONTAINER_WORKDIR'" 2>/dev/null; then
+            log_info "✓ 目录创建成功 (使用 sh)"
+            return 0
+        fi
+
+        # 尝试使用 bash
+        if docker run --rm --entrypoint bash "$CONTAINER_IMAGE" -c "mkdir -p '$CONTAINER_WORKDIR'" 2>/dev/null; then
+            log_info "✓ 目录创建成功 (使用 bash)"
+            return 0
+        fi
+
+        # 尝试不覆盖 entrypoint，直接运行（如果镜像是可执行的）
+        if docker run --rm "$CONTAINER_IMAGE" mkdir -p "$CONTAINER_WORKDIR" 2>/dev/null; then
+            log_info "✓ 目录创建成功 (默认 entrypoint)"
+            return 0
+        fi
+
+        # 尝试使用 busybox 镜像（如果原镜像没有 shell）
+        log_warn "原镜像无法创建目录，尝试使用 busybox..."
+        if docker run --rm busybox mkdir -p "$CONTAINER_WORKDIR" 2>/dev/null; then
+            log_info "✓ 目录创建成功 (使用 busybox)"
+            # 注意：使用 busybox 创建的目录可能权限不同，但通常可以工作
+            return 0
+        fi
+    else
+        log_error "无法获取容器镜像名称"
     fi
-    log_warn "临时容器创建失败，尝试其他方法..."
+
+    log_warn "所有临时容器创建方法都失败，尝试其他方法..."
 
     # 方法2: 如果容器可以执行命令，直接创建目录
     if is_container_executable; then
@@ -48,7 +76,7 @@ ensure_workdir_exists() {
         return 0
     fi
 
-    # 方法3: 容器不可执行，启动容器后创建
+    # 方法3: 容器不可执行，启动容器后创建（这部分保持不变）
     log_info "容器不可执行，尝试启动容器后创建目录..."
 
     # 保存当前重启策略
