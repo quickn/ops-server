@@ -26,104 +26,6 @@ is_container_executable() {
     return $?
 }
 
-# 确保容器工作目录存在
-ensure_workdir_exists() {
-    log_info "确保工作目录存在: $CONTAINER_WORKDIR"
-
-    # 方法1: 使用临时容器创建目录（最佳方案，不依赖容器状态）
-    log_info "使用临时容器创建目录..."
-    CONTAINER_IMAGE=$(docker inspect -f '{{.Config.Image}}' "$CONTAINER_NAME" 2>/dev/null || echo "")
-
-    if [ -n "$CONTAINER_IMAGE" ]; then
-        # 尝试使用 sh
-        if docker run --rm --entrypoint sh "$CONTAINER_IMAGE" -c "mkdir -p '$CONTAINER_WORKDIR'" 2>/dev/null; then
-            log_info "✓ 目录创建成功 (使用 sh)"
-            return 0
-        fi
-
-        # 尝试使用 bash
-        if docker run --rm --entrypoint bash "$CONTAINER_IMAGE" -c "mkdir -p '$CONTAINER_WORKDIR'" 2>/dev/null; then
-            log_info "✓ 目录创建成功 (使用 bash)"
-            return 0
-        fi
-
-        # 尝试不覆盖 entrypoint，直接运行（如果镜像是可执行的）
-        if docker run --rm "$CONTAINER_IMAGE" mkdir -p "$CONTAINER_WORKDIR" 2>/dev/null; then
-            log_info "✓ 目录创建成功 (默认 entrypoint)"
-            return 0
-        fi
-
-        # 尝试使用 busybox 镜像（如果原镜像没有 shell）
-        log_warn "原镜像无法创建目录，尝试使用 busybox..."
-        if docker run --rm busybox mkdir -p "$CONTAINER_WORKDIR" 2>/dev/null; then
-            log_info "✓ 目录创建成功 (使用 busybox)"
-            # 注意：使用 busybox 创建的目录可能权限不同，但通常可以工作
-            return 0
-        fi
-    else
-        log_error "无法获取容器镜像名称"
-    fi
-
-    log_warn "所有临时容器创建方法都失败，尝试其他方法..."
-
-    # 方法2: 如果容器可以执行命令，直接创建目录
-    if is_container_executable; then
-        docker exec "$CONTAINER_NAME" mkdir -p "$CONTAINER_WORKDIR" 2>/dev/null || {
-            log_error "无法创建目录（容器可执行）"
-            return 1
-        }
-        log_info "✓ 目录创建成功"
-        return 0
-    fi
-
-    # 方法3: 容器不可执行，启动容器后创建（这部分保持不变）
-    log_info "容器不可执行，尝试启动容器后创建目录..."
-
-    # 保存当前重启策略
-    local current_restart
-    current_restart=$(docker inspect -f '{{.HostConfig.RestartPolicy.Name}}' "$CONTAINER_NAME" 2>/dev/null || echo "no")
-
-    # 临时禁用重启
-    docker update --restart=no "$CONTAINER_NAME" >/dev/null 2>&1 || true
-
-    # 启动容器
-    if docker start "$CONTAINER_NAME" >/dev/null 2>&1; then
-        sleep 3
-
-        # 等待容器可执行
-        local wait_time=10
-        for i in $(seq 1 $wait_time); do
-            if is_container_executable; then
-                # 创建目录
-                if docker exec "$CONTAINER_NAME" mkdir -p "$CONTAINER_WORKDIR" 2>/dev/null; then
-                    log_info "✓ 容器启动后目录创建成功"
-                    # 停止容器
-                    docker stop "$CONTAINER_NAME" >/dev/null 2>&1 || true
-                    sleep 2
-                    # 恢复重启策略
-                    docker update --restart="$current_restart" "$CONTAINER_NAME" >/dev/null 2>&1 || true
-                    return 0
-                else
-                    log_error "容器启动后仍无法创建目录"
-                    docker stop "$CONTAINER_NAME" >/dev/null 2>&1 || true
-                    docker update --restart="$current_restart" "$CONTAINER_NAME" >/dev/null 2>&1 || true
-                    return 1
-                fi
-            fi
-            sleep 1
-        done
-
-        log_error "容器启动但无法执行命令"
-        docker stop "$CONTAINER_NAME" >/dev/null 2>&1 || true
-        docker update --restart="$current_restart" "$CONTAINER_NAME" >/dev/null 2>&1 || true
-        return 1
-    else
-        log_error "无法启动容器"
-        docker update --restart="$current_restart" "$CONTAINER_NAME" >/dev/null 2>&1 || true
-        return 1
-    fi
-}
-
 # 复制JAR文件到容器
 copy_jar_to_container() {
     log_info "复制JAR文件到容器..."
@@ -357,12 +259,6 @@ if [ "$FILE_SIZE" -eq 0 ]; then
     exit 1
 fi
 log_info "JAR文件大小: ${FILE_SIZE} bytes"
-
-# 确保工作目录存在
-if ! ensure_workdir_exists; then
-    log_error "无法确保工作目录存在"
-    exit 1
-fi
 
 # 复制JAR文件
 if ! copy_jar_to_container; then
