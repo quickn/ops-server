@@ -120,13 +120,33 @@ public class LogServiceImpl implements ILogService {
                 logs.append(agentConfig.getHostname() + "\n");
                 logs.append("</div>");
                 logs.append("\n");
-                logs.append(iMsgService.sendCMDMsgAndRawResponse(null, agentConfig.getId(), cmd.toString(), logCmdForm.getTimeout()));
+                logs.append(iMsgService.sendCMDMsgAndRawResponse(agentConfig.getId(), cmd.toString(), logCmdForm.getTimeout()));
                 logs.append("\n");
             } else {
-                logs.append(iMsgService.sendCMDMsgAndRawResponse(null, agentConfig.getId(), logCmdForm.getCmd(), logCmdForm.getTimeout()));
+                logs.append(iMsgService.sendCMDMsgAndRawResponse(agentConfig.getId(), logCmdForm.getCmd(), logCmdForm.getTimeout()));
             }
         }
         return logs.toString();
+    }
+
+    @Override
+    public MsgResult detail(LogCmdForm logCmdForm) {
+        if (StringUtils.isEmpty(logCmdForm.getFilePath())) {
+            throw new BusinessException("filePath不能为空");
+        }
+        if (StringUtils.isEmpty(logCmdForm.getKeyword())) {
+            throw new BusinessException("关键字不能为空");
+        }
+        StringBuilder cmd = new StringBuilder();
+        cmd.append("cat ");
+        cmd.append(logCmdForm.getFilePath());
+        cmd.append("|grep ");
+        if (StringUtils.isNotEmpty(logCmdForm.getGrepPara()) && StringUtils.isEmpty(logCmdForm.getKeyword1())) {
+            cmd.append(logCmdForm.getGrepPara());
+            cmd.append(" ");
+        }
+        cmd.append("'" + logCmdForm.getKeyword() + "'");
+        return iMsgService.sendCMDMsgAndRawResponse(logCmdForm.getAgentId(), cmd.toString(), logCmdForm.getTimeout());
     }
 
 }

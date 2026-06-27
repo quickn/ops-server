@@ -10,4 +10,5 @@ public interface ILogService {
      List<MsgResult> analysis(LogCmdForm logCmdForm);
      String getLogsByServiceId(LogCmdForm logCmdForm);
 
+     MsgResult detail(LogCmdForm logCmdForm);
 }

@@ -33,4 +33,11 @@ public class LogController {
     public Result analysis(@ParameterObject LogCmdForm logCmdForm) {
         return Result.success(iLogService.analysis(logCmdForm));
     }
+
+    @ResponseBody
+    @GetMapping("/detail")
+    @Operation(summary = "日志详情")
+    public Result detail(@ParameterObject LogCmdForm logCmdForm) {
+        return Result.success(iLogService.detail(logCmdForm));
+    }
 }

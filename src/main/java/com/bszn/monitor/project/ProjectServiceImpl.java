@@ -149,7 +149,6 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         cmd.append(String.format("cp -r %s %s", fromDir, toDir));
 
         String cmdResult = msgService.sendCMDMsgAndResponse(
-                userId,
                 jump.getId(),
                 cmd.toString(),
                 300
