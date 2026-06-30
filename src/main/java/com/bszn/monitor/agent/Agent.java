@@ -67,4 +67,8 @@ public class Agent extends ServiceBaseEntity {
     @Schema(description = "操作用户")
     private String user;
 
+
+    public void setRemoteIp(String remoteIp) {
+        this.remoteIp = remoteIp != null ? remoteIp.trim() : null;
+    }
 }

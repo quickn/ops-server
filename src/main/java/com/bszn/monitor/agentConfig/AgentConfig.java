@@ -39,6 +39,7 @@ public class AgentConfig implements Serializable {
     @Schema(description = "工作路径")
     private String workPath;
 
+
     @Schema(description = "日志路径")
     private String logPath;
 
@@ -52,4 +53,17 @@ public class AgentConfig implements Serializable {
      */
     private LocalDateTime createTime;
 
+
+    public void setWorkPath(String workPath) {
+        this.workPath = workPath != null ? workPath.trim() : null;
+    }
+
+
+    public void setLogPath(String logPath) {
+        this.logPath = logPath != null ? logPath.trim() : null;
+    }
+
+    public void setNginxPath(String nginxPath) {
+        this.nginxPath = nginxPath != null ? nginxPath.trim() : null;
+    }
 }
