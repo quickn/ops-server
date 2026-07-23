@@ -21,13 +21,6 @@ mybatis-plus:
   configuration:
     #log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
     log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
-# xxl-job 定时任务配置
-xxl:
-  job:
-    admin:
-      # 多个地址使用,分割
-      addresses: http://172.16.150.158:9030/xxlJobAdmin
-
 # 文件配置
 file:
   upload:

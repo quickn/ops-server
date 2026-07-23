@@ -20,8 +20,8 @@
 
         <spring.boot.version>3.1.0</spring.boot.version>
 
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
 
         <hutool.version>5.8.15</hutool.version>
 
