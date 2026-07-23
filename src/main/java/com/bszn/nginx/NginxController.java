@@ -37,7 +37,7 @@ public class NginxController {
         stringBuffer.append(confText);
         stringBuffer.append("\n");
         stringBuffer.append("NGINX_TEST_CONFIG");
-        String str = iMsgService.sendCMDMsgAndResponse(null, fileForm.getAgentId(), stringBuffer.toString());
+        String str = iMsgService.sendCMDMsgAndResponse(fileForm.getAgentId(), stringBuffer.toString());
         if (str.contains("语法错误") || str.contains("test failed")) {
             return Result.failed(str);
         }
@@ -52,7 +52,7 @@ public class NginxController {
         if (result.getCode().equals(Result.failed().getCode())) {
             return result;
         }
-        String str = iMsgService.sendCMDMsgAndResponse(null, fileForm.getAgentId(), "sudo /usr/local/nginx/sbin/nginx -s reload");
+        String str = iMsgService.sendCMDMsgAndResponse(fileForm.getAgentId(), "sudo /usr/local/nginx/sbin/nginx -s reload");
         return Result.success(str);
     }
 
@@ -60,7 +60,7 @@ public class NginxController {
     @Operation(summary = "停止Nginx")
     @ResponseBody
     public Result stop(@RequestBody FileForm fileForm) {
-        String str = iMsgService.sendCMDMsgAndResponse(null, fileForm.getAgentId(), "sudo /usr/local/nginx/sbin/nginx -s stop");
+        String str = iMsgService.sendCMDMsgAndResponse(fileForm.getAgentId(), "sudo /usr/local/nginx/sbin/nginx -s stop");
         return Result.success(str);
     }
 
@@ -68,7 +68,7 @@ public class NginxController {
     @Operation(summary = "启动Nginx")
     @ResponseBody
     public Result start(@RequestBody FileForm fileForm) {
-        String str = iMsgService.sendCMDMsgAndResponse(null, fileForm.getAgentId(), "sudo /usr/local/nginx/sbin/nginx");
+        String str = iMsgService.sendCMDMsgAndResponse( fileForm.getAgentId(), "sudo /usr/local/nginx/sbin/nginx");
         return Result.success(str);
     }
 

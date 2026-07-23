@@ -108,7 +108,7 @@ public class FileSyncController {
             String uploadCmd = buildUploadCommand(downloadUrl, destPath, saveFileName);
 
             log.info("执行上传命令到跳板机 {}: {}", jumpServer.getHostname(), uploadCmd);
-            String result = msgService.sendCMDMsgAndResponse(userId, agentId, uploadCmd, 120);
+            String result = msgService.sendCMDMsgAndResponse(agentId, uploadCmd, 120);
             // 上传完成后删除临时文件
             try {
                 File uploadedFile = new File(filePath);
@@ -146,9 +146,8 @@ public class FileSyncController {
             if (jumpServer == null || !jumpServer.getIsJumpServer()) {
                 return Result.failed("指定的服务器不是跳板机");
             }
-            Long userId = SecurityUtils.getUserId();
             // 直接在跳板机上执行rsync命令
-            String result = msgService.sendCMDMsgAndResponse(userId, cmdRequest.getAgentId(), cmdRequest.getCommand(), 300);
+            String result = msgService.sendCMDMsgAndResponse(cmdRequest.getAgentId(), cmdRequest.getCommand(), 300);
             return Result.success(result);
         } catch (Exception e) {
             log.error("同步命令执行失败", e);

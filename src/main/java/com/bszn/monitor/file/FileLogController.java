@@ -40,7 +40,6 @@ public class FileLogController {
         Agent jump = agentConfigService.getjumpServers(agentConfig.getServiceId());
         String cmd = String.format("curl -F \"file=@%s\" -sS http://%s:18080/pyApi/log/analyzer", logFilePath, jump.getHostname());
         String cmdResult = iMsgService.sendCMDMsgAndResponse(
-                SecurityUtils.getUserId(),
                 agentId,
                 cmd,
                 30
@@ -65,7 +64,7 @@ public class FileLogController {
             // 构建查看目录的命令
             String cmd = String.format("ls -l %s", path);
             // 发送命令获取文件列表
-            String result = iMsgService.sendCMDMsgAndResponse(userId, agentId, cmd, 30);
+            String result = iMsgService.sendCMDMsgAndResponse(agentId, cmd, 30);
             // 解析结果
             List<FileInfo> fileList = FileUtils.parseLsResult(result);
             return Result.success(fileList);

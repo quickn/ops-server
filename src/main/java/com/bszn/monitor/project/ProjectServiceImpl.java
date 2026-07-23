@@ -275,7 +275,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
             String combinedCmd = String.format("%s && %s && %s && %s",
                     downloadCmd, chmodCmd, executeCmd, cleanupCmd);
 
-            String scriptResult = msgService.sendCMDMsgAndResponse(userId, agentId, combinedCmd);
+            String scriptResult = msgService.sendCMDMsgAndResponse(agentId, combinedCmd);
 
             // 6. 清理本地脚本文件
             new File(scriptPath).delete();
@@ -338,7 +338,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
             String combinedCmd = String.format("%s && timeout 300 %s && %s && %s ",
                     cleanupCmd, downloadCmd, chmodCmd, executeCmd);
 
-            String scriptResult = msgService.sendCMDMsgAndResponse(userId, agentId, combinedCmd);
+            String scriptResult = msgService.sendCMDMsgAndResponse(agentId, combinedCmd);
 
 
             // 解析脚本执行结果
@@ -371,7 +371,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         try {
             // 执行docker ps命令检查容器
             String checkCmd = String.format("docker ps -a --filter 'name=^%s$' --format '{{.Names}}'", containerName);
-            String result = msgService.sendCMDMsgAndResponseNon(userId, agentId, checkCmd);
+            String result = msgService.sendCMDMsgAndResponseNon(agentId, checkCmd);
             return StringUtils.isNotBlank(result) && result.trim().equals(containerName);
         } catch (Exception e) {
             log.error("检查容器存在失败", e);

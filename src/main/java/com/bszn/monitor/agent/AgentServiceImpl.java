@@ -9,7 +9,6 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.bszn.constant.MonitorMsgType;
 import com.bszn.monitor.cmd.ClientMsgForm;
-import com.bszn.monitor.cmd.LogCmdForm;
 import com.bszn.monitor.constant.MonitorCmdC;
 import com.bszn.monitor.docker.DockerContainer;
 import com.bszn.monitor.docker.DockerContainerMapper;
@@ -17,7 +16,6 @@ import com.bszn.monitor.msg.IMsgService;
 import com.bszn.system.common.exception.BusinessException;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -175,7 +173,7 @@ public class AgentServiceImpl extends ServiceImpl<AgentMapper, Agent>
             jsonObject.putOnce("handle", "agentManagerHandle");
             jsonObject.putOnce("url", upgradeClientUrl);
             jsonObject.putOnce("cmd", cmd);
-            iMsgService.sendMsg(null, agentConfig.getId(), jsonObject.toString(), MonitorMsgType.TASK, null);
+            iMsgService.sendMsg(agentConfig.getId(), jsonObject.toString(), MonitorMsgType.TASK, null);
         }
     }
 
@@ -185,7 +183,7 @@ public class AgentServiceImpl extends ServiceImpl<AgentMapper, Agent>
         jsonObject.putOnce("handle", "agentManagerHandle");
         jsonObject.putOnce("cmd", cmd);
         jsonObject.putOnce("url", upgradeClientUrl);
-        iMsgService.sendMsgAndResponse(null, agentId, jsonObject.toString(), MonitorMsgType.TASK, 3);
+        iMsgService.sendMsgAndResponse(agentId, jsonObject.toString(), MonitorMsgType.TASK, 3);
     }
 
 }

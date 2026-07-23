@@ -5,7 +5,6 @@ import com.bszn.monitor.agent.Agent;
 import com.bszn.monitor.agent.AgentService;
 import com.bszn.monitor.msg.IMsgService;
 import com.bszn.system.common.result.Result;
-import com.bszn.system.common.util.SecurityUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -54,7 +53,7 @@ public class DockerContainerController {
     public Result restart(@PathVariable Long id) {
         DockerContainer dockerContainer = dockerContainerMapper.selectById(id);
         Agent agentConfig = agentConfigService.getByServiceIdAndHost(dockerContainer.getServiceId(), dockerContainer.getHostname());
-        String msg = iMsgService.sendCMDMsgAndResponse(SecurityUtils.getUserId(), agentConfig.getId(), "docker restart " + dockerContainer.getNames(), 60);
+        String msg = iMsgService.sendCMDMsgAndResponse(agentConfig.getId(), "docker restart " + dockerContainer.getNames(), 60);
         return Result.success(msg);
     }
 
@@ -62,7 +61,7 @@ public class DockerContainerController {
     public Result stop(@PathVariable Long id) {
         DockerContainer dockerContainer = dockerContainerMapper.selectById(id);
         Agent agentConfig = agentConfigService.getByServiceIdAndHost(dockerContainer.getServiceId(), dockerContainer.getHostname());
-        String msg = iMsgService.sendCMDMsgAndResponse(SecurityUtils.getUserId(), agentConfig.getId(), "docker stop " + dockerContainer.getNames(), 60);
+        String msg = iMsgService.sendCMDMsgAndResponse(agentConfig.getId(), "docker stop " + dockerContainer.getNames(), 60);
         return Result.success(msg);
     }
 

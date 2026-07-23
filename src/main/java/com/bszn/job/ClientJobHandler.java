@@ -52,7 +52,7 @@ public class ClientJobHandler {
         String hostname = jsonObject.getString("hostname");
         Object msgType = jsonObject.getOrDefault("msgType", "cmd");
         if (agentId != null) {
-            iMsgService.sendMsg(null, agentId, cmd, msgType.toString(), null);
+            iMsgService.sendMsg( agentId, cmd, msgType.toString(), null);
             return;
         }
         if (StringUtils.isNotEmpty(hostname) && serviceId != null) {
@@ -61,14 +61,14 @@ public class ClientJobHandler {
                 log.warn("agent 不存在 hostname:{}", hostname);
                 return;
             }
-            iMsgService.sendMsg(null, agentConfig.getId(), cmd, msgType.toString(), null);
+            iMsgService.sendMsg(agentConfig.getId(), cmd, msgType.toString(), null);
             return;
         }
         String dockerName = jsonObject.getString("dockerName");
         if (StringUtils.isNotEmpty(dockerName) && serviceId != null) {
             List<DockerContainer> list = iDockerContainerService.getByServiceIdAndDockerName(serviceId, dockerName);
             for (DockerContainer dockerContainer : list) {
-                iMsgService.sendMsg(null, dockerContainer.getAgentId(), cmd, msgType.toString(), null);
+                iMsgService.sendMsg(dockerContainer.getAgentId(), cmd, msgType.toString(), null);
             }
             return;
         }
