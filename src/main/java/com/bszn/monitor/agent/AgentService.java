@@ -38,4 +38,6 @@ public interface AgentService extends IService<Agent> {
      * @return
      */
     Agent getjumpServers(Integer serviceId);
+
+    List<Agent> getListByServiceId(Integer serviceId);
 }

@@ -95,6 +95,11 @@ public class AgentServiceImpl extends ServiceImpl<AgentMapper, Agent>
         return jumpServers.get(0);
     }
 
+    @Override
+    public List<Agent> getListByServiceId(Integer serviceId) {
+        return baseMapper.getListByServiceId(serviceId);
+    }
+
     /**
      * 重写新增修改方法
      *
