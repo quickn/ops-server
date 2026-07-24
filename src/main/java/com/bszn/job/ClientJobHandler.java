@@ -55,7 +55,7 @@ public class ClientJobHandler {
         if (StringUtils.isNotEmpty(jobParam) && jobParam.startsWith("{")) {
             jsonObject = JSONObject.parseObject(jobParam);
         }
-        JobConfig jobConfig = jobConfigMapper.selectByJobId(jobId.intValue());
+        JobConfig jobConfig = jobConfigMapper.selectById(jobId);
         if (jobConfig == null) {
             log.warn("jobConfig 不存在 jobId:{}", jobId);
         }

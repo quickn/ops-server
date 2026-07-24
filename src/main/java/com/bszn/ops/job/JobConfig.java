@@ -8,13 +8,12 @@ import lombok.Data;
 @TableName("job_config")
 public class JobConfig {
 
-    @TableId(type = IdType.AUTO)
+    @TableId(type = IdType.ASSIGN_ID)
+    @Schema(description = "任务Id")
     private Long id;
 
     @TableField(fill = FieldFill.INSERT)
     Integer serviceId;
-
-    Integer jobId;
 
     @Schema(description = "指令")
     private String command;
@@ -27,6 +26,7 @@ public class JobConfig {
 
     private Integer timeout;
 
+    @TableField("`interval`")
     private Integer interval;
 
     private Integer agentId;
