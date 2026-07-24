@@ -24,11 +24,11 @@ public class CmdLogInfoServiceImpl extends ServiceImpl<CmdLogInfoMapper, CmdLogI
      *
      * @param userId  用户id
      * @param agentId 服务id
-     * @param cmd     指令
+     * @param script     指令
      * @param msgType 消息类型
      */
     @Override
-    public Long save(Long userId, Long agentId, String cmd, String msgType) {
+    public Long save(Long userId, Long agentId,String command, String script, String msgType) {
         // 拿到服务
         Agent byId = agentConfigService.getById(agentId);
         CmdLogInfo cmdLogInfo = CmdLogInfo.builder()
@@ -36,7 +36,8 @@ public class CmdLogInfoServiceImpl extends ServiceImpl<CmdLogInfoMapper, CmdLogI
                 .serviceName(byId.getServiceName())
                 .agentId(agentId)
                 .agentIp(byId.getHostname())
-                .cmd(cmd)
+                .command(command)
+                .script(script)
                 .msgType(msgType)
                 .userId(userId)
                 .createTime(LocalDateTime.now())

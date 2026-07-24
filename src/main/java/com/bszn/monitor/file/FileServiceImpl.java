@@ -87,7 +87,7 @@ public class FileServiceImpl implements IFileService {
                     user.trim(),
                     jumpServerAgent.getRemoteIp().trim(),
                     targetPath.trim() + File.separator);
-            result.append(msgService.sendCMDMsgAndResponse(syncFileParam.getSourceAgentId(), rsyncCmd, 300))
+            result.append(msgService.sendCMDMsgAndResponse(syncFileParam.getSourceAgentId(), "跳板机同步", rsyncCmd, 300))
                     .append(" === 第一段结果集结束 === ");
         }
         AgentQuery agentQuery = new AgentQuery(jumpServerAgent.getServiceId());
@@ -110,7 +110,7 @@ public class FileServiceImpl implements IFileService {
                     command.append(" && ");
                 }
             }
-            result.append(msgService.sendCMDMsgAndResponse(jumpServerAgent.getId(), command.toString(), 120));
+            result.append(msgService.sendCMDMsgAndResponse(jumpServerAgent.getId(), "跳板机同步", command.toString(), 120));
             log.info("同步结果：{}", result);
         }
         return true;

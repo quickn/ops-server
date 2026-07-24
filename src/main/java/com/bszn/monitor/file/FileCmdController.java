@@ -30,6 +30,7 @@ public class FileCmdController {
         String cmd = String.format("cat %s/%s", filePath, fileName);
         String cmdResult = iMsgService.sendCMDMsgAndResponse(
                 agentId,
+                "获取文件通过路径",
                 cmd,
                 30
         );
@@ -45,6 +46,7 @@ public class FileCmdController {
         }
         String cmdResult = iMsgService.sendCMDMsgAndResponse(
                 agentId,
+                "创建目录文件",
                 cmd,
                 30
         );
@@ -60,6 +62,7 @@ public class FileCmdController {
         }
         String cmdResult = iMsgService.sendCMDMsgAndResponse(
                 agentId,
+                "删除目录文件",
                 cmd,
                 30
         );
@@ -116,7 +119,7 @@ public class FileCmdController {
                 cmd += "| grep \"^d\"";
             }
             // 发送命令获取文件列表
-            String result = iMsgService.sendCMDMsgAndResponse(agentId, cmd, 30);
+            String result = iMsgService.sendCMDMsgAndResponse(agentId, "查看文件列表", cmd, 30);
             // 解析结果
             List<FileInfo> fileList = FileUtils.parseLsResult(result);
             return Result.success(fileList);

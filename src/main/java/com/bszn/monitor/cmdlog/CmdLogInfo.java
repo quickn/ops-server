@@ -37,7 +37,10 @@ public class CmdLogInfo {
     private String agentIp;
 
     @Schema(description = "指令")
-    private String cmd;
+    private String command;
+
+    @Schema(description = "指令")
+    private String script;
 
     @Schema(description = "结果集")
     private String result;
@@ -58,4 +61,7 @@ public class CmdLogInfo {
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createTime;
+
 }
+
+

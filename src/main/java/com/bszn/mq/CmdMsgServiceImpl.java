@@ -33,21 +33,21 @@ public class CmdMsgServiceImpl implements IMsgService {
 
 
     @Override
-    public String sendMsg(Long agentId, String msg, String msgType, Integer timeout) {
+    public String sendMsg(Long agentId, String command, String script, String msgType, Integer timeout) {
         String ip = IpUtil.getIPv4Ip();
         final String messageId = MyIdWorker.getId() + "";
-        log.info("发送指令 {} ", msg);
-        if (StringUtils.isEmpty(msg)) {
+        log.info("发送指令 {} ", script);
+        if (StringUtils.isEmpty(script)) {
             log.warn("指令为空 agentId:{}", agentId);
             return null;
         }
         try {
             // 加密
-            msg = cryptoService.encrypt(EncryptRequest.builder().userId(SecurityUtils.getUserId()).plainText(msg).build());
+            script = cryptoService.encrypt(EncryptRequest.builder().userId(SecurityUtils.getUserId()).plainText(script).build());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        rabbitTemplate.convertAndSend("exchange." + MQConstants.MONITOR_CMD, "routing." + MQConstants.MONITOR_CMD + ".key." + agentId, msg, message -> {
+        rabbitTemplate.convertAndSend("exchange." + MQConstants.MONITOR_CMD, "routing." + MQConstants.MONITOR_CMD + ".key." + agentId, script, message -> {
             message.getMessageProperties().setMessageId(messageId);
             // message.getMessageProperties().setCorrelationId(messageId);
             //message.getMessageProperties().setTimestamp(new Date());
@@ -56,6 +56,7 @@ public class CmdMsgServiceImpl implements IMsgService {
             // 添加自定义头部
             message.getMessageProperties().setHeader("serverIp", ip);
             message.getMessageProperties().setHeader("msgType", msgType);
+            message.getMessageProperties().setHeader("command", command);
             if (timeout != null) {
                 message.getMessageProperties().setHeader("timeout", timeout);
             }
@@ -65,10 +66,10 @@ public class CmdMsgServiceImpl implements IMsgService {
     }
 
     @Override
-    public MsgResult sendMsgAndResponse( Long agentId, String msg, String msgType, Integer timeout) {
-        Long msgId = cmdLogInfoService.save(SecurityUtils.getUserId(), agentId, msg, msgType);
+    public MsgResult sendMsgAndResponse(Long agentId, String command, String script, String msgType, Integer timeout) {
+        Long msgId = cmdLogInfoService.save(SecurityUtils.getUserId(), agentId, command, script, msgType);
         long startTime = System.currentTimeMillis();
-        String messageId = sendMsg(agentId, msg, msgType, timeout);
+        String messageId = sendMsg(agentId, command, script, msgType, timeout);
         MsgResult msgResult = null;
         try {
             msgResult = cmdCacheMsgService.getMsgResult(messageId, timeout);

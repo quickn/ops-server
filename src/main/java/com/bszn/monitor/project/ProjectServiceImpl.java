@@ -150,6 +150,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
 
         String cmdResult = msgService.sendCMDMsgAndResponse(
                 jump.getId(),
+                operation,
                 cmd.toString(),
                 300
         );

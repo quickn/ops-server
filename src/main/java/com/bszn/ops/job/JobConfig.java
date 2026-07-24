@@ -16,12 +16,19 @@ public class JobConfig {
 
     Integer jobId;
 
-    @Schema(description = "CMD")
-    private String cmd;
+    @Schema(description = "指令")
+    private String command;
+
+    @Schema(description = "脚本")
+    private String script;
 
     @Schema(description = "类型")
     private String type;
 
     private Integer timeout;
+
+    private Integer interval;
+
+    private Integer agentId;
 
 }

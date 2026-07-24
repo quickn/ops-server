@@ -93,7 +93,7 @@ public class AgentController {
         if (cmd.startsWith("{")) {
             return Result.success(iMsgService.sendTaskMsgResponse(agentId, cmd, timeout));
         }
-        return Result.success(iMsgService.sendCMDMsgAndResponse(agentId, cmd, timeout));
+        return Result.success(iMsgService.sendCMDMsgAndResponse(agentId, "发送指令", cmd, timeout));
     }
 
     @GetMapping("/handleAgentByServiceId/{serviceId}")

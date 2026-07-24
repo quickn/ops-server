@@ -15,6 +15,7 @@ import com.bszn.utils.CmdUtil;
 import com.xxl.job.core.context.XxlJobHelper;
 import com.xxl.job.core.handler.annotation.XxlJob;
 import jakarta.annotation.Resource;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -44,29 +45,41 @@ public class ClientJobHandler {
     @Resource
     JobConfigMapper jobConfigMapper;
 
+    @SneakyThrows
     @XxlJob("cmdJobHandler")
     public void cmdJobHandler() {
         String jobParam = XxlJobHelper.getJobParam();
+        Long jobId = XxlJobHelper.getJobId();
         log.info("cmdJobHandler {}", jobParam);
-        if (StringUtils.isEmpty(jobParam)) {
-            return;
-        }
         JSONObject jsonObject = null;
-        if (jobParam.startsWith("{")) {
+        if (StringUtils.isNotEmpty(jobParam) && jobParam.startsWith("{")) {
             jsonObject = JSONObject.parseObject(jobParam);
-        } else {
-            Integer jobId = Integer.parseInt(jobParam);
-            JobConfig jobConfig = jobConfigMapper.selectByJobId(jobId);
+        }
+        JobConfig jobConfig = jobConfigMapper.selectByJobId(jobId.intValue());
+        if (jobConfig == null) {
+            log.warn("jobConfig 不存在 jobId:{}", jobId);
+        }
+        if (jsonObject == null && jobConfig != null) {
             jsonObject = (JSONObject) JSON.toJSON(jobConfig);
         }
+        if (jsonObject != null && jobConfig != null) {
+            JSONObject temp = (JSONObject) JSON.toJSON(jobConfig);
+            temp.putAll(jsonObject);
+            jsonObject = temp;
+        }
+        if (jsonObject == null) {
+            throw new BusinessException("jobParam 和 jobConfig 都为空");
+        }
         Long agentId = jsonObject.getLong("agentId");
-        String cmd = jsonObject.getString("cmd");
+        String command = jsonObject.getString("command");
+        String script = jsonObject.getString("script");
         Integer serviceId = jsonObject.getInteger("serviceId");
         String hostname = jsonObject.getString("hostname");
         Integer timeout = (Integer) jsonObject.getOrDefault("timeout", 10);
-        Object msgType = jsonObject.getOrDefault("msgType", "cmd");
+        Integer interval = (Integer) jsonObject.getOrDefault("interval", 0);
+        String msgType = (String) jsonObject.getOrDefault("type", "cmd");
         if (agentId != null) {
-            iMsgService.sendMsg(agentId, cmd, msgType.toString(), null);
+            iMsgService.sendMsgAndResponse(agentId, command, script, msgType, timeout);
             return;
         }
         if (StringUtils.isNotEmpty(hostname) && serviceId != null) {
@@ -75,21 +88,27 @@ public class ClientJobHandler {
                 log.warn("agent 不存在 hostname:{}", hostname);
                 return;
             }
-            iMsgService.sendMsg(agentConfig.getId(), cmd, msgType.toString(), timeout);
+            iMsgService.sendMsgAndResponse(agentConfig.getId(), command, script, msgType, timeout);
             return;
         }
         String dockerName = jsonObject.getString("dockerName");
         if (StringUtils.isNotEmpty(dockerName) && serviceId != null) {
             List<DockerContainer> list = iDockerContainerService.getByServiceIdAndDockerName(serviceId, dockerName);
             for (DockerContainer dockerContainer : list) {
-                iMsgService.sendMsg(dockerContainer.getAgentId(), cmd, msgType.toString(), timeout);
+                iMsgService.sendMsgAndResponse(dockerContainer.getAgentId(), command, script, msgType, timeout);
+                if (interval > 0 && list.size() > 1) {
+                    Thread.sleep(interval * 1000L);
+                }
             }
             return;
         }
         if (StringUtils.isEmpty(dockerName) && serviceId != null && StringUtils.isEmpty(hostname)) {
             List<Agent> agentList = agentService.getListByServiceId(serviceId);
             for (Agent agent : agentList) {
-                iMsgService.sendMsgAndResponse(agent.getId(), cmd, msgType.toString(), timeout);
+                iMsgService.sendMsgAndResponse(agent.getId(), command, script, msgType, timeout);
+                if (interval > 0 && agentList.size() > 1) {
+                    Thread.sleep(interval * 1000L);
+                }
             }
             return;
         }

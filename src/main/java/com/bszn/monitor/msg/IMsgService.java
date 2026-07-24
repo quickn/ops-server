@@ -6,9 +6,9 @@ import com.bszn.mq.MsgResult;
 
 public interface IMsgService {
 
-    String sendMsg(Long agentId, String msg, String msgType, Integer timeout);
+    String sendMsg(Long agentId, String command, String script, String msgType, Integer timeout);
 
-    MsgResult sendMsgAndResponse(Long agentId, String msg, String msgType, Integer timeout);
+    MsgResult sendMsgAndResponse(Long agentId, String command, String script, String msgType, Integer timeout);
 
 
     /**
@@ -19,7 +19,7 @@ public interface IMsgService {
      * @return 结果
      */
     default String sendCMDMsgAndResponseNon(Long agentId, String msg) {
-        return sendCMDMsgAndResponse( agentId, msg).replace("\n", "");
+        return sendCMDMsgAndResponse(agentId, msg).replace("\n", "");
     }
 
     /**
@@ -30,27 +30,27 @@ public interface IMsgService {
      * @return 结果
      */
     default String sendCMDMsgAndResponse(Long agentId, String msg) {
-        return sendCMDMsgAndResponse(agentId, msg, 300);
+        return sendCMDMsgAndResponse(agentId, null, msg, 300);
     }
 
 
-    default String sendCMDMsgAndResponse(Long agentId, String cmd, Integer timeout) {
-        return sendMsgAndResponse(agentId, cmd, MonitorMsgType.CMD, timeout).getData();
+    default String sendCMDMsgAndResponse(Long agentId, String command, String script, Integer timeout) {
+        return sendMsgAndResponse(agentId, command, script, MonitorMsgType.CMD, timeout).getData();
     }
 
     /**
      * 发送指令保留原始数据响应
      *
      * @param agentId
-     * @param cmd
+     * @param script
      * @param timeout
      * @return
      */
-    default MsgResult sendCMDMsgAndRawResponse(Long agentId, String cmd, Integer timeout) {
-        return sendMsgAndResponse(agentId, cmd, MonitorMsgType.CMD, timeout);
+    default MsgResult sendCMDMsgAndRawResponse(Long agentId, String script, Integer timeout) {
+        return sendMsgAndResponse(agentId, null, script, MonitorMsgType.CMD, timeout);
     }
 
     default MsgResult sendTaskMsgResponse(Long agentId, String msg, Integer timeout) {
-        return sendMsgAndResponse(agentId, msg, MonitorMsgType.TASK, timeout);
+        return sendMsgAndResponse(agentId, null, msg, MonitorMsgType.TASK, timeout);
     }
 }

@@ -178,7 +178,7 @@ public class AgentServiceImpl extends ServiceImpl<AgentMapper, Agent>
             jsonObject.putOnce("handle", "agentManagerHandle");
             jsonObject.putOnce("url", upgradeClientUrl);
             jsonObject.putOnce("cmd", cmd);
-            iMsgService.sendMsg(agentConfig.getId(), jsonObject.toString(), MonitorMsgType.TASK, null);
+            iMsgService.sendMsg(agentConfig.getId(), "升级客户端", jsonObject.toString(), MonitorMsgType.TASK, null);
         }
     }
 
@@ -187,8 +187,13 @@ public class AgentServiceImpl extends ServiceImpl<AgentMapper, Agent>
         JSONObject jsonObject = new JSONObject();
         jsonObject.putOnce("handle", "agentManagerHandle");
         jsonObject.putOnce("cmd", cmd);
-        jsonObject.putOnce("url", upgradeClientUrl);
-        iMsgService.sendMsgAndResponse(agentId, jsonObject.toString(), MonitorMsgType.TASK, 3);
+        String command = "升级客户端";
+        if (cmd.equals("restart")) {
+            command = "重启客户端";
+        } else {
+            jsonObject.putOnce("url", upgradeClientUrl);
+        }
+        iMsgService.sendMsgAndResponse(agentId, command, jsonObject.toString(), MonitorMsgType.TASK, 3);
     }
 
 }

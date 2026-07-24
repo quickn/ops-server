@@ -53,7 +53,7 @@ public class DockerContainerController {
     public Result restart(@PathVariable Long id) {
         DockerContainer dockerContainer = dockerContainerMapper.selectById(id);
         Agent agentConfig = agentConfigService.getByServiceIdAndHost(dockerContainer.getServiceId(), dockerContainer.getHostname());
-        String msg = iMsgService.sendCMDMsgAndResponse(agentConfig.getId(), "docker restart " + dockerContainer.getNames(), 60);
+        String msg = iMsgService.sendCMDMsgAndResponse(agentConfig.getId(), "重启容器", "docker restart " + dockerContainer.getNames(), 60);
         return Result.success(msg);
     }
 
@@ -61,7 +61,7 @@ public class DockerContainerController {
     public Result stop(@PathVariable Long id) {
         DockerContainer dockerContainer = dockerContainerMapper.selectById(id);
         Agent agentConfig = agentConfigService.getByServiceIdAndHost(dockerContainer.getServiceId(), dockerContainer.getHostname());
-        String msg = iMsgService.sendCMDMsgAndResponse(agentConfig.getId(), "docker stop " + dockerContainer.getNames(), 60);
+        String msg = iMsgService.sendCMDMsgAndResponse(agentConfig.getId(), "停止容器", "docker stop " + dockerContainer.getNames(), 60);
         return Result.success(msg);
     }
 
