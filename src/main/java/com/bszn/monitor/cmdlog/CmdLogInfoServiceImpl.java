@@ -6,8 +6,6 @@ import com.bszn.monitor.agent.AgentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-
 /**
  * @author wzh
  * @date 2026/1/21 15:08
@@ -40,7 +38,6 @@ public class CmdLogInfoServiceImpl extends ServiceImpl<CmdLogInfoMapper, CmdLogI
                 .script(script)
                 .msgType(msgType)
                 .userId(userId)
-                .createTime(LocalDateTime.now())
                 .build();
         save(cmdLogInfo);
         return cmdLogInfo.getId();
