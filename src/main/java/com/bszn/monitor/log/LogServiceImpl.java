@@ -1,6 +1,6 @@
 package com.bszn.monitor.log;
 
-import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson2.JSONObject;
 import com.bszn.monitor.agent.Agent;
 import com.bszn.monitor.agent.AgentMapper;
 import com.bszn.monitor.cmd.LogCmdForm;
