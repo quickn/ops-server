@@ -5,8 +5,8 @@ import com.bszn.monitor.agent.Agent;
 import com.bszn.monitor.email.MailConfig;
 import com.bszn.monitor.email.MailConfigService;
 import com.bszn.monitor.heath.ApiHeathMonitor;
-import com.bszn.monitor.log.LogInfo;
-import com.bszn.monitor.log.LogInfoService;
+import com.bszn.monitor.warnLog.WarnLogInfo;
+import com.bszn.monitor.warnLog.WarnLogInfoService;
 import com.bszn.server.StaticKeys;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.mail.DefaultAuthenticator;
@@ -19,7 +19,7 @@ public class WarnMailUtil {
 
     public static final String content_suffix = "<p><a target='_blank' href='http://bisenpark.com'>百胜智能</a>敬上";
 
-    private static LogInfoService logInfoService = SpringUtil.getBean(LogInfoService.class);
+    private static WarnLogInfoService logInfoService = SpringUtil.getBean(WarnLogInfoService.class);
     private static MailConfigService mailService = SpringUtil.getBean(MailConfigService.class);
 
     public static void sendWarnMail(Agent agentConfig, String title, String commContent) {
@@ -53,7 +53,7 @@ public class WarnMailUtil {
                     WarnMailUtil.sendMail(mailSet, heathMonitor.getServiceName() + logTitle, commContent);
                 }
             }
-            logInfoService.save(new LogInfo(logTitle, commContent, heathMonitor.getServiceId(), heathMonitor.getServiceName(), isEmail));
+            logInfoService.save(new WarnLogInfo(logTitle, commContent, heathMonitor.getServiceId(), heathMonitor.getServiceName(), isEmail));
         } catch (Exception e) {
             log.error("服务接口告警邮件失败：", e);
         }

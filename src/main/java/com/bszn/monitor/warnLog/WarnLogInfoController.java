@@ -1,4 +1,4 @@
-package com.bszn.monitor.log;
+package com.bszn.monitor.warnLog;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.bszn.system.common.result.Result;
@@ -9,19 +9,19 @@ import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "监控日志")
+@Tag(name = "预警日志")
 @RestController
 @RequestMapping(value = "/monitor/logInfo")
 @Slf4j
-public class LogInfoController {
+public class WarnLogInfoController {
     @Resource
-    LogInfoMapper logInfoMapper;
+    WarnLogInfoMapper logInfoMapper;
 
     @ResponseBody
     @GetMapping("/listPage")
     @Operation(summary = "文件日志查询")
-    public Result listPage(@ParameterObject LogInfoQuery logInfoQuery) {
-        Page<LogInfo> list = logInfoMapper.queryPage(logInfoQuery, logInfoMapper.getPage());
+    public Result listPage(@ParameterObject WarnLogInfoQuery logInfoQuery) {
+        Page<WarnLogInfo> list = logInfoMapper.queryPage(logInfoQuery, logInfoMapper.getPage());
         return Result.success(list);
     }
 

@@ -1,4 +1,4 @@
-package com.bszn.monitor.log;
+package com.bszn.monitor.warnLog;
 
 import com.bszn.base.sql.IQuery;
 import com.bszn.base.sql.PageForm;
@@ -16,9 +16,9 @@ import java.time.LocalDateTime;
  * Created by Liuyun on 2024-01-09 11:51
  **/
 @Data
-@SelectSql(" * from log_info ")
+@SelectSql(" * from warn_log_info ")
 @OrderBy(" id desc ")
-public class LogInfoQuery extends PageForm implements IQuery {
+public class WarnLogInfoQuery extends PageForm implements IQuery {
     @Where
     private Integer serviceId;
 

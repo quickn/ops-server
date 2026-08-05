@@ -4,7 +4,7 @@ import cn.hutool.extra.spring.SpringUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.bszn.base.http.RestUtil;
-import com.bszn.monitor.log.LogInfoService;
+import com.bszn.monitor.warnLog.WarnLogInfoService;
 import com.bszn.msg.WarnMailUtil;
 import com.bszn.server.StaticKeys;
 import jakarta.annotation.Resource;
@@ -12,7 +12,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -25,7 +24,7 @@ public class ApiHeathMonitorServiceImpl extends ServiceImpl<ApiHeathMonitorMappe
     @Autowired
     private ApiHeathMonitorMapper heathMonitorMapper;
     @Resource
-    LogInfoService logInfoService;
+    WarnLogInfoService logInfoService;
     @Resource
     RestUtil restUtil;
 

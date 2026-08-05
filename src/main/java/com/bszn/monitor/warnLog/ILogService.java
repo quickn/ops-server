@@ -1,4 +1,4 @@
-package com.bszn.monitor.log;
+package com.bszn.monitor.warnLog;
 
 import com.bszn.monitor.cmd.LogCmdForm;
 import com.bszn.mq.MsgResult;

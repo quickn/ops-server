@@ -1,4 +1,4 @@
-package com.bszn.monitor.log;
+package com.bszn.monitor.warnLog;
 
 import com.alibaba.fastjson2.JSONObject;
 import com.bszn.monitor.agent.Agent;

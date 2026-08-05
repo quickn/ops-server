@@ -1,11 +1,11 @@
-package com.bszn.monitor.log;
+package com.bszn.monitor.warnLog;
 
 import com.bszn.base.ServiceBaseEntity;
 import com.bszn.server.StaticKeys;
 import lombok.Data;
 
 @Data
-public class LogInfo extends ServiceBaseEntity {
+public class WarnLogInfo extends ServiceBaseEntity {
 
     /**
      *
@@ -31,11 +31,16 @@ public class LogInfo extends ServiceBaseEntity {
 
     private Boolean sendEmail;
 
-    public LogInfo() {
+    /**
+     * 阈值
+     */
+    private String threshold;
+
+    public WarnLogInfo() {
 
     }
 
-    public LogInfo(String title, String infoContent, Integer serviceId, String serviceName, boolean sendEmail) {
+    public WarnLogInfo(String title, String infoContent, Integer serviceId, String serviceName, boolean sendEmail) {
         this.title = title;
         this.infoContent = infoContent;
         this.state = StaticKeys.LOG_ERROR;

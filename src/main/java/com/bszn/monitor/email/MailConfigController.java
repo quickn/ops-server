@@ -1,7 +1,7 @@
 package com.bszn.monitor.email;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.bszn.monitor.log.LogInfoService;
+import com.bszn.monitor.warnLog.WarnLogInfoService;
 import com.bszn.msg.WarnMailUtil;
 import com.bszn.server.StaticKeys;
 import com.bszn.system.common.result.Result;
@@ -29,7 +29,7 @@ public class MailConfigController {
     @Resource
     private MailConfigService mailService;
     @Resource
-    private LogInfoService logInfoService;
+    private WarnLogInfoService logInfoService;
 
 
     @Operation(summary = "获取最新的数据")

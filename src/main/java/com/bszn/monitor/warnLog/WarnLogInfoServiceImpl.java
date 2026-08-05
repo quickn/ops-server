@@ -1,4 +1,4 @@
-package com.bszn.monitor.log;
+package com.bszn.monitor.warnLog;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.bszn.monitor.agent.Agent;
@@ -19,15 +19,15 @@ import java.util.Date;
 
 @Service
 @Slf4j
-public class LogInfoServiceImpl extends ServiceImpl<LogInfoMapper, LogInfo> implements LogInfoService {
+public class WarnLogInfoServiceImpl extends ServiceImpl<WarnLogInfoMapper, WarnLogInfo> implements WarnLogInfoService {
 
     @Autowired
-    private LogInfoMapper logInfoMapper;
+    private WarnLogInfoMapper logInfoMapper;
     @Resource
     AgentService iAgentConfigService;
 
     public void save(String hostname, String infoContent, String state) {
-        LogInfo logInfo = new LogInfo();
+        WarnLogInfo logInfo = new WarnLogInfo();
         // logInfo.setHostname(hostname);
         logInfo.setTitle(hostname);
         logInfo.setInfoContent(infoContent);
@@ -40,9 +40,9 @@ public class LogInfoServiceImpl extends ServiceImpl<LogInfoMapper, LogInfo> impl
             return false;
         }
         boolean sendEmail = true;
-        LogInfo temp = logInfoMapper.getLastByHostnameAndTitle(hostname, title);
+        WarnLogInfo temp = logInfoMapper.getLastByHostnameAndTitle(hostname, title);
         if (temp != null) {
-            long minute = LogInfoServiceImpl.differMinute(temp.getCreateTime(), new Date());
+            long minute = WarnLogInfoServiceImpl.differMinute(temp.getCreateTime(), new Date());
             //小于八个小时
             if (minute <= 60 * 8) {
                 sendEmail = false;
@@ -57,7 +57,7 @@ public class LogInfoServiceImpl extends ServiceImpl<LogInfoMapper, LogInfo> impl
             return false;
         }
         boolean sendEmail = this.checkSendEmail(agentConfig.getHostname(), title, agentConfig.getIsMail());
-        LogInfo logInfo = new LogInfo();
+        WarnLogInfo logInfo = new WarnLogInfo();
         logInfo.setHostname(agentConfig.getHostname());
         logInfo.setServiceName(agentConfig.getServiceName());
         logInfo.setServiceId(agentConfig.getServiceId());
@@ -109,9 +109,9 @@ public class LogInfoServiceImpl extends ServiceImpl<LogInfoMapper, LogInfo> impl
         if (!mailConfig.getIsSendMail()) {
             return false;
         }
-        LogInfo temp = logInfoMapper.getLastByServiceIdAndTitle(mailConfig.getServiceId(), title);
+        WarnLogInfo temp = logInfoMapper.getLastByServiceIdAndTitle(mailConfig.getServiceId(), title);
         if (temp != null) {
-            long minute = LogInfoServiceImpl.differMinute(temp.getCreateTime(), new Date());
+            long minute = WarnLogInfoServiceImpl.differMinute(temp.getCreateTime(), new Date());
             //小于1个小时
             if (minute <= mailConfig.getTimeInterval()) {
                 return false;
