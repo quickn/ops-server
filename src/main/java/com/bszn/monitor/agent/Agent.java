@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.bszn.base.ServiceBaseEntity;
+import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -66,6 +67,12 @@ public class Agent extends ServiceBaseEntity {
 
     @Schema(description = "操作用户")
     private String user;
+
+    @ApiModelProperty("进程流量发送接受阈值")
+    private Integer netThresholdKb;
+
+    @ApiModelProperty("网卡流量阈值")
+    private Integer ifStatThresholdKb;
 
 
     public void setRemoteIp(String remoteIp) {
