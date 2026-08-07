@@ -3,10 +3,12 @@ package com.bszn.monitor.agent;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.bszn.ops.cmd.ClientMsgForm;
+import com.bszn.constant.MonitorMsgType;
 import com.bszn.monitor.msg.IMsgService;
 import com.bszn.monitor.service.ServiceInfo;
 import com.bszn.monitor.service.ServiceInfoService;
+import com.bszn.mq.MsgResult;
+import com.bszn.ops.cmd.ClientMsgForm;
 import com.bszn.system.common.result.Result;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -16,6 +18,7 @@ import org.springaicommunity.mcp.annotation.McpTool;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -90,10 +93,11 @@ public class AgentController {
         if (timeout > 300) {
             timeout = 300;
         }
+        String msgType = MonitorMsgType.CMD;
         if (cmd.startsWith("{")) {
-            return Result.success(iMsgService.sendTaskMsgResponse(agentId, cmd, timeout));
+            msgType = MonitorMsgType.TASK;
         }
-        return Result.success(iMsgService.sendCMDMsgAndResponse(agentId, "发送指令", cmd, timeout));
+        return Result.success(iMsgService.sendMsgAndResponse(agentId, "发送指令", cmd, msgType, timeout));
     }
 
     @GetMapping("/handleAgentByServiceId/{serviceId}")
@@ -113,10 +117,12 @@ public class AgentController {
     public Result batchHandleAgent(@RequestBody JSONObject jsonObject) {
         Long[] ids = jsonObject.getJSONArray("ids").toArray(new Long[0]);
         String cmd = jsonObject.getStr("cmd");
+        List<MsgResult> result = new ArrayList<>();
         for (Long agentId : ids) {
-            iAgentConfigService.handleAgent(agentId, cmd);
+            MsgResult msgResult = iAgentConfigService.handleAgent(agentId, cmd);
+            result.add(msgResult);
         }
-        return Result.success();
+        return Result.success(result);
     }
 
 

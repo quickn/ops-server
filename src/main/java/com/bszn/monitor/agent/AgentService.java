@@ -1,6 +1,7 @@
 package com.bszn.monitor.agent;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.bszn.mq.MsgResult;
 import com.bszn.ops.cmd.ClientMsgForm;
 
 import java.util.List;
@@ -20,7 +21,7 @@ public interface AgentService extends IService<Agent> {
 
     void handleAgentByServiceId(Integer serviceId, String cmd);
 
-    void handleAgent(Long agentId, String cmd);
+    MsgResult handleAgent(Long agentId, String cmd);
 
     /**
      * 获取服务器列表

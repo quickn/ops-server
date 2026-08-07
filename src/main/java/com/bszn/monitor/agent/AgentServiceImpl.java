@@ -8,11 +8,12 @@ import cn.hutool.json.JSONObject;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.bszn.constant.MonitorMsgType;
-import com.bszn.ops.cmd.ClientMsgForm;
 import com.bszn.monitor.constant.MonitorCmdC;
 import com.bszn.monitor.docker.DockerContainer;
 import com.bszn.monitor.docker.DockerContainerMapper;
 import com.bszn.monitor.msg.IMsgService;
+import com.bszn.mq.MsgResult;
+import com.bszn.ops.cmd.ClientMsgForm;
 import com.bszn.system.common.exception.BusinessException;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -183,17 +184,21 @@ public class AgentServiceImpl extends ServiceImpl<AgentMapper, Agent>
     }
 
     @Override
-    public void handleAgent(Long agentId, String cmd) {
+    public MsgResult handleAgent(Long agentId, String cmd) {
         JSONObject jsonObject = new JSONObject();
-        jsonObject.putOnce("handle", "agentManagerHandle");
         jsonObject.putOnce("cmd", cmd);
-        String command = "升级客户端";
+        String command = "执行指令";
         if (cmd.equals("restart")) {
             command = "重启客户端";
-        } else {
+        } else if (cmd.equals("upgrade")) {
+            command = "升级客户端";
             jsonObject.putOnce("url", upgradeClientUrl);
+        } else {
+            return iMsgService.sendMsgAndResponse(agentId, command, cmd, MonitorMsgType.CMD, 10);
         }
-        iMsgService.sendMsgAndResponse(agentId, command, jsonObject.toString(), MonitorMsgType.TASK, 3);
+        jsonObject.putOnce("handle", "agentManagerHandle");
+        jsonObject.putOnce("timeout", 5);
+        return iMsgService.sendMsgAndResponse(agentId, command, jsonObject.toString(), MonitorMsgType.TASK, 10);
     }
 
 }
