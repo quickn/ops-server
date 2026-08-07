@@ -1,4 +1,4 @@
-package com.bszn.monitor.operation;
+package com.bszn.ops.operation;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;

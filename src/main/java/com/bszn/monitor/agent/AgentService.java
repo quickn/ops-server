@@ -1,8 +1,7 @@
 package com.bszn.monitor.agent;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.bszn.monitor.cmd.ClientMsgForm;
-import com.bszn.monitor.cmd.LogCmdForm;
+import com.bszn.ops.cmd.ClientMsgForm;
 
 import java.util.List;
 

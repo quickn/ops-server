@@ -1,4 +1,4 @@
-package com.bszn.monitor.operation;
+package com.bszn.ops.operation;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.stereotype.Service;

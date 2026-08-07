@@ -1,4 +1,4 @@
-package com.bszn.monitor.operation;
+package com.bszn.ops.operation;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.bszn.system.common.result.Result;

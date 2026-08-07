@@ -1,4 +1,4 @@
-package com.bszn.monitor.jar;
+package com.bszn.ops.jar;
 
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;

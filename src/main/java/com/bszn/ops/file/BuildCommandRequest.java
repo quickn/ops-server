@@ -1,4 +1,4 @@
-package com.bszn.monitor.file;
+package com.bszn.ops.file;
 
 import lombok.Data;
 

@@ -1,6 +1,6 @@
 package com.bszn.nginx;
 
-import com.bszn.monitor.file.FileForm;
+import com.bszn.ops.file.FileForm;
 import com.bszn.monitor.msg.IMsgService;
 import com.bszn.system.common.nginx.Vali;
 import com.bszn.system.common.result.Result;

@@ -3,7 +3,7 @@ package com.bszn.monitor.agent;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.bszn.monitor.cmd.ClientMsgForm;
+import com.bszn.ops.cmd.ClientMsgForm;
 import com.bszn.monitor.msg.IMsgService;
 import com.bszn.monitor.service.ServiceInfo;
 import com.bszn.monitor.service.ServiceInfoService;

@@ -1,6 +1,6 @@
 package com.bszn.monitor.warnLog;
 
-import com.bszn.monitor.cmd.LogCmdForm;
+import com.bszn.ops.cmd.LogCmdForm;
 import com.bszn.mq.MsgResult;
 
 import java.util.List;

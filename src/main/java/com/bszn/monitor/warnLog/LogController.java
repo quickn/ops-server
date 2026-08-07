@@ -1,6 +1,6 @@
 package com.bszn.monitor.warnLog;
 
-import com.bszn.monitor.cmd.LogCmdForm;
+import com.bszn.ops.cmd.LogCmdForm;
 import com.bszn.system.common.result.Result;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

@@ -1,4 +1,4 @@
-package com.bszn.monitor.file;
+package com.bszn.ops.file;
 
 import com.bszn.monitor.msg.IMsgService;
 import com.bszn.system.common.nginx.Vali;

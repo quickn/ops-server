@@ -1,4 +1,4 @@
-package com.bszn.monitor.jar;
+package com.bszn.ops.jar;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;

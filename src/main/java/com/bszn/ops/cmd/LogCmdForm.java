@@ -1,4 +1,4 @@
-package com.bszn.monitor.cmd;
+package com.bszn.ops.cmd;
 
 import io.swagger.annotations.ApiModelProperty;
 import jakarta.validation.constraints.NotBlank;

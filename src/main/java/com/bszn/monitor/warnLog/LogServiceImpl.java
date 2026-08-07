@@ -3,7 +3,7 @@ package com.bszn.monitor.warnLog;
 import com.alibaba.fastjson2.JSONObject;
 import com.bszn.monitor.agent.Agent;
 import com.bszn.monitor.agent.AgentMapper;
-import com.bszn.monitor.cmd.LogCmdForm;
+import com.bszn.ops.cmd.LogCmdForm;
 import com.bszn.monitor.msg.IMsgService;
 import com.bszn.monitor.service.ServiceInfo;
 import com.bszn.monitor.service.ServiceInfoService;

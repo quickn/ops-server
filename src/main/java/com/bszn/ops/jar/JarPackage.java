@@ -1,4 +1,4 @@
-package com.bszn.monitor.jar;
+package com.bszn.ops.jar;
 
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.bszn.base.ServiceBaseEntity;

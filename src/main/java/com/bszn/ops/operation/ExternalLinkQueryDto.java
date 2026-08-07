@@ -1,4 +1,4 @@
-package com.bszn.monitor.operation;
+package com.bszn.ops.operation;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.bszn.base.sql.IQuery;
