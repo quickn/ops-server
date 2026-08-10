@@ -1,0 +1,15 @@
+---
+description: 
+alwaysApply: true
+enabled: true
+updatedAt: 2026-08-07T01:23:06.396Z
+provider: 
+---
+
+# 文件编码规则
+
+写入任何文件时，**必须使用 UTF-8 编码（不带 BOM）**。
+
+Windows 环境下默认 GBK 编码会导致中文乱码，确保所有 `.go`,`.py`,`.java`,`.ts`、`.vue`、`.md`、`.json` 等文件都以 UTF-8 编码写入。
+
+**注意**：不要运行可能以 GBK 覆盖文件的第三方脚本（如 `package_skill.py`）。如果必须运行，先备份文件，运行后恢复。
