@@ -68,11 +68,11 @@ public class Agent extends ServiceBaseEntity {
     @Schema(description = "操作用户")
     private String user;
 
-    @ApiModelProperty("进程流量发送接受阈值")
-    private Integer netThresholdKb;
+    @ApiModelProperty("进程流量阈值")
+    private Integer netThresholdMbps;
 
     @ApiModelProperty("网卡流量阈值")
-    private Integer ifStatThresholdKb;
+    private Integer ifStatThresholdMbps;
 
 
     public void setRemoteIp(String remoteIp) {
