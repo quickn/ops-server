@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 /**
@@ -25,6 +26,8 @@ import java.util.List;
 @RequestMapping("/processStat")
 public class ProcessStatController {
 
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+
     @Resource
     private ProcessStatService processNetStatService;
 
@@ -37,7 +40,9 @@ public class ProcessStatController {
             @RequestParam(required = false) String hostname,
             @RequestParam(required = false) String processName,
             @RequestParam(required = false) String containerName,
-            @RequestParam(required = false) String date) {
+            @RequestParam(required = false) String date,
+            @RequestParam(required = false) String startTime,
+            @RequestParam(required = false) String endTime) {
 
         Page<ProcessStat> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<ProcessStat> wrapper = new LambdaQueryWrapper<ProcessStat>()
@@ -47,8 +52,13 @@ public class ProcessStatController {
                 .eq(containerName != null && !containerName.isEmpty(), ProcessStat::getContainerName, containerName)
                 .orderByDesc(ProcessStat::getCreateTime);
 
-        // 日期筛选：查询某一天的数据
-        if (date != null && !date.isEmpty()) {
+        // 时间范围筛选：优先使用 startTime/endTime
+        if (startTime != null && !startTime.isEmpty() && endTime != null && !endTime.isEmpty()) {
+            LocalDateTime start = LocalDateTime.parse(startTime, DATE_TIME_FORMATTER);
+            LocalDateTime end = LocalDateTime.parse(endTime, DATE_TIME_FORMATTER).withSecond(59).withNano(999_999_999);
+            wrapper.between(ProcessStat::getCreateTime, start, end);
+        } else if (date != null && !date.isEmpty()) {
+            // 日期筛选：查询某一天的数据
             LocalDate localDate = LocalDate.parse(date);
             LocalDateTime start = localDate.atStartOfDay();
             LocalDateTime end = localDate.atTime(LocalTime.MAX);
@@ -63,14 +73,20 @@ public class ProcessStatController {
     public Result<List<ProcessStat>> listByPid(
             @RequestParam Integer pid,
             @RequestParam(defaultValue = "20") Integer limit,
-            @RequestParam(required = false) String date) {
+            @RequestParam(required = false) String date,
+            @RequestParam(required = false) String startTime,
+            @RequestParam(required = false) String endTime) {
 
         LambdaQueryWrapper<ProcessStat> wrapper = new LambdaQueryWrapper<ProcessStat>()
                 .eq(ProcessStat::getPid, pid)
                 .orderByDesc(ProcessStat::getCreateTime)
                 .last("LIMIT " + limit);
 
-        if (date != null && !date.isEmpty()) {
+        if (startTime != null && !startTime.isEmpty() && endTime != null && !endTime.isEmpty()) {
+            LocalDateTime start = LocalDateTime.parse(startTime, DATE_TIME_FORMATTER);
+            LocalDateTime end = LocalDateTime.parse(endTime, DATE_TIME_FORMATTER).withSecond(59).withNano(999_999_999);
+            wrapper.between(ProcessStat::getCreateTime, start, end);
+        } else if (date != null && !date.isEmpty()) {
             LocalDate localDate = LocalDate.parse(date);
             LocalDateTime start = localDate.atStartOfDay();
             LocalDateTime end = localDate.atTime(LocalTime.MAX);

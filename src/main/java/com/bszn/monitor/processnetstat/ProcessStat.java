@@ -44,11 +44,17 @@ public class ProcessStat extends ServiceBaseEntity {
     @Schema(description = "默认网卡接收流量(KB)")
     private Double recvRate;
 
-    @Schema(description = "所有非lo网卡发送流量(KB)")
-    private Double totalSentRate;
+    @Schema(description = "TCP 连接总数")
+    private Integer connTotal;
 
-    @Schema(description = "所有非lo网卡接收流量(KB)")
-    private Double totalRecvRate;
+    @Schema(description = "ESTABLISHED 状态连接数")
+    private Integer connEstablished;
+
+    @Schema(description = "CLOSE_WAIT 状态连接数")
+    private Integer connCloseWait;
+
+    @Schema(description = "TIME_WAIT 状态连接数")
+    private Integer connTimeWait;
 
     @TableField(exist = false)
     private LocalDateTime updateTime;
