@@ -74,6 +74,10 @@ public class Agent extends ServiceBaseEntity {
     @ApiModelProperty("网卡流量阈值")
     private Integer ifStatThresholdMbps;
 
+    @ApiModelProperty("进程网络连接数阈值")
+    private Integer netConnThreshold;
+
+
 
     public void setRemoteIp(String remoteIp) {
         this.remoteIp = remoteIp != null ? remoteIp.trim() : null;
