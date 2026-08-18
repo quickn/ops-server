@@ -42,6 +42,12 @@ public class LogCmdForm {
     @ApiModelProperty("结束时间")
     String endTime;
 
+    @ApiModelProperty("开始时分(HH:mm)")
+    String startHourMinute;
+
+    @ApiModelProperty("结束时分(HH:mm)")
+    String endHourMinute;
+
     String cmd;
     String grepPara;
 

@@ -26,7 +26,7 @@ import java.util.List;
 @RequestMapping("/processStat")
 public class ProcessStatController {
 
-    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 
     @Resource
     private ProcessStatService processNetStatService;
@@ -52,16 +52,17 @@ public class ProcessStatController {
                 .eq(containerName != null && !containerName.isEmpty(), ProcessStat::getContainerName, containerName)
                 .orderByDesc(ProcessStat::getCreateTime);
 
-        // 时间范围筛选：优先使用 startTime/endTime
-        if (startTime != null && !startTime.isEmpty() && endTime != null && !endTime.isEmpty()) {
-            LocalDateTime start = LocalDateTime.parse(startTime, DATE_TIME_FORMATTER);
-            LocalDateTime end = LocalDateTime.parse(endTime, DATE_TIME_FORMATTER).withSecond(59).withNano(999_999_999);
-            wrapper.between(ProcessStat::getCreateTime, start, end);
-        } else if (date != null && !date.isEmpty()) {
-            // 日期筛选：查询某一天的数据
+        // 时间筛选：日期（date）+ 时分区间（startTime/endTime，格式 HH:mm）
+        if (date != null && !date.isEmpty()) {
             LocalDate localDate = LocalDate.parse(date);
             LocalDateTime start = localDate.atStartOfDay();
             LocalDateTime end = localDate.atTime(LocalTime.MAX);
+            if (startTime != null && !startTime.isEmpty()) {
+                start = localDate.atTime(LocalTime.parse(startTime, TIME_FORMATTER));
+            }
+            if (endTime != null && !endTime.isEmpty()) {
+                end = localDate.atTime(LocalTime.parse(endTime, TIME_FORMATTER)).withSecond(59).withNano(999_999_999);
+            }
             wrapper.between(ProcessStat::getCreateTime, start, end);
         }
 
@@ -82,14 +83,17 @@ public class ProcessStatController {
                 .orderByDesc(ProcessStat::getCreateTime)
                 .last("LIMIT " + limit);
 
-        if (startTime != null && !startTime.isEmpty() && endTime != null && !endTime.isEmpty()) {
-            LocalDateTime start = LocalDateTime.parse(startTime, DATE_TIME_FORMATTER);
-            LocalDateTime end = LocalDateTime.parse(endTime, DATE_TIME_FORMATTER).withSecond(59).withNano(999_999_999);
-            wrapper.between(ProcessStat::getCreateTime, start, end);
-        } else if (date != null && !date.isEmpty()) {
+        // 时间筛选：日期（date）+ 时分区间（startTime/endTime，格式 HH:mm）
+        if (date != null && !date.isEmpty()) {
             LocalDate localDate = LocalDate.parse(date);
             LocalDateTime start = localDate.atStartOfDay();
             LocalDateTime end = localDate.atTime(LocalTime.MAX);
+            if (startTime != null && !startTime.isEmpty()) {
+                start = localDate.atTime(LocalTime.parse(startTime, TIME_FORMATTER));
+            }
+            if (endTime != null && !endTime.isEmpty()) {
+                end = localDate.atTime(LocalTime.parse(endTime, TIME_FORMATTER)).withSecond(59).withNano(999_999_999);
+            }
             wrapper.between(ProcessStat::getCreateTime, start, end);
         }
 

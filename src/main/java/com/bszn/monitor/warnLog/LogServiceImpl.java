@@ -3,11 +3,11 @@ package com.bszn.monitor.warnLog;
 import com.alibaba.fastjson2.JSONObject;
 import com.bszn.monitor.agent.Agent;
 import com.bszn.monitor.agent.AgentMapper;
-import com.bszn.ops.cmd.LogCmdForm;
 import com.bszn.monitor.msg.IMsgService;
 import com.bszn.monitor.service.ServiceInfo;
 import com.bszn.monitor.service.ServiceInfoService;
 import com.bszn.mq.MsgResult;
+import com.bszn.ops.cmd.LogCmdForm;
 import com.bszn.system.common.exception.BusinessException;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -86,19 +86,38 @@ public class LogServiceImpl implements ILogService {
                     cmd.append("tail -n200 ");
                 }
                 cmd.append(" ");
-                cmd.append(serviceInfo.getWorkPath().trim());
-                cmd.append("/logs/");
-                cmd.append(logCmdForm.getDockerName());
-                cmd.append("/");
+                String logPath = serviceInfo.getWorkPath().trim() + "/logs/" + logCmdForm.getDockerName() + "/";
                 if (StringUtils.isNotEmpty(logCmdForm.getCreateDate())) {
-                    cmd.append(logCmdForm.getLogLevel() + "/");
+                    logPath = logPath + logCmdForm.getLogLevel() + "/";
                 }
-                cmd.append(logCmdForm.getLogLevel());
+
                 if (StringUtils.isEmpty(logCmdForm.getCreateDate())) {
+                    cmd.append(logPath);
                     cmd.append(".log");
                 } else {
-                    String createDate = logCmdForm.getCreateDate().substring(0, 10);
-                    cmd.append("-" + createDate + ".*.log");
+                    if (StringUtils.isNotEmpty(logCmdForm.getStartHourMinute()) || StringUtils.isNotEmpty(logCmdForm.getEndHourMinute())) {
+                        String startHm = StringUtils.isNotEmpty(logCmdForm.getStartHourMinute()) ? logCmdForm.getStartHourMinute() : "00:00";
+                        String endHm = StringUtils.isNotEmpty(logCmdForm.getEndHourMinute()) ? logCmdForm.getEndHourMinute() : "23:59:59";
+                        // 查询当前目录下所有文件名称，并根据文件名称中的时间戳范围筛选
+                        String lsCmd = String.format(
+                                "find %s -maxdepth 1 -name \"info-*.log\" -newermt \"%s %s\" ! -newermt \"%s %s:59\" -printf \"%%f\\\\n\"", logPath,
+                                logCmdForm.getCreateDate(), startHm, logCmdForm.getCreateDate(), endHm);
+                        MsgResult msgResult = iMsgService.sendCMDMsgAndRawResponse(agentConfig.getId(), lsCmd, logCmdForm.getTimeout());
+                        if (StringUtils.isEmpty(msgResult.getData())) {
+                            throw new BusinessException("未找到日志文件");
+                        }
+                        String[] fileNames = msgResult.getData().split("\n");
+                        for (String fileName : fileNames) {
+                            cmd.append(logPath);
+                            cmd.append(fileName);
+                            cmd.append(" ");
+                        }
+                        //cmd.append("|awk '{split($2,t,\":\"); hm=t[1]\":\"t[2]; if(hm>=\"" + startHm + "\" && hm<=\"" + endHm + "\") print}'");
+                    } else {
+                        cmd.append(logPath);
+                        String createDate = logCmdForm.getCreateDate().substring(0, 10);
+                        cmd.append("-" + createDate + ".*.log");
+                    }
                 }
                 if (StringUtils.isNotEmpty(logCmdForm.getKeyword())) {
                     cmd.append("|grep ");
@@ -116,6 +135,7 @@ public class LogServiceImpl implements ILogService {
                     }
                     cmd.append("'" + logCmdForm.getKeyword1() + "'");
                 }
+
                 logs.append("<div class='hostname'>");
                 logs.append(agentConfig.getHostname() + "\n");
                 logs.append("</div>");
