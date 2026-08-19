@@ -93,15 +93,16 @@ public class LogServiceImpl implements ILogService {
 
                 if (StringUtils.isEmpty(logCmdForm.getCreateDate())) {
                     cmd.append(logPath);
+                    cmd.append(logCmdForm.getLogLevel());
                     cmd.append(".log");
                 } else {
                     if (StringUtils.isNotEmpty(logCmdForm.getStartHourMinute()) || StringUtils.isNotEmpty(logCmdForm.getEndHourMinute())) {
                         String startHm = StringUtils.isNotEmpty(logCmdForm.getStartHourMinute()) ? logCmdForm.getStartHourMinute() : "00:00";
-                        String endHm = StringUtils.isNotEmpty(logCmdForm.getEndHourMinute()) ? logCmdForm.getEndHourMinute() : "23:59:59";
+                        String endHm = StringUtils.isNotEmpty(logCmdForm.getEndHourMinute()) ? logCmdForm.getEndHourMinute() : "23:59";
                         // 查询当前目录下所有文件名称，并根据文件名称中的时间戳范围筛选
                         String lsCmd = String.format(
-                                "find %s -maxdepth 1 -name \"info-*.log\" -newermt \"%s %s\" ! -newermt \"%s %s:59\" -printf \"%%f\\\\n\"", logPath,
-                                logCmdForm.getCreateDate(), startHm, logCmdForm.getCreateDate(), endHm);
+                                "find %s -maxdepth 1 -name \"%s-*.log\" -newermt \"%s %s\" ! -newermt \"%s %s:59\" -printf \"%%f\\\\n\"", logPath,
+                                logCmdForm.getLogLevel(), logCmdForm.getCreateDate(), startHm, logCmdForm.getCreateDate(), endHm);
                         MsgResult msgResult = iMsgService.sendCMDMsgAndRawResponse(agentConfig.getId(), lsCmd, logCmdForm.getTimeout());
                         if (StringUtils.isEmpty(msgResult.getData())) {
                             throw new BusinessException("未找到日志文件");
@@ -115,6 +116,7 @@ public class LogServiceImpl implements ILogService {
                         //cmd.append("|awk '{split($2,t,\":\"); hm=t[1]\":\"t[2]; if(hm>=\"" + startHm + "\" && hm<=\"" + endHm + "\") print}'");
                     } else {
                         cmd.append(logPath);
+                        cmd.append(logCmdForm.getLogLevel());
                         String createDate = logCmdForm.getCreateDate().substring(0, 10);
                         cmd.append("-" + createDate + ".*.log");
                     }
