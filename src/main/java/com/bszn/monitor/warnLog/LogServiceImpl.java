@@ -80,10 +80,11 @@ public class LogServiceImpl implements ILogService {
                     throw new BusinessException("dockerName不能为空");
                 }
                 StringBuilder cmd = new StringBuilder();
-                if (StringUtils.isNotEmpty(logCmdForm.getKeyword())) {
+                if (logCmdForm.getLimit() == -1) {
                     cmd.append("cat");
                 } else {
-                    cmd.append("tail -n200 ");
+                    cmd.append("tail -n");
+                    cmd.append(logCmdForm.getLimit());
                 }
                 cmd.append(" ");
                 String logPath = serviceInfo.getWorkPath().trim() + "/logs/" + logCmdForm.getDockerName() + "/";
@@ -142,6 +143,9 @@ public class LogServiceImpl implements ILogService {
                 logs.append(agentConfig.getHostname() + "\n");
                 logs.append("</div>");
                 logs.append("\n");
+                if (logCmdForm.isOnlyCount()) {
+                    cmd.append("|wc -l");
+                }
                 logs.append(iMsgService.sendCMDMsgAndRawResponse(agentConfig.getId(), cmd.toString(), logCmdForm.getTimeout()));
                 logs.append("\n");
             } else {
