@@ -6,6 +6,7 @@ import com.bszn.base.ServiceBaseEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -30,7 +31,10 @@ public class ProcessStat extends ServiceBaseEntity {
     private Integer rsz;
 
     @Schema(description = "CPU占用百分比")
-    private java.math.BigDecimal pcpu;
+    private BigDecimal pcpu;
+
+    @Schema(description = "内存占用百分比")
+    private BigDecimal pmem;
 
     @Schema(description = "用户")
     private String user;
