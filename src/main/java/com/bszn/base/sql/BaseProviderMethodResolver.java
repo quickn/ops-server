@@ -121,6 +121,33 @@ public class BaseProviderMethodResolver implements ProviderMethodResolver {
 
 
     public static String getOrderBy(Object query) {
+        // 动态排序：优先读取 query 对象上的 sortField/sortOrder 属性
+        String sortField = null;
+        String sortOrder = null;
+        try {
+            java.lang.reflect.Field sf = query.getClass().getDeclaredField("sortField");
+            sf.setAccessible(true);
+            Object sfValue = sf.get(query);
+            if (sfValue != null && StringUtils.isNotEmpty(sfValue.toString())) {
+                sortField = sfValue.toString();
+            }
+        } catch (NoSuchFieldException ignored) {
+        } catch (IllegalAccessException ignored) {
+        }
+        if (sortField != null) {
+            try {
+                java.lang.reflect.Field so = query.getClass().getDeclaredField("sortOrder");
+                so.setAccessible(true);
+                Object soValue = so.get(query);
+                if (soValue != null && StringUtils.isNotEmpty(soValue.toString())) {
+                    sortOrder = soValue.toString();
+                }
+            } catch (NoSuchFieldException ignored) {
+            } catch (IllegalAccessException ignored) {
+            }
+            boolean asc = "asc".equalsIgnoreCase(sortOrder);
+            return humpToLine2(sortField) + (asc ? " asc" : " desc");
+        }
         OrderBy orderBy = query.getClass().getAnnotation(OrderBy.class);
         if (orderBy != null) {
             return orderBy.value();

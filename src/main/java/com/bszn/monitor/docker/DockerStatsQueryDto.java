@@ -39,15 +39,31 @@ public class DockerStatsQueryDto extends PageForm<DockerStats> implements IQuery
     @Schema(description = "结束时间")
     private LocalDateTime endTime;
 
+    @Schema(description = "排序字段")
+    private String sortField;
+
+    @Schema(description = "排序方向：asc/desc")
+    private String sortOrder;
+
 
     @Override
     public LambdaQueryWrapper<DockerStats> buildLambda() {
-        return super.buildLambda()
+        LambdaQueryWrapper<DockerStats> wrapper = super.buildLambda()
                 .eq(Objects.nonNull(serviceId), DockerStats::getServiceId, serviceId)
                 .eq(Objects.nonNull(agentId), DockerStats::getAgentId, agentId)
                 .eq(StringUtils.isNotEmpty(names), DockerStats::getNames, names)
                 .lt(endTime != null, DockerStats::getCreateTime, endTime)
-                .gt(startTime != null, DockerStats::getCreateTime, startTime)
-                .orderByDesc(DockerStats::getId);
+                .gt(startTime != null, DockerStats::getCreateTime, startTime);
+
+        // 动态排序：指定排序字段时按其排序，否则默认按 id 倒序
+        boolean asc = "asc".equalsIgnoreCase(sortOrder);
+        if (StringUtils.isNotEmpty(sortField)) {
+            switch (sortField) {
+                case "cpu" -> wrapper.orderBy(true, asc, DockerStats::getCpu);
+                case "mem" -> wrapper.orderBy(true, asc, DockerStats::getMem);
+                default -> wrapper.orderByDesc(DockerStats::getId);
+            }
+        }
+        return wrapper.orderByDesc(DockerStats::getId);
     }
 }

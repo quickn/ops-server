@@ -19,4 +19,10 @@ public class DiskStateQuery extends PageForm implements IQuery {
 
     @Where
     private String hostname;
+
+    @Where(ignore = true)
+    private String sortField;
+
+    @Where(ignore = true)
+    private String sortOrder;
 }
