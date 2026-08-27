@@ -15,6 +15,9 @@ public class JobConfig {
     @TableField(fill = FieldFill.INSERT)
     Integer serviceId;
 
+    @Schema(description = "服务名")
+    String serviceName;
+
     @Schema(description = "指令")
     private String command;
 

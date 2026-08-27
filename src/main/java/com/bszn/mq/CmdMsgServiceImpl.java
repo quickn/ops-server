@@ -11,6 +11,7 @@ import com.bszn.monitor.msg.CmdCacheMsgService;
 import com.bszn.monitor.msg.IMsgService;
 import com.bszn.system.common.exception.BusinessException;
 import com.bszn.system.common.util.SecurityUtils;
+import com.bszn.utils.CmdLogInfoSessionUtil;
 import com.bszn.utils.IpUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -82,13 +83,19 @@ public class CmdMsgServiceImpl implements IMsgService {
     @Override
     public MsgResult sendMsgAndResponse(CmdLogInfo cmdLogInfo) {
         Long agentId = cmdLogInfo.getAgentId();
-        String command = cmdLogInfo.getCommand();
         String script = cmdLogInfo.getScript();
         String msgType = cmdLogInfo.getMsgType();
         Integer timeout = cmdLogInfo.getTimeout();
         Agent byId = agentConfigService.getById(agentId);
         if (byId == null)
             throw new BusinessException("agent 不存在");
+        CmdLogInfo session = CmdLogInfoSessionUtil.get();
+        if (session != null) {
+            cmdLogInfo.setJobId(session.getJobId());
+            cmdLogInfo.setCommand(session.getCommand());
+            cmdLogInfo.setMsgType(session.getMsgType());
+            cmdLogInfo.setTimeout(session.getTimeout());
+        }
         cmdLogInfo.setUserId(SecurityUtils.getUserId());
         cmdLogInfo.setServiceId(byId.getServiceId());
         cmdLogInfo.setServiceName(byId.getServiceName());
@@ -97,14 +104,14 @@ public class CmdMsgServiceImpl implements IMsgService {
         cmdLogInfoService.save(cmdLogInfo);
         Long msgId = cmdLogInfo.getId();
         long startTime = System.currentTimeMillis();
-        String messageId = sendMsg(agentId, command, script, msgType, timeout);
+        String messageId = sendMsg(agentId, cmdLogInfo.getCommand(), script, msgType, timeout);
         MsgResult msgResult = null;
         try {
             msgResult = cmdCacheMsgService.getMsgResult(messageId, timeout);
         } catch (Exception exception) {
             log.error("发送消息异常", exception);
             int timeConsuming = (int) ((System.currentTimeMillis() - startTime) / 1000);
-            cmdLogInfoService.updateResult(msgId, exception.getMessage(), timeConsuming, true);
+            cmdLogInfoService.updateResult(msgId, exception.getMessage(), timeConsuming, false);
             throw new BusinessException(exception.getMessage());
         }
         String result = "返回结果为空";

@@ -1,5 +1,7 @@
 package com.bszn.ops.job;
 
+import com.bszn.monitor.service.ServiceInfo;
+import com.bszn.monitor.service.ServiceInfoService;
 import com.bszn.system.common.result.Result;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
@@ -13,6 +15,8 @@ import org.springframework.web.bind.annotation.*;
 public class JobConfigController {
     @Resource
     JobConfigMapper jobConfigMapper;
+    @Resource
+    ServiceInfoService serviceInfoService;
 
     @GetMapping("/get/{jobId}")
     public Result get(@PathVariable Long jobId) {
@@ -27,6 +31,10 @@ public class JobConfigController {
     @PostMapping("/save")
     public Result save(@RequestBody JobConfig jobConfig) {
         JobConfig temp = jobConfigMapper.selectById(jobConfig.getId());
+        if (jobConfig.getServiceId() != null) {
+            ServiceInfo serviceInfo = serviceInfoService.getById(jobConfig.getServiceId());
+            jobConfig.setServiceName(serviceInfo.getName());
+        }
         if (temp == null) {
             jobConfigMapper.insert(jobConfig);
         } else {

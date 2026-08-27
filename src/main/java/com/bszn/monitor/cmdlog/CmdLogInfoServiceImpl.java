@@ -15,14 +15,14 @@ public class CmdLogInfoServiceImpl extends ServiceImpl<CmdLogInfoMapper, CmdLogI
 
 
     @Override
-    public boolean updateResult(Long id, String result, Integer timeConsuming, Boolean isError) {
+    public boolean updateResult(Long id, String result, Integer timeConsuming, Boolean isSuccess) {
         if (result != null && result.length() >= 2000) {
             result = result.substring(0, 2000);
         }
         updateById(CmdLogInfo.builder()
                 .id(id)
                 .result(result)
-                .isError(isError)
+                .isSuccess(isSuccess)
                 .timeConsuming(timeConsuming)
                 .build());
         return true;

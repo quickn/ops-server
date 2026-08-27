@@ -1,7 +1,6 @@
 package com.bszn.job;
 
 import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import com.bszn.monitor.agent.Agent;
 import com.bszn.monitor.agent.AgentService;
@@ -12,7 +11,6 @@ import com.bszn.monitor.msg.IMsgService;
 import com.bszn.ops.job.JobConfig;
 import com.bszn.ops.job.JobConfigMapper;
 import com.bszn.system.common.exception.BusinessException;
-import com.bszn.utils.CmdUtil;
 import com.xxl.job.core.context.XxlJobHelper;
 import com.xxl.job.core.handler.annotation.XxlJob;
 import jakarta.annotation.Resource;
@@ -22,7 +20,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.util.Base64;
 import java.util.List;
 
 @Component
@@ -119,34 +116,6 @@ public class ClientJobHandler {
             }
             return;
         }
-    }
-
-    /**
-     * 发布job
-     */
-    @XxlJob("deployJobHandler")
-    public void deployJobHandler() throws Exception {
-        String jobParam = XxlJobHelper.getJobParam();
-        log.info("pythonJobHandler jobParam{}", jobParam);
-        JSONObject jsonObject = JSONObject.parseObject(jobParam);
-        Integer serviceId = jsonObject.getInteger("serviceId");
-        JSONArray projectNames = jsonObject.getJSONArray("projectNames");
-        if (serviceId == null) {
-            throw new BusinessException("serviceId不能为空");
-        }
-        if (projectNames == null || projectNames.isEmpty()) {
-            throw new BusinessException("projectNames不能为空");
-        }
-        String script = jsonObject.getString("script");
-        if (script == null || script.isEmpty()) {
-            throw new BusinessException("script不能为空");
-        }
-        if (StringUtils.isNotEmpty(pythonUrl)) {
-            jsonObject.put("url", pythonUrl);
-        }
-        String encodedParams = Base64.getEncoder().encodeToString(jsonObject.toJSONString().getBytes());
-        String[] arr = {pythonPath, pythonScript + "/" + script, encodedParams};
-        CmdUtil.exec(false, 120, false, arr);
     }
 
 }

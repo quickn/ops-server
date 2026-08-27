@@ -58,6 +58,7 @@ public class AgentController {
             agentConfig.setServiceName(serviceInfo.getName());
         }
         iAgentConfigService.saveOrUpdate(agentConfig);
+        iAgentConfigService.handleAgent(agentConfig.getId(), "restart");
         return Result.success();
     }
 

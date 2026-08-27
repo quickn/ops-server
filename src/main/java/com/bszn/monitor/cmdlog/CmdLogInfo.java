@@ -61,7 +61,7 @@ public class CmdLogInfo {
     private Long jobId;
 
     @Schema(description = "是否错误日志")
-    private Boolean isError;
+    private Boolean isSuccess;
 
     @Schema(description = "创建时间")
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
