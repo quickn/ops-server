@@ -5,6 +5,7 @@ import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import com.bszn.monitor.agent.Agent;
 import com.bszn.monitor.agent.AgentService;
+import com.bszn.monitor.cmdlog.CmdLogInfo;
 import com.bszn.monitor.docker.DockerContainer;
 import com.bszn.monitor.docker.IDockerContainerService;
 import com.bszn.monitor.msg.IMsgService;
@@ -78,8 +79,12 @@ public class ClientJobHandler {
         Integer timeout = (Integer) jsonObject.getOrDefault("timeout", 10);
         Integer interval = (Integer) jsonObject.getOrDefault("interval", 0);
         String msgType = (String) jsonObject.getOrDefault("type", "cmd");
+
+        CmdLogInfo cmdLogInfo = CmdLogInfo.builder().agentId(agentId).command
+                (command).script(script).msgType(msgType).timeout(timeout).jobId(jobId).build();
+
         if (agentId != null) {
-            iMsgService.sendMsgAndResponse(agentId, command, script, msgType, timeout);
+            iMsgService.sendMsgAndResponse(cmdLogInfo);
             return;
         }
         if (StringUtils.isNotEmpty(hostname) && serviceId != null) {
@@ -88,14 +93,15 @@ public class ClientJobHandler {
                 log.warn("agent 不存在 hostname:{}", hostname);
                 return;
             }
-            iMsgService.sendMsgAndResponse(agentConfig.getId(), command, script, msgType, timeout);
+            iMsgService.sendMsgAndResponse(cmdLogInfo);
             return;
         }
         String dockerName = jsonObject.getString("dockerName");
         if (StringUtils.isNotEmpty(dockerName) && serviceId != null) {
             List<DockerContainer> list = iDockerContainerService.getByServiceIdAndDockerName(serviceId, dockerName);
             for (DockerContainer dockerContainer : list) {
-                iMsgService.sendMsgAndResponse(dockerContainer.getAgentId(), command, script, msgType, timeout);
+                cmdLogInfo.setAgentId(dockerContainer.getAgentId());
+                iMsgService.sendMsgAndResponse(cmdLogInfo);
                 if (interval > 0 && list.size() > 1) {
                     Thread.sleep(interval * 1000L);
                 }
@@ -105,7 +111,8 @@ public class ClientJobHandler {
         if (StringUtils.isEmpty(dockerName) && serviceId != null && StringUtils.isEmpty(hostname)) {
             List<Agent> agentList = agentService.getListByServiceId(serviceId);
             for (Agent agent : agentList) {
-                iMsgService.sendMsgAndResponse(agent.getId(), command, script, msgType, timeout);
+                cmdLogInfo.setAgentId(agent.getId());
+                iMsgService.sendMsgAndResponse(cmdLogInfo);
                 if (interval > 0 && agentList.size() > 1) {
                     Thread.sleep(interval * 1000L);
                 }

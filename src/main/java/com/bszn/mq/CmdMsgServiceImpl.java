@@ -1,6 +1,9 @@
 package com.bszn.mq;
 
 import com.bszn.base.util.MyIdWorker;
+import com.bszn.monitor.agent.Agent;
+import com.bszn.monitor.agent.AgentService;
+import com.bszn.monitor.cmdlog.CmdLogInfo;
 import com.bszn.monitor.cmdlog.ICmdLogInfoService;
 import com.bszn.monitor.encryption.CryptoService;
 import com.bszn.monitor.encryption.EncryptRequest;
@@ -14,6 +17,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
 
 @Service
 @Slf4j
@@ -30,6 +35,9 @@ public class CmdMsgServiceImpl implements IMsgService {
 
     @Autowired
     private ICmdLogInfoService cmdLogInfoService;
+
+    @Autowired
+    AgentService agentConfigService;
 
 
     @Override
@@ -67,7 +75,27 @@ public class CmdMsgServiceImpl implements IMsgService {
 
     @Override
     public MsgResult sendMsgAndResponse(Long agentId, String command, String script, String msgType, Integer timeout) {
-        Long msgId = cmdLogInfoService.save(SecurityUtils.getUserId(), agentId, command, script, msgType);
+        return this.sendMsgAndResponse(CmdLogInfo.builder().agentId(agentId).command
+                (command).script(script).msgType(msgType).timeout(timeout).build());
+    }
+
+    @Override
+    public MsgResult sendMsgAndResponse(CmdLogInfo cmdLogInfo) {
+        Long agentId = cmdLogInfo.getAgentId();
+        String command = cmdLogInfo.getCommand();
+        String script = cmdLogInfo.getScript();
+        String msgType = cmdLogInfo.getMsgType();
+        Integer timeout = cmdLogInfo.getTimeout();
+        Agent byId = agentConfigService.getById(agentId);
+        if (byId == null)
+            throw new BusinessException("agent 不存在");
+        cmdLogInfo.setUserId(SecurityUtils.getUserId());
+        cmdLogInfo.setServiceId(byId.getServiceId());
+        cmdLogInfo.setServiceName(byId.getServiceName());
+        cmdLogInfo.setAgentIp(byId.getHostname());
+        cmdLogInfo.setCreateTime(LocalDateTime.now());
+        cmdLogInfoService.save(cmdLogInfo);
+        Long msgId = cmdLogInfo.getId();
         long startTime = System.currentTimeMillis();
         String messageId = sendMsg(agentId, command, script, msgType, timeout);
         MsgResult msgResult = null;

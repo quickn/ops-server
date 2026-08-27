@@ -9,6 +9,7 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -53,6 +54,7 @@ public class CmdLibController {
     @PostMapping("/save")
     @Operation(summary = "新增指令")
     public Result save(@RequestBody CmdLib cmdLib) {
+        cmdLib.setUpdateTime(LocalDateTime.now());
         cmdLibService.save(cmdLib);
         return Result.success();
     }
@@ -60,6 +62,7 @@ public class CmdLibController {
     @PutMapping("/update")
     @Operation(summary = "修改指令")
     public Result update(@RequestBody CmdLib cmdLib) {
+        cmdLib.setUpdateTime(LocalDateTime.now());
         cmdLibService.updateById(cmdLib);
         return Result.success();
     }

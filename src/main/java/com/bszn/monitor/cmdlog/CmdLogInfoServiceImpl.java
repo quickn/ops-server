@@ -1,8 +1,6 @@
 package com.bszn.monitor.cmdlog;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.bszn.monitor.agent.Agent;
-import com.bszn.monitor.agent.AgentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -15,33 +13,6 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class CmdLogInfoServiceImpl extends ServiceImpl<CmdLogInfoMapper, CmdLogInfo> implements ICmdLogInfoService {
 
-    private final AgentService agentConfigService;
-
-    /**
-     * 保存
-     *
-     * @param userId  用户id
-     * @param agentId 服务id
-     * @param script     指令
-     * @param msgType 消息类型
-     */
-    @Override
-    public Long save(Long userId, Long agentId,String command, String script, String msgType) {
-        // 拿到服务
-        Agent byId = agentConfigService.getById(agentId);
-        CmdLogInfo cmdLogInfo = CmdLogInfo.builder()
-                .serviceId(byId.getServiceId())
-                .serviceName(byId.getServiceName())
-                .agentId(agentId)
-                .agentIp(byId.getHostname())
-                .command(command)
-                .script(script)
-                .msgType(msgType)
-                .userId(userId)
-                .build();
-        save(cmdLogInfo);
-        return cmdLogInfo.getId();
-    }
 
     @Override
     public boolean updateResult(Long id, String result, Integer timeConsuming, Boolean isError) {

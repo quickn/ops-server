@@ -2,6 +2,7 @@ package com.bszn.monitor.msg;
 
 
 import com.bszn.constant.MonitorMsgType;
+import com.bszn.monitor.cmdlog.CmdLogInfo;
 import com.bszn.mq.MsgResult;
 
 public interface IMsgService {
@@ -46,11 +47,13 @@ public interface IMsgService {
      * @param timeout
      * @return
      */
-    default MsgResult sendCMDMsgAndRawResponse(Long agentId, String script, Integer timeout) {
-        return sendMsgAndResponse(agentId, null, script, MonitorMsgType.CMD, timeout);
+    default MsgResult sendCMDMsgAndRawResponse(Long agentId, String command, String script, Integer timeout) {
+        return sendMsgAndResponse(agentId, command, script, MonitorMsgType.CMD, timeout);
     }
 
-    default MsgResult sendTaskMsgResponse(Long agentId, String msg, Integer timeout) {
-        return sendMsgAndResponse(agentId, null, msg, MonitorMsgType.TASK, timeout);
+    default MsgResult sendTaskMsgResponse(Long agentId, String command, String msg, Integer timeout) {
+        return sendMsgAndResponse(agentId, command, msg, MonitorMsgType.TASK, timeout);
     }
+
+    MsgResult sendMsgAndResponse(CmdLogInfo cmdLogInfo);
 }

@@ -37,6 +37,7 @@ public class LogServiceImpl implements ILogService {
         jsonObject.put("action", logCmdForm.getAction());
         jsonObject.put("startTime", logCmdForm.getStartTime());
         jsonObject.put("endTime", logCmdForm.getEndTime());
+        String command = "日志分析";
         if (StringUtils.isEmpty(logCmdForm.getFilePath())) {
             if (StringUtils.isEmpty(logCmdForm.getDockerName())) {
                 throw new BusinessException("dockerName不能为空");
@@ -61,11 +62,11 @@ public class LogServiceImpl implements ILogService {
                     cmd.append("-" + createDate + ".*.log");
                 }
                 jsonObject.put("filePath", cmd.toString());
-                list.add(iMsgService.sendTaskMsgResponse(agentConfig.getId(), jsonObject.toJSONString(), logCmdForm.getTimeout()));
+                list.add(iMsgService.sendTaskMsgResponse(agentConfig.getId(), command, jsonObject.toJSONString(), logCmdForm.getTimeout()));
             }
         } else {
             jsonObject.put("filePath", logCmdForm.getFilePath());
-            list.add(iMsgService.sendTaskMsgResponse(logCmdForm.getAgentId(), jsonObject.toJSONString(), logCmdForm.getTimeout()));
+            list.add(iMsgService.sendTaskMsgResponse(logCmdForm.getAgentId(), command, jsonObject.toJSONString(), logCmdForm.getTimeout()));
         }
         return list;
     }
@@ -74,6 +75,7 @@ public class LogServiceImpl implements ILogService {
         ServiceInfo serviceInfo = serviceInfoService.getById(logCmdForm.getServiceId());
         List<Agent> agentConfigs = this.agentMapper.getByServiceId(logCmdForm.getServiceId(), logCmdForm.getDockerName());
         StringBuffer logs = new StringBuffer();
+        String command = "查询日志文件";
         for (Agent agentConfig : agentConfigs) {
             if (StringUtils.isEmpty(logCmdForm.getCmd())) {
                 if (StringUtils.isEmpty(logCmdForm.getDockerName())) {
@@ -104,7 +106,7 @@ public class LogServiceImpl implements ILogService {
                         String lsCmd = String.format(
                                 "find %s -maxdepth 1 -name \"%s-*.log\" -newermt \"%s %s\" ! -newermt \"%s %s:59\" -printf \"%%f\\\\n\"", logPath,
                                 logCmdForm.getLogLevel(), logCmdForm.getCreateDate(), startHm, logCmdForm.getCreateDate(), endHm);
-                        MsgResult msgResult = iMsgService.sendCMDMsgAndRawResponse(agentConfig.getId(), lsCmd, logCmdForm.getTimeout());
+                        MsgResult msgResult = iMsgService.sendCMDMsgAndRawResponse(agentConfig.getId(), command, lsCmd, logCmdForm.getTimeout());
                         if (StringUtils.isEmpty(msgResult.getData())) {
                             throw new BusinessException("未找到日志文件");
                         }
@@ -146,10 +148,10 @@ public class LogServiceImpl implements ILogService {
                 if (logCmdForm.isOnlyCount()) {
                     cmd.append("|wc -l");
                 }
-                logs.append(iMsgService.sendCMDMsgAndRawResponse(agentConfig.getId(), cmd.toString(), logCmdForm.getTimeout()));
+                logs.append(iMsgService.sendCMDMsgAndRawResponse(agentConfig.getId(), command, cmd.toString(), logCmdForm.getTimeout()));
                 logs.append("\n");
             } else {
-                logs.append(iMsgService.sendCMDMsgAndRawResponse(agentConfig.getId(), logCmdForm.getCmd(), logCmdForm.getTimeout()));
+                logs.append(iMsgService.sendCMDMsgAndRawResponse(agentConfig.getId(), command, logCmdForm.getCmd(), logCmdForm.getTimeout()));
             }
         }
         return logs.toString();
@@ -172,7 +174,7 @@ public class LogServiceImpl implements ILogService {
             cmd.append(" ");
         }
         cmd.append("'" + logCmdForm.getKeyword() + "'");
-        return iMsgService.sendCMDMsgAndRawResponse(logCmdForm.getAgentId(), cmd.toString(), logCmdForm.getTimeout());
+        return iMsgService.sendCMDMsgAndRawResponse(logCmdForm.getAgentId(), "日志详情", cmd.toString(), logCmdForm.getTimeout());
     }
 
 }

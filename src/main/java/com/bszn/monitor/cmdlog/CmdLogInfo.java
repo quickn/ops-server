@@ -54,6 +54,12 @@ public class CmdLogInfo {
     @Schema(description = "耗时")
     private Integer timeConsuming;
 
+    @Schema(description = "设置超时时间")
+    private Integer timeout;
+
+    @Schema(description = "定时任务ID")
+    private Long jobId;
+
     @Schema(description = "是否错误日志")
     private Boolean isError;
 
