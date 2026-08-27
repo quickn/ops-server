@@ -119,7 +119,7 @@ public class CmdMsgServiceImpl implements IMsgService {
             result = msgResult.getData();
         }
         int timeConsuming = (int) ((System.currentTimeMillis() - startTime) / 1000);
-        cmdLogInfoService.updateResult(msgId, result, timeConsuming, false);
+        cmdLogInfoService.updateResult(msgId, result, timeConsuming, true);
         // 保存日志
         return msgResult;
     }

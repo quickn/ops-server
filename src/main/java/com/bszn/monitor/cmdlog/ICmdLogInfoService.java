@@ -9,6 +9,6 @@ import com.baomidou.mybatisplus.extension.service.IService;
  */
 public interface ICmdLogInfoService extends IService<CmdLogInfo> {
 
-    boolean updateResult(Long id, String result, Integer timeConsuming, Boolean isSuccess);
+    void updateResult(Long id, String result, Integer timeConsuming, Boolean isSuccess);
 
 }

@@ -5,9 +5,9 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.bszn.monitor.agent.Agent;
 import com.bszn.monitor.agent.AgentService;
+import com.bszn.monitor.msg.IMsgService;
 import com.bszn.ops.file.IFileService;
 import com.bszn.ops.file.SyncFileParam;
-import com.bszn.monitor.msg.IMsgService;
 import com.bszn.system.common.exception.BusinessException;
 import com.bszn.system.common.util.SecurityUtils;
 import com.bszn.utils.IpUtil;
@@ -184,9 +184,10 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         if (StrUtil.isEmpty(project.getDockerfileContent())) {
             throw new BusinessException("尚未设置Dockerfile");
         }
+        final Long projectIdTemp = project.getId();
         // 更新状态为部署中
         Project projectTemp = new Project();
-        projectTemp.setId(projectId);
+        projectTemp.setId(projectIdTemp);
         projectTemp.setStatus(1);
         this.updateById(projectTemp);
 
@@ -196,7 +197,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
             Long agentId = agentIds.get(i);
 
             // 创建部署记录
-            ProjectDeployRecord record = createDeployRecord(projectId, agentId, project.getName());
+            ProjectDeployRecord record = createDeployRecord(projectIdTemp, agentId, project.getName());
 
             // 异步执行首次部署（根据Dockerfile创建容器）
             CompletableFuture<Boolean> future = CompletableFuture.supplyAsync(() -> deployType == 1 ?
@@ -222,7 +223,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
                     // 更新JAR包状态
                     projectTemp.setStatus(allSuccess ? 2 : 3);
                     this.updateById(projectTemp);
-                    log.info("部署完成: id={}, success={}", projectId, allSuccess);
+                    log.info("部署完成: id={}, success={}", projectIdTemp, allSuccess);
                     return allSuccess;
                 });
     }
