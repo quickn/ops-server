@@ -1,6 +1,7 @@
 package com.bszn.utils;
 
 
+import com.alibaba.ttl.TransmittableThreadLocal;
 import com.bszn.monitor.cmdlog.CmdLogInfo;
 
 /**
@@ -8,7 +9,8 @@ import com.bszn.monitor.cmdlog.CmdLogInfo;
  **/
 public class CmdLogInfoSessionUtil {
 
-    private static final ThreadLocal<CmdLogInfo> session = new ThreadLocal<CmdLogInfo>();
+    private static final TransmittableThreadLocal<CmdLogInfo> session = new TransmittableThreadLocal<CmdLogInfo>();
+
 
     public static CmdLogInfo get() {
         return session.get();

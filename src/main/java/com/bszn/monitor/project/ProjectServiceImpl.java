@@ -5,11 +5,13 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.bszn.monitor.agent.Agent;
 import com.bszn.monitor.agent.AgentService;
+import com.bszn.monitor.cmdlog.CmdLogInfo;
 import com.bszn.monitor.msg.IMsgService;
 import com.bszn.ops.file.IFileService;
 import com.bszn.ops.file.SyncFileParam;
 import com.bszn.system.common.exception.BusinessException;
 import com.bszn.system.common.util.SecurityUtils;
+import com.bszn.utils.CmdLogInfoSessionUtil;
 import com.bszn.utils.IpUtil;
 import com.bszn.utils.ScriptUtil;
 import jakarta.annotation.Resource;
@@ -195,14 +197,13 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         // 为每个Agent创建部署任务
         for (int i = 0; i < agentIds.size(); i++) {
             Long agentId = agentIds.get(i);
-
             // 创建部署记录
             ProjectDeployRecord record = createDeployRecord(projectIdTemp, agentId, project.getName());
-
             // 异步执行首次部署（根据Dockerfile创建容器）
-            CompletableFuture<Boolean> future = CompletableFuture.supplyAsync(() -> deployType == 1 ?
-                    deployWithDockerfile(project, agentId, record.getId(), userId)
-                    : redeployJarOnly(project, agentId, record.getId(), userId));
+            CompletableFuture<Boolean> future = CompletableFuture.supplyAsync(() ->
+                    deployType == 1 ?
+                    deployWithDockerfile(project, agentId, record.getId())
+                    : redeployJarOnly(project, agentId, record.getId()));
             futures.add(future);
         }
 
@@ -234,14 +235,13 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
      * @param project  项目
      * @param agentId  服务id
      * @param recordId 部署记录id
-     * @param userId   用户id
      * @return 结果
      */
-    private boolean redeployJarOnly(Project project, Long agentId, Long recordId, Long userId) {
+    private boolean redeployJarOnly(Project project, Long agentId, Long recordId) {
         try {
             // 检查容器是否存在
             updateDeployRecord(recordId, 1, "检查容器状态...");
-            boolean containerExists = checkContainerExists(agentId, project.getName(), userId);
+            boolean containerExists = checkContainerExists(agentId, project.getName());
 
             if (!containerExists) {
                 updateDeployRecord(recordId, 3, "容器不存在，请先部署");
@@ -307,7 +307,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
      * @param userId   用户id
      * @return 结果
      */
-    private Boolean deployWithDockerfile(Project project, Long agentId, Long recordId, Long userId) {
+    private Boolean deployWithDockerfile(Project project, Long agentId, Long recordId) {
         try {
             // 获取脚本
             String jarPath = StrUtil.isEmpty(project.getTargetDir()) ? workPath + this.jarPath : project.getTargetDir();
@@ -366,10 +366,9 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
      *
      * @param agentId       服务器id
      * @param containerName 容器名
-     * @param userId        用户id
      * @return 是否存在 true 存在 false 不存在
      */
-    private boolean checkContainerExists(Long agentId, String containerName, Long userId) {
+    private boolean checkContainerExists(Long agentId, String containerName) {
         try {
             // 执行docker ps命令检查容器
             String checkCmd = String.format("docker ps -a --filter 'name=^%s$' --format '{{.Names}}'", containerName);

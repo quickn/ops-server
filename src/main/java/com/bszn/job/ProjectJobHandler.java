@@ -1,6 +1,5 @@
 package com.bszn.job;
 
-import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
 import com.bszn.monitor.agent.AgentService;
 import com.bszn.monitor.cmdlog.CmdLogInfo;
@@ -58,21 +57,19 @@ public class ProjectJobHandler {
     @SneakyThrows
     @XxlJob("syncJarJobHandler")
     public void syncJarJobHandler() {
-        JobContext ctx = buildJobContext("syncJarJobHandler");
-        if (ctx == null)
-            return;
+        JobContext ctx = buildJobContext();
         try {
             CmdLogInfoSessionUtil.set(ctx.cmdLogInfo);
-            String[] projectNames = ctx.script.split(",");
+            String[] projectNames = ctx.projectNames;
             for (String projectName : projectNames) {
                 SyncRequest syncRequest = new SyncRequest();
-                syncRequest.setServiceId(ctx.serviceId);
+                syncRequest.setServiceId(ctx.cmdLogInfo.getServiceId());
                 syncRequest.setType(1);
-                syncRequest.setSourceAgentId(ctx.agentId);
+                syncRequest.setSourceAgentId(ctx.jobConfig.getAgentId());
                 syncRequest.setProjectName(projectName);
                 iProjectService.sync(syncRequest);
-                if (ctx.interval > 0 && projectNames.length > 1) {
-                    Thread.sleep(ctx.interval * 1000L);
+                if (ctx.jobConfig.getInterval() > 0 && projectNames.length > 1) {
+                    Thread.sleep(ctx.jobConfig.getInterval() * 1000L);
                 }
             }
         } catch (Exception e) {
@@ -88,18 +85,16 @@ public class ProjectJobHandler {
      */
     @XxlJob("deployJobHandler")
     public void deployJobHandler() throws Exception {
-        JobContext ctx = buildJobContext("deployJobHandler");
-        if (ctx == null)
-            return;
+        JobContext ctx = buildJobContext();
         try {
             CmdLogInfoSessionUtil.set(ctx.cmdLogInfo);
-            String[] projectNames = ctx.script.split(",");
+            String[] projectNames = ctx.projectNames;
             CmdLogInfo cmdLogInfo = ctx.cmdLogInfo;
             for (String projectName : projectNames) {
                 DeployRequest deployRequest = new DeployRequest();
-                deployRequest.setDeployType(2);
+                deployRequest.setDeployType(ctx.deployType);
                 deployRequest.setProjectName(projectName);
-                List<DockerContainer> list = iDockerContainerService.getByServiceIdAndDockerName(ctx.serviceId, projectName);
+                List<DockerContainer> list = iDockerContainerService.getByServiceIdAndDockerName(ctx.cmdLogInfo.getServiceId(), projectName);
                 if (CollectionUtils.isEmpty(list)) {
                     log.warn("docker 不存在 projectName:{}", projectName);
                     cmdLogInfo.setIsSuccess(false);
@@ -114,8 +109,8 @@ public class ProjectJobHandler {
                 }
                 deployRequest.setAgentIds(agentIds);
                 iProjectService.deploy(deployRequest);
-                if (ctx.interval > 0 && projectNames.length > 1) {
-                    Thread.sleep(ctx.interval * 1000L);
+                if (ctx.jobConfig.getInterval() > 0 && projectNames.length > 1) {
+                    Thread.sleep(ctx.jobConfig.getInterval() * 1000L);
                 }
             }
         } catch (Exception e) {
@@ -128,52 +123,48 @@ public class ProjectJobHandler {
     /**
      * 解析任务参数与配置，构建统一的执行上下文
      */
-    private JobContext buildJobContext(String handlerName) {
-        String jobParam = XxlJobHelper.getJobParam();
+    private JobContext buildJobContext() {
         Long jobId = XxlJobHelper.getJobId();
-        log.info("{} {}", handlerName, jobParam);
-        JSONObject jsonObject = null;
-        if (StringUtils.isNotEmpty(jobParam) && jobParam.startsWith("{")) {
-            jsonObject = JSONObject.parseObject(jobParam);
-        }
         JobConfig jobConfig = jobConfigMapper.selectById(jobId);
         if (jobConfig == null) {
             log.warn("jobConfig 不存在 jobId:{}", jobId);
+            throw new BusinessException("jobConfig 不存在");
         }
-        if (jsonObject == null && jobConfig != null) {
-            jsonObject = (JSONObject) JSON.toJSON(jobConfig);
+        String jobParam = jobConfig.getScript();
+        if (StringUtils.isEmpty(jobParam)) {
+            throw new BusinessException("参数不能为空");
         }
-        if (jsonObject != null && jobConfig != null) {
-            JSONObject temp = (JSONObject) JSON.toJSON(jobConfig);
-            temp.putAll(jsonObject);
-            jsonObject = temp;
+        JSONObject jsonObject = null;
+        String msgType = "cmd";
+        Integer deployType = 2;
+
+        String[] projectNames = {};
+
+        if (StringUtils.isNotEmpty(jobParam) && jobParam.startsWith("{")) {
+            jsonObject = JSONObject.parseObject(jobParam);
+            msgType = (String) jsonObject.getOrDefault("type", "cmd");
+            deployType = (Integer) jsonObject.getOrDefault("deployType", 2);
+            String projectNamesStr = jsonObject.getString("projectNames");
+            if (StringUtils.isEmpty(projectNamesStr)) {
+                throw new BusinessException("jobConfig 不存在");
+            } else {
+                projectNames = projectNamesStr.split(",");
+            }
         }
-        if (jsonObject == null) {
-            throw new BusinessException("jobParam 和 jobConfig 都为空");
-        }
-        Long agentId = jsonObject.getLong("agentId");
-        String command = jsonObject.getString("command");
-        String script = jsonObject.getString("script");
-        Integer serviceId = jsonObject.getInteger("serviceId");
-        Integer timeout = (Integer) jsonObject.getOrDefault("timeout", 10);
-        Integer interval = (Integer) jsonObject.getOrDefault("interval", 0);
-        String msgType = (String) jsonObject.getOrDefault("type", "cmd");
 
         JobContext ctx = new JobContext();
-        ctx.agentId = agentId;
-        ctx.command = command;
-        ctx.script = script;
-        ctx.serviceId = serviceId;
-        ctx.timeout = timeout;
-        ctx.interval = interval;
-        ctx.msgType = msgType;
-        ctx.cmdLogInfo = CmdLogInfo.builder().agentId(agentId).command(command)
-                .script(script).msgType(msgType).timeout(timeout).jobId(jobId).serviceName(jobConfig.getServiceName()).build();
-        if (serviceId == null) {
+        ctx.jobConfig = jobConfig;
+        ctx.deployType = deployType;
+        ctx.projectNames = projectNames;
+        ctx.cmdLogInfo = CmdLogInfo.builder().agentId(jobConfig.getAgentId()).command(jobConfig.getCommand())
+                .script(jobConfig.getScript()).msgType(msgType)
+                .timeout(jobConfig.getTimeout()).jobId(jobId).serviceName(jobConfig.getServiceName())
+                .serviceId(jobConfig.getServiceId()).build();
+        if (jobConfig.getServiceId() == null) {
             ctx.cmdLogInfo.setIsSuccess(false);
             ctx.cmdLogInfo.setResult("serviceId 为空");
             iCmdLogInfoService.save(ctx.cmdLogInfo);
-            return null;
+            throw new BusinessException("serviceId 为空");
         }
         return ctx;
     }
@@ -182,13 +173,9 @@ public class ProjectJobHandler {
      * 任务执行上下文
      */
     private static class JobContext {
-        private Long agentId;
-        private String command;
-        private String script;
-        private Integer serviceId;
-        private Integer timeout;
-        private Integer interval;
-        private String msgType;
+        private JobConfig jobConfig;
+        private String[] projectNames;
+        private Integer deployType;
         private CmdLogInfo cmdLogInfo;
     }
 

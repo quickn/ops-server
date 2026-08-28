@@ -32,6 +32,6 @@ public class JobConfig {
     @TableField("`interval`")
     private Integer interval;
 
-    private Integer agentId;
+    private Long agentId;
 
 }
