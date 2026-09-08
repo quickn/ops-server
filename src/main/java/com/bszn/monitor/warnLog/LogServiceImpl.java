@@ -74,7 +74,7 @@ public class LogServiceImpl implements ILogService {
     public String getLogsByServiceId(LogCmdForm logCmdForm) {
         ServiceInfo serviceInfo = serviceInfoService.getById(logCmdForm.getServiceId());
         List<Agent> agentConfigs = this.agentMapper.getByServiceId(logCmdForm.getServiceId(), logCmdForm.getDockerName());
-        StringBuffer logs = new StringBuffer();
+        StringBuilder logs = new StringBuilder();
         String command = "查询日志文件";
         for (Agent agentConfig : agentConfigs) {
             if (StringUtils.isEmpty(logCmdForm.getCmd())) {
@@ -82,13 +82,18 @@ public class LogServiceImpl implements ILogService {
                     throw new BusinessException("dockerName不能为空");
                 }
                 StringBuilder cmd = new StringBuilder();
-                if (logCmdForm.getLimit() == -1) {
-                    cmd.append("cat");
-                } else {
-                    cmd.append("tail -n");
-                    cmd.append(logCmdForm.getLimit());
+                if (StringUtils.isEmpty(logCmdForm.getKeyword()) && StringUtils.isEmpty(logCmdForm.getKeyword1())) {
+                    cmd.append("cat ");
                 }
-                cmd.append(" ");
+                if (StringUtils.isNotEmpty(logCmdForm.getKeyword())) {
+                    cmd.append("grep ");
+                    if (StringUtils.isNotEmpty(logCmdForm.getGrepPara()) && StringUtils.isEmpty(logCmdForm.getKeyword1())) {
+                        cmd.append(logCmdForm.getGrepPara());
+                        cmd.append(" ");
+                    }
+                    cmd.append("'").append(logCmdForm.getKeyword()).append("' ");
+                }
+
                 String logPath = serviceInfo.getWorkPath().trim() + "/logs/" + logCmdForm.getDockerName() + "/";
                 if (StringUtils.isNotEmpty(logCmdForm.getCreateDate())) {
                     logPath = logPath + logCmdForm.getLogLevel() + "/";
@@ -121,28 +126,26 @@ public class LogServiceImpl implements ILogService {
                         cmd.append(logPath);
                         cmd.append(logCmdForm.getLogLevel());
                         String createDate = logCmdForm.getCreateDate().substring(0, 10);
-                        cmd.append("-" + createDate + ".*.log");
+                        cmd.append("-").append(createDate).append(".*.log");
                     }
                 }
-                if (StringUtils.isNotEmpty(logCmdForm.getKeyword())) {
-                    cmd.append("|grep ");
-                    if (StringUtils.isNotEmpty(logCmdForm.getGrepPara()) && StringUtils.isEmpty(logCmdForm.getKeyword1())) {
-                        cmd.append(logCmdForm.getGrepPara());
-                        cmd.append(" ");
-                    }
-                    cmd.append("'" + logCmdForm.getKeyword() + "'");
-                }
+
                 if (StringUtils.isNotEmpty(logCmdForm.getKeyword1())) {
-                    cmd.append("|grep ");
+                    cmd.append("| grep ");
                     if (StringUtils.isNotEmpty(logCmdForm.getGrepPara())) {
                         cmd.append(logCmdForm.getGrepPara());
                         cmd.append(" ");
                     }
-                    cmd.append("'" + logCmdForm.getKeyword1() + "'");
+                    cmd.append("'").append(logCmdForm.getKeyword1()).append("' ");
+                }
+
+                if (logCmdForm.getLimit() > 0) {
+                    cmd.append(" | tail -n");
+                    cmd.append(logCmdForm.getLimit());
                 }
 
                 logs.append("<div class='hostname'>");
-                logs.append(agentConfig.getHostname() + "\n");
+                logs.append(agentConfig.getHostname()).append("\n");
                 logs.append("</div>");
                 logs.append("\n");
                 if (logCmdForm.isOnlyCount()) {
