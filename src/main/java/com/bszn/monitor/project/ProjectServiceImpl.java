@@ -239,15 +239,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
      */
     private boolean redeployJarOnly(Project project, Long agentId, Long recordId) {
         try {
-            // 检查容器是否存在
-            updateDeployRecord(recordId, 1, "检查容器状态...");
-            boolean containerExists = checkContainerExists(agentId, project.getName());
-
-            if (!containerExists) {
-                updateDeployRecord(recordId, 3, "容器不存在，请先部署");
-                return false;
-            }
-            // 2. 生成重新部署脚本
+            // 2. 生成重新部署脚本（容器存在性检查已下沉至 redeploy-template.sh 中处理）
             int type = project.getType() == 1 ? 3 : project.getType();
             String jarPath = StrUtil.isEmpty(project.getTargetDir()) ? workPath + this.jarPath : project.getTargetDir();
             String redeployScript = ScriptUtil.deployScript(project.getName(), project.getDockerfileContent(), project.getDockerComposeContent(), jarPath, type, workPath);
@@ -359,25 +351,6 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
             return false;
         }
 
-    }
-
-    /**
-     * 检查容器是否存在
-     *
-     * @param agentId       服务器id
-     * @param containerName 容器名
-     * @return 是否存在 true 存在 false 不存在
-     */
-    private boolean checkContainerExists(Long agentId, String containerName) {
-        try {
-            // 执行docker ps命令检查容器
-            String checkCmd = String.format("docker ps -a --filter 'name=^%s$' --format '{{.Names}}'", containerName);
-            String result = msgService.sendCMDMsgAndResponseNon(agentId, checkCmd);
-            return StringUtils.isNotBlank(result) && result.trim().equals(containerName);
-        } catch (Exception e) {
-            log.error("检查容器存在失败", e);
-            return false;
-        }
     }
 
     /**
