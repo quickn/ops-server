@@ -71,7 +71,7 @@ public class FileServiceImpl implements IFileService {
                 throw new BusinessException("源服务Agent不在线");
             }
             // 源服务跟同步服务一样，无需同步
-            if (agent.getServiceId().equals(jumpServerAgent.getServiceId())) {
+            if (agent.getServiceId().equals(jumpServerAgent.getServiceId()) && syncFileParam.getSyncType() == 1) {
                 return true;
             }
         }
