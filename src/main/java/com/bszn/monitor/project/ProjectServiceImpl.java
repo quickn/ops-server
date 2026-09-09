@@ -7,11 +7,11 @@ import com.bszn.monitor.agent.Agent;
 import com.bszn.monitor.agent.AgentService;
 import com.bszn.monitor.cmdlog.CmdLogInfo;
 import com.bszn.monitor.msg.IMsgService;
+import com.bszn.mq.MsgResult;
 import com.bszn.ops.file.IFileService;
 import com.bszn.ops.file.SyncFileParam;
 import com.bszn.system.common.exception.BusinessException;
 import com.bszn.system.common.util.SecurityUtils;
-import com.bszn.utils.CmdLogInfoSessionUtil;
 import com.bszn.utils.IpUtil;
 import com.bszn.utils.ScriptUtil;
 import jakarta.annotation.Resource;
@@ -202,8 +202,8 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
             // 异步执行首次部署（根据Dockerfile创建容器）
             CompletableFuture<Boolean> future = CompletableFuture.supplyAsync(() ->
                     deployType == 1 ?
-                    deployWithDockerfile(project, agentId, record.getId())
-                    : redeployJarOnly(project, agentId, record.getId()));
+                            deployWithDockerfile(project, agentId, record.getId())
+                            : redeployJarOnly(project, agentId, record.getId()));
             futures.add(future);
         }
 
@@ -269,7 +269,12 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
             String combinedCmd = String.format("%s && %s && %s && %s",
                     downloadCmd, chmodCmd, executeCmd, cleanupCmd);
 
-            String scriptResult = msgService.sendCMDMsgAndResponse(agentId, combinedCmd);
+            MsgResult msgResult = msgService.sendMsgAndResponse(CmdLogInfo.builder().agentId(agentId)
+                    .command("手动部署")
+                    .script(combinedCmd).remark(project.getName())
+                    .timeout(120).build());
+
+            String scriptResult = msgResult.getData();
 
             // 6. 清理本地脚本文件
             new File(scriptPath).delete();
@@ -296,7 +301,6 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
      * @param project  项目
      * @param agentId  服务id
      * @param recordId 部署记录id
-     * @param userId   用户id
      * @return 结果
      */
     private Boolean deployWithDockerfile(Project project, Long agentId, Long recordId) {
@@ -332,9 +336,11 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
             String combinedCmd = String.format("%s && timeout 300 %s && %s && %s ",
                     cleanupCmd, downloadCmd, chmodCmd, executeCmd);
 
-            String scriptResult = msgService.sendCMDMsgAndResponse(agentId, combinedCmd);
-
-
+            MsgResult msgResult = msgService.sendMsgAndResponse(CmdLogInfo.builder().agentId(agentId)
+                    .command("手动部署")
+                    .script(combinedCmd).remark(project.getName())
+                    .timeout(120).build());
+            String scriptResult = msgResult.getData();
             // 解析脚本执行结果
             if (scriptResult.contains("DEPLOY_SUCCESS")) {
                 String successInfo = ScriptUtil.extractDeploySuccessInfo(scriptResult);

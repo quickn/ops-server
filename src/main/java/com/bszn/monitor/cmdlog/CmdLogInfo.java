@@ -63,6 +63,9 @@ public class CmdLogInfo {
     @Schema(description = "是否错误日志")
     private Boolean isSuccess;
 
+    @Schema(description = "备注")
+    private String remark;
+
     @Schema(description = "创建时间")
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")

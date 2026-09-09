@@ -1,6 +1,7 @@
 package com.bszn.mq;
 
 import com.bszn.base.util.MyIdWorker;
+import com.bszn.constant.MonitorMsgType;
 import com.bszn.monitor.agent.Agent;
 import com.bszn.monitor.agent.AgentService;
 import com.bszn.monitor.cmdlog.CmdLogInfo;
@@ -85,6 +86,9 @@ public class CmdMsgServiceImpl implements IMsgService {
         Long agentId = cmdLogInfo.getAgentId();
         String script = cmdLogInfo.getScript();
         String msgType = cmdLogInfo.getMsgType();
+        if (msgType == null) {
+            msgType = MonitorMsgType.CMD;
+        }
         Integer timeout = cmdLogInfo.getTimeout();
         Agent byId = agentConfigService.getById(agentId);
         if (byId == null)
@@ -120,6 +124,8 @@ public class CmdMsgServiceImpl implements IMsgService {
         }
         int timeConsuming = (int) ((System.currentTimeMillis() - startTime) / 1000);
         cmdLogInfoService.updateResult(msgId, result, timeConsuming, true);
+        assert msgResult != null;
+        msgResult.setMsgId(msgId);
         // 保存日志
         return msgResult;
     }

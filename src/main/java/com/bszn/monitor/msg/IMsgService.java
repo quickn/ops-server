@@ -12,31 +12,12 @@ public interface IMsgService {
     MsgResult sendMsgAndResponse(Long agentId, String command, String script, String msgType, Integer timeout);
 
 
-    /**
-     * 发送cmd指定 默认5分钟
-     *
-     * @param agentId 服务id
-     * @param msg     消息
-     * @return 结果
-     */
-    default String sendCMDMsgAndResponseNon(Long agentId, String msg) {
-        return sendCMDMsgAndResponse(agentId, msg).replace("\n", "");
-    }
-
-    /**
-     * 发送cmd指定 默认5分钟
-     *
-     * @param agentId 服务id
-     * @param msg     消息
-     * @return 结果
-     */
-    default String sendCMDMsgAndResponse(Long agentId, String msg) {
-        return sendCMDMsgAndResponse(agentId, null, msg, 300);
-    }
-
-
     default String sendCMDMsgAndResponse(Long agentId, String command, String script, Integer timeout) {
         return sendMsgAndResponse(agentId, command, script, MonitorMsgType.CMD, timeout).getData();
+    }
+
+    default String sendCMDMsgAndResponse(Long agentId, String command, String script) {
+        return sendMsgAndResponse(agentId, command, script, MonitorMsgType.CMD, 10).getData();
     }
 
     /**

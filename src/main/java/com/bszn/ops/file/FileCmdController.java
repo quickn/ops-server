@@ -86,7 +86,7 @@ public class FileCmdController {
         stringBuffer.append(confText);
         stringBuffer.append("\n");
         stringBuffer.append("saveFile");
-        String str = iMsgService.sendCMDMsgAndResponse(fileForm.getAgentId(), stringBuffer.toString());
+        String str = iMsgService.sendCMDMsgAndResponse(fileForm.getAgentId(),"保存文件", stringBuffer.toString(),10);
         if (str.contains("语法错误") || str.contains("test failed")) {
             return Result.failed(str);
         }
