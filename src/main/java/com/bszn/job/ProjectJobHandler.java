@@ -134,12 +134,11 @@ public class ProjectJobHandler {
                 agentIds.add(dockerContainer.getAgentId());
             }
             deployRequest.setAgentIds(agentIds);
-            iProjectService.deploy(deployRequest);
-            if (!deployRequest.getSync()) {
-                if (ctx.jobConfig.getInterval() > 0 && projectNamesLength(ctx) > 1) {
-                    Thread.sleep(ctx.jobConfig.getInterval() * 1000L);
-                }
+            if (ctx.jobConfig.getInterval() != null) {
+                deployRequest.setInterval(ctx.jobConfig.getInterval());
             }
+            iProjectService.deploy(deployRequest);
+
         } catch (Exception e) {
             log.error("部署项目异常 projectName:{}", projectName, e);
         } finally {

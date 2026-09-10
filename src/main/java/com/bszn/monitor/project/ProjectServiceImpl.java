@@ -86,7 +86,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
 
         // 同步部署：顺序执行，任一失败即终止
         if (Boolean.TRUE.equals(deployRequest.getSync())) {
-            return CompletableFuture.supplyAsync(() -> deploySync(project, deployRequest.getAgentIds(), deployRequest.getDeployType(), projectIdTemp, projectTemp), executorService);
+            return CompletableFuture.supplyAsync(() -> deploySync(project, deployRequest, projectIdTemp, projectTemp), executorService);
         }
 
         List<CompletableFuture<Boolean>> futures = new ArrayList<>();
@@ -229,18 +229,17 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
      * 同步部署：顺序执行各服务器，任一失败即终止后续部署
      *
      * @param project       项目
-     * @param agentIds      服务器id列表
-     * @param deployType    部署类型 1 构建容器 2 替换jar包
+     * @param deployRequest 部署参数
      * @param projectIdTemp 项目id
      * @param projectTemp   用于更新状态的项目对象
      * @return 是否全部成功
      */
-    private Boolean deploySync(Project project, List<Long> agentIds, Integer deployType, Long projectIdTemp, Project projectTemp) {
+    private Boolean deploySync(Project project, DeployRequest deployRequest, Long projectIdTemp, Project projectTemp) {
         boolean allSuccess = true;
-        for (Long agentId : agentIds) {
+        for (Long agentId : deployRequest.getAgentIds()) {
             ProjectDeployRecord record = createDeployRecord(projectIdTemp, agentId, project.getName());
             boolean success;
-            if (deployType == 1) {
+            if (deployRequest.getDeployType() == 1) {
                 success = deployWithDockerfile(project, agentId, record.getId());
             } else {
                 success = redeployJarOnly(project, agentId, record.getId());
@@ -250,6 +249,13 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
                 allSuccess = false;
                 log.warn("同步部署失败，终止后续部署: projectId={}, agentId={}", projectIdTemp, agentId);
                 break;
+            }
+            if (deployRequest.getInterval() > 0 && deployRequest.getAgentIds().size() > 1) {
+                try {
+                    Thread.sleep(deployRequest.getInterval() * 1000L);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
             }
         }
         // 更新项目状态
