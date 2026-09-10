@@ -11,7 +11,6 @@ import com.bszn.mq.MsgResult;
 import com.bszn.ops.file.IFileService;
 import com.bszn.ops.file.SyncFileParam;
 import com.bszn.system.common.exception.BusinessException;
-import com.bszn.system.common.util.SecurityUtils;
 import com.bszn.utils.IpUtil;
 import com.bszn.utils.ScriptUtil;
 import jakarta.annotation.Resource;
@@ -29,6 +28,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 
 /**
  * @author wzh
@@ -61,13 +61,68 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
     @Resource
     IFileService fileService;
 
+    @Resource(name = "newCachedThreadPool")
+    private ExecutorService executorService;
+
     @SneakyThrows
     @Override
     public CompletableFuture<Boolean> deploy(DeployRequest deployRequest) {
         if (deployRequest.getProjectId() == null && StringUtils.isEmpty(deployRequest.getProjectName())) {
             throw new BusinessException("项目ID或项目名称不能为空");
         }
-        return deploy(deployRequest.getProjectId(), deployRequest.getProjectName(), deployRequest.getAgentIds(), SecurityUtils.getUserId(), deployRequest.getDeployType());
+        Project project = getByIdOrName(deployRequest.getProjectId(), deployRequest.getProjectName());
+        if (Objects.isNull(project)) {
+            throw new BusinessException("项目不存在");
+        }
+        if (StrUtil.isEmpty(project.getDockerfileContent())) {
+            throw new BusinessException("尚未设置Dockerfile");
+        }
+        final Long projectIdTemp = project.getId();
+        // 更新状态为部署中
+        Project projectTemp = new Project();
+        projectTemp.setId(projectIdTemp);
+        projectTemp.setStatus(1);
+        this.updateById(projectTemp);
+
+        // 同步部署：顺序执行，任一失败即终止
+        if (Boolean.TRUE.equals(deployRequest.getSync())) {
+            return CompletableFuture.supplyAsync(() -> deploySync(project, deployRequest.getAgentIds(), deployRequest.getDeployType(), projectIdTemp, projectTemp), executorService);
+        }
+
+        List<CompletableFuture<Boolean>> futures = new ArrayList<>();
+        // 为每个Agent创建部署任务
+        for (int i = 0; i < deployRequest.getAgentIds().size(); i++) {
+            Long agentId = deployRequest.getAgentIds().get(i);
+            // 创建部署记录
+            ProjectDeployRecord record = createDeployRecord(projectIdTemp, agentId, project.getName());
+            // 异步执行首次部署（根据Dockerfile创建容器）
+            CompletableFuture<Boolean> future = CompletableFuture.supplyAsync(() ->
+                    deployRequest.getDeployType() == 1 ?
+                            deployWithDockerfile(project, agentId, record.getId())
+                            : redeployJarOnly(project, agentId, record.getId()), executorService);
+            futures.add(future);
+        }
+
+        // 等待所有部署完成
+        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+                .thenApply(v -> {
+                    boolean allSuccess = true;
+                    for (CompletableFuture<Boolean> future : futures) {
+                        try {
+                            if (!future.get()) {
+                                allSuccess = false;
+                            }
+                        } catch (Exception e) {
+                            log.error("获取部署结果失败", e);
+                            allSuccess = false;
+                        }
+                    }
+                    // 更新JAR包状态
+                    projectTemp.setStatus(allSuccess ? 2 : 3);
+                    this.updateById(projectTemp);
+                    log.info("部署完成: id={}, success={}", projectIdTemp, allSuccess);
+                    return allSuccess;
+                });
     }
 
     /**
@@ -169,64 +224,39 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         return projectId != null ? getById(projectId) : getOne(new LambdaQueryWrapper<Project>().eq(Project::getName, projectName));
     }
 
+
     /**
-     * 部署
+     * 同步部署：顺序执行各服务器，任一失败即终止后续部署
      *
-     * @param projectId  项目id
-     * @param agentIds   服务器id
-     * @param userId     用户id
-     * @param deployType 部署类型 1 构建容器 2 替换jar包
-     * @return 结果
+     * @param project       项目
+     * @param agentIds      服务器id列表
+     * @param deployType    部署类型 1 构建容器 2 替换jar包
+     * @param projectIdTemp 项目id
+     * @param projectTemp   用于更新状态的项目对象
+     * @return 是否全部成功
      */
-    private CompletableFuture<Boolean> deploy(Long projectId, String projectName, List<Long> agentIds, Long userId, Integer deployType) {
-        Project project = getByIdOrName(projectId, projectName);
-        if (Objects.isNull(project)) {
-            throw new BusinessException("项目不存在");
-        }
-        if (StrUtil.isEmpty(project.getDockerfileContent())) {
-            throw new BusinessException("尚未设置Dockerfile");
-        }
-        final Long projectIdTemp = project.getId();
-        // 更新状态为部署中
-        Project projectTemp = new Project();
-        projectTemp.setId(projectIdTemp);
-        projectTemp.setStatus(1);
-        this.updateById(projectTemp);
-
-        List<CompletableFuture<Boolean>> futures = new ArrayList<>();
-        // 为每个Agent创建部署任务
-        for (int i = 0; i < agentIds.size(); i++) {
-            Long agentId = agentIds.get(i);
-            // 创建部署记录
+    private Boolean deploySync(Project project, List<Long> agentIds, Integer deployType, Long projectIdTemp, Project projectTemp) {
+        boolean allSuccess = true;
+        for (Long agentId : agentIds) {
             ProjectDeployRecord record = createDeployRecord(projectIdTemp, agentId, project.getName());
-            // 异步执行首次部署（根据Dockerfile创建容器）
-            CompletableFuture<Boolean> future = CompletableFuture.supplyAsync(() ->
-                    deployType == 1 ?
-                            deployWithDockerfile(project, agentId, record.getId())
-                            : redeployJarOnly(project, agentId, record.getId()));
-            futures.add(future);
+            boolean success;
+            if (deployType == 1) {
+                success = deployWithDockerfile(project, agentId, record.getId());
+            } else {
+                success = redeployJarOnly(project, agentId, record.getId());
+            }
+            // 同步模式：一个失败即终止后续部署
+            if (!success) {
+                allSuccess = false;
+                log.warn("同步部署失败，终止后续部署: projectId={}, agentId={}", projectIdTemp, agentId);
+                break;
+            }
         }
-
-        // 等待所有部署完成
-        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
-                .thenApply(v -> {
-                    boolean allSuccess = true;
-                    for (CompletableFuture<Boolean> future : futures) {
-                        try {
-                            if (!future.get()) {
-                                allSuccess = false;
-                            }
-                        } catch (Exception e) {
-                            log.error("获取部署结果失败", e);
-                            allSuccess = false;
-                        }
-                    }
-                    // 更新JAR包状态
-                    projectTemp.setStatus(allSuccess ? 2 : 3);
-                    this.updateById(projectTemp);
-                    log.info("部署完成: id={}, success={}", projectIdTemp, allSuccess);
-                    return allSuccess;
-                });
+        // 更新项目状态
+        projectTemp.setStatus(allSuccess ? 2 : 3);
+        this.updateById(projectTemp);
+        log.info("同步部署完成: id={}, success={}", projectIdTemp, allSuccess);
+        return allSuccess;
     }
 
     /**

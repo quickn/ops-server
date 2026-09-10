@@ -1,5 +1,6 @@
 package com.bszn.base.config;
 
+import com.alibaba.ttl.threadpool.TtlExecutors;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -52,7 +53,8 @@ public class ThreadPoolConfig {
                 }
             }
         });
-        return newCachedThreadPool;
+        // 使用 TTL 包装线程池，使 TransmittableThreadLocal 能自动传递到子线程
+        return TtlExecutors.getTtlExecutorService(newCachedThreadPool);
     }
 
 }

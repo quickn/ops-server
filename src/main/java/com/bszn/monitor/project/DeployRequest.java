@@ -28,4 +28,7 @@ public class DeployRequest {
     @Schema(description = "部署方式 1:重新构建 2:直接替换jar")
     private Integer deployType = 1;
 
+    @Schema(description = "执行方式 true:同步 false:异步(默认)")
+    private Boolean sync = true;
+
 }

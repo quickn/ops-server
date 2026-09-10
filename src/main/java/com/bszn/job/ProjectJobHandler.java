@@ -25,7 +25,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 
 @Component
 @Slf4j
@@ -53,6 +56,9 @@ public class ProjectJobHandler {
 
     @Resource
     ICmdLogInfoService iCmdLogInfoService;
+
+    @Resource(name = "newCachedThreadPool")
+    ExecutorService executorService;
 
     @SneakyThrows
     @XxlJob("syncJarJobHandler")
@@ -87,37 +93,65 @@ public class ProjectJobHandler {
     public void deployJobHandler() throws Exception {
         JobContext ctx = buildJobContext();
         try {
-            CmdLogInfoSessionUtil.set(ctx.cmdLogInfo);
             String[] projectNames = ctx.projectNames;
-            CmdLogInfo cmdLogInfo = ctx.cmdLogInfo;
+            // 不同 projectName 并行部署
+            List<CompletableFuture<Void>> futures = new ArrayList<>();
             for (String projectName : projectNames) {
-                DeployRequest deployRequest = new DeployRequest();
-                deployRequest.setDeployType(ctx.deployType);
-                deployRequest.setProjectName(projectName);
-                List<DockerContainer> list = iDockerContainerService.getByServiceIdAndDockerName(ctx.cmdLogInfo.getServiceId(), projectName);
-                if (CollectionUtils.isEmpty(list)) {
-                    log.warn("docker 不存在 projectName:{}", projectName);
-                    cmdLogInfo.setIsSuccess(false);
-                    cmdLogInfo.setResult("docker 不存在 projectName:" + projectName);
-                    iCmdLogInfoService.save(cmdLogInfo);
-                    cmdLogInfo.setId(cmdLogInfo.getId() + 1);
-                    continue;
-                }
-                List<Long> agentIds = Lists.newArrayList();
-                for (DockerContainer dockerContainer : list) {
-                    agentIds.add(dockerContainer.getAgentId());
-                }
-                deployRequest.setAgentIds(agentIds);
-                iProjectService.deploy(deployRequest);
-                if (ctx.jobConfig.getInterval() > 0 && projectNames.length > 1) {
+                futures.add(CompletableFuture.runAsync(() -> deployProject(ctx, projectName), executorService));
+            }
+            // 等待所有项目部署完成
+            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+        } catch (Exception e) {
+            log.error("执行异常", e);
+        }
+    }
+
+    /**
+     * 部署单个项目
+     *
+     * @param ctx         任务上下文
+     * @param projectName 项目名称
+     */
+    private void deployProject(JobContext ctx, String projectName) {
+        try {
+            // 每个项目使用独立的 CmdLogInfo 副本，避免并发修改共享对象
+            CmdLogInfo cmdLogInfo = ctx.cmdLogInfo;
+            CmdLogInfoSessionUtil.set(cmdLogInfo);
+            DeployRequest deployRequest = new DeployRequest();
+            deployRequest.setDeployType(ctx.deployType);
+            deployRequest.setProjectName(projectName);
+            deployRequest.setSync(ctx.sync);
+            List<DockerContainer> list = iDockerContainerService.getByServiceIdAndDockerName(ctx.cmdLogInfo.getServiceId(), projectName);
+            if (CollectionUtils.isEmpty(list)) {
+                log.warn("docker 不存在 projectName:{}", projectName);
+                cmdLogInfo.setIsSuccess(false);
+                cmdLogInfo.setResult("docker 不存在 projectName:" + projectName);
+                iCmdLogInfoService.save(cmdLogInfo);
+                return;
+            }
+            List<Long> agentIds = Lists.newArrayList();
+            for (DockerContainer dockerContainer : list) {
+                agentIds.add(dockerContainer.getAgentId());
+            }
+            deployRequest.setAgentIds(agentIds);
+            iProjectService.deploy(deployRequest);
+            if (!deployRequest.getSync()) {
+                if (ctx.jobConfig.getInterval() > 0 && projectNamesLength(ctx) > 1) {
                     Thread.sleep(ctx.jobConfig.getInterval() * 1000L);
                 }
             }
         } catch (Exception e) {
-            log.error("执行异常", e);
+            log.error("部署项目异常 projectName:{}", projectName, e);
         } finally {
             CmdLogInfoSessionUtil.remove();
         }
+    }
+
+    /**
+     * 获取项目名称数量
+     */
+    private int projectNamesLength(JobContext ctx) {
+        return ctx.projectNames != null ? ctx.projectNames.length : 0;
     }
 
     /**
@@ -137,6 +171,7 @@ public class ProjectJobHandler {
         JSONObject jsonObject = null;
         String msgType = "cmd";
         Integer deployType = 2;
+        Boolean sync = true;
 
         String[] projectNames = {};
 
@@ -144,6 +179,7 @@ public class ProjectJobHandler {
             jsonObject = JSONObject.parseObject(jobParam);
             msgType = (String) jsonObject.getOrDefault("type", "cmd");
             deployType = (Integer) jsonObject.getOrDefault("deployType", 2);
+            sync = (Boolean) jsonObject.getOrDefault("sync", true);
             String projectNamesStr = jsonObject.getString("projectNames");
             if (StringUtils.isEmpty(projectNamesStr)) {
                 throw new BusinessException("jobConfig 不存在");
@@ -155,6 +191,7 @@ public class ProjectJobHandler {
         JobContext ctx = new JobContext();
         ctx.jobConfig = jobConfig;
         ctx.deployType = deployType;
+        ctx.sync = sync;
         ctx.projectNames = projectNames;
         ctx.cmdLogInfo = CmdLogInfo.builder().agentId(jobConfig.getAgentId()).command(jobConfig.getCommand())
                 .script(jobConfig.getScript()).msgType(msgType)
@@ -176,6 +213,7 @@ public class ProjectJobHandler {
         private JobConfig jobConfig;
         private String[] projectNames;
         private Integer deployType;
+        private Boolean sync;
         private CmdLogInfo cmdLogInfo;
     }
 
