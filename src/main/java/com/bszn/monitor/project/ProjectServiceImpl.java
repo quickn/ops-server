@@ -90,16 +90,29 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
         }
 
         List<CompletableFuture<Boolean>> futures = new ArrayList<>();
+        int interval = deployRequest.getInterval() == null ? 0 : deployRequest.getInterval();
+        // 异步部署：interval > 0 且多台服务器时，按 interval 错开各服务器的部署时间
+        boolean stagger = interval > 0 && deployRequest.getAgentIds().size() > 1;
         // 为每个Agent创建部署任务
         for (int i = 0; i < deployRequest.getAgentIds().size(); i++) {
             Long agentId = deployRequest.getAgentIds().get(i);
             // 创建部署记录
             ProjectDeployRecord record = createDeployRecord(projectIdTemp, agentId, project.getName());
-            // 异步执行首次部署（根据Dockerfile创建容器）
-            CompletableFuture<Boolean> future = CompletableFuture.supplyAsync(() ->
-                    deployRequest.getDeployType() == 1 ?
-                            deployWithDockerfile(project, agentId, record.getId())
-                            : redeployJarOnly(project, agentId, record.getId()), executorService);
+            final int index = i;
+            // 异步执行首次部署（根据Dockerfile创建容器），按 interval 错开启动时间
+            CompletableFuture<Boolean> future = CompletableFuture.supplyAsync(() -> {
+                if (stagger && index > 0) {
+                    try {
+                        Thread.sleep((long) index * interval * 1000L);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new RuntimeException(e);
+                    }
+                }
+                return deployRequest.getDeployType() == 1 ?
+                        deployWithDockerfile(project, agentId, record.getId())
+                        : redeployJarOnly(project, agentId, record.getId());
+            }, executorService);
             futures.add(future);
         }
 
