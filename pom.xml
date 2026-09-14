@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.bszn</groupId>
-    <artifactId>bs-monitor</artifactId>
+    <artifactId>ops-server</artifactId>
     <version>1.0.0</version>
     <description>基于 SpringBoot3 快速构建的权限管理系统</description>
 
@@ -300,12 +300,12 @@
             <version>${netty.version}</version>
         </dependency>
 
-        <!--     <dependency>
-                 <groupId>com.alibaba.boot</groupId>
-                 <artifactId>nacos-config-spring-boot-starter</artifactId>
-                 <version>0.3.0-RC</version>
-             </dependency>
-     -->
+<!--        <dependency>
+            <groupId>com.alibaba.boot</groupId>
+            <artifactId>nacos-config-spring-boot-starter</artifactId>
+            <version>0.3.0-RC</version>
+        </dependency>
+        -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-devtools</artifactId>
@@ -343,7 +343,7 @@
     </dependencies>
 
     <build>
-        <finalName>bs-monitor</finalName>
+        <finalName>ops-server</finalName>
         <plugins>
             <!--
                 ============================================================

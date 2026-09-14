@@ -3,11 +3,11 @@ server:
 nacos:
   config:
     server-addr: bs-nacos:8848
+    context-path: /nacos
     encode: UTF-8
     #配置自动刷新
     refresh-enabled: true
-    data-id: ${spring.application.name}-${spring.profiles.active}.yaml
-    #data-ids: ${spring.application.name}.yaml,${spring.application.name}-${spring.profiles.active}.yaml
+    data-id: ${spring.application.name}.yaml
     type: yaml
     auto-refresh: true
     group: DEFAULT_GROUP
@@ -39,7 +39,7 @@ spring:
     allow-circular-references: true
     allow-bean-definition-overriding: true
   application:
-    name: bs-monitor
+    name: ops-server
   mvc:
     async:
       request-timeout: 20000
