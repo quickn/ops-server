@@ -111,7 +111,7 @@ public class LogServiceImpl implements ILogService {
                         String lsCmd = String.format(
                                 "find %s -maxdepth 1 -name \"%s-*.log\" -newermt \"%s %s\" ! -newermt \"%s %s:59\" -printf \"%%f\\\\n\"", logPath,
                                 logCmdForm.getLogLevel(), logCmdForm.getCreateDate(), startHm, logCmdForm.getCreateDate(), endHm);
-                        MsgResult msgResult = iMsgService.sendCMDMsgAndRawResponse(agentConfig.getId(), command, lsCmd, logCmdForm.getTimeout());
+                        MsgResult msgResult = iMsgService.sendCMDMsgAndRawResponse(agentConfig.getId(), command, lsCmd, logCmdForm.getTimeout(), logCmdForm.getDockerName());
                         if (StringUtils.isEmpty(msgResult.getData())) {
                             throw new BusinessException("未找到日志文件");
                         }
@@ -151,10 +151,10 @@ public class LogServiceImpl implements ILogService {
                 if (logCmdForm.isOnlyCount()) {
                     cmd.append("|wc -l");
                 }
-                logs.append(iMsgService.sendCMDMsgAndRawResponse(agentConfig.getId(), command, cmd.toString(), logCmdForm.getTimeout()));
+                logs.append(iMsgService.sendCMDMsgAndRawResponse(agentConfig.getId(), command, cmd.toString(), logCmdForm.getTimeout(), logCmdForm.getDockerName()));
                 logs.append("\n");
             } else {
-                logs.append(iMsgService.sendCMDMsgAndRawResponse(agentConfig.getId(), command, logCmdForm.getCmd(), logCmdForm.getTimeout()));
+                logs.append(iMsgService.sendCMDMsgAndRawResponse(agentConfig.getId(), command, logCmdForm.getCmd(), logCmdForm.getTimeout(), logCmdForm.getDockerName()));
             }
         }
         return logs.toString();
@@ -177,7 +177,7 @@ public class LogServiceImpl implements ILogService {
             cmd.append(" ");
         }
         cmd.append("'" + logCmdForm.getKeyword() + "'");
-        return iMsgService.sendCMDMsgAndRawResponse(logCmdForm.getAgentId(), "日志详情", cmd.toString(), logCmdForm.getTimeout());
+        return iMsgService.sendCMDMsgAndRawResponse(logCmdForm.getAgentId(), "日志详情", cmd.toString(), logCmdForm.getTimeout(),logCmdForm.getDockerName());
     }
 
 }

@@ -219,7 +219,8 @@ xxl:
     executor:
       appname: ${spring.application.name}
       address:
-      ip:
+      # 执行器IP，留空则自动探测本机网卡地址；容器/host网络等 hostname 无法解析的环境可通过环境变量 XXL_JOB_EXECUTOR_IP 显式指定
+      ip: ${XXL_JOB_EXECUTOR_IP:}
       port: 39999
       logpath: /home/park/xxl-job/jobhandler
       logretentiondays: 30

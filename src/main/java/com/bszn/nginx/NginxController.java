@@ -21,7 +21,7 @@ public class NginxController {
 
 
     @PostMapping("/test")
-    @Operation(summary = "测试配置文件")
+    @Operation(summary = "测试Nginx文件")
     @ResponseBody
     public Result test(@RequestBody FileForm fileForm) {
         if (Vali.isEpt(fileForm.getFileContent())) {
@@ -37,7 +37,7 @@ public class NginxController {
         stringBuffer.append(confText);
         stringBuffer.append("\n");
         stringBuffer.append("NGINX_TEST_CONFIG");
-        String str = iMsgService.sendCMDMsgAndResponse(fileForm.getAgentId(), "", stringBuffer.toString());
+        String str = iMsgService.sendCMDMsgAndResponse(fileForm.getAgentId(), "测试Nginx文件", stringBuffer.toString());
         if (str.contains("语法错误") || str.contains("test failed")) {
             return Result.failed(str);
         }
@@ -45,14 +45,14 @@ public class NginxController {
     }
 
     @PostMapping("/reload")
-    @Operation(summary = "重新加载配置文件")
+    @Operation(summary = "重新加载Nginx文件")
     @ResponseBody
     public Result reload(@RequestBody FileForm fileForm) {
         Result result = test(fileForm);
         if (result.getCode().equals(Result.failed().getCode())) {
             return result;
         }
-        String str = iMsgService.sendCMDMsgAndResponse(fileForm.getAgentId(), "重新加载配置文件", "sudo /usr/local/nginx/sbin/nginx -s reload");
+        String str = iMsgService.sendCMDMsgAndResponse(fileForm.getAgentId(), "重新加载Nginx文件", "sudo /usr/local/nginx/sbin/nginx -s reload");
         return Result.success(str);
     }
 

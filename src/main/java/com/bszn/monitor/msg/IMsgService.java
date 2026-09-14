@@ -28,8 +28,10 @@ public interface IMsgService {
      * @param timeout
      * @return
      */
-    default MsgResult sendCMDMsgAndRawResponse(Long agentId, String command, String script, Integer timeout) {
-        return sendMsgAndResponse(agentId, command, script, MonitorMsgType.CMD, timeout);
+    default MsgResult sendCMDMsgAndRawResponse(Long agentId, String command, String script, Integer timeout, String remark) {
+        CmdLogInfo cmdLogInfo = CmdLogInfo.builder().agentId(agentId).command
+                (command).script(script).msgType(MonitorMsgType.CMD).timeout(timeout).remark(remark).build();
+        return sendMsgAndResponse(cmdLogInfo);
     }
 
     default MsgResult sendTaskMsgResponse(Long agentId, String command, String msg, Integer timeout) {
