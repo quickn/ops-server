@@ -65,6 +65,11 @@ public class UserBO {
     private String roleNames;
 
     /**
+     * 登录掩码(IP白名单)
+     */
+    private String loginMask;
+
+    /**
      * 创建时间
      */
     @JsonFormat(pattern = "yyyy-MM-dd")

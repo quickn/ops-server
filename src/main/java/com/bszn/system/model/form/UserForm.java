@@ -53,4 +53,7 @@ public class UserForm {
     @NotEmpty(message = "用户角色不能为空")
     private List<Long> roleIds;
 
+    @Schema(description="登录掩码(IP白名单，多个以逗号分隔，支持IP、通配符、网段、区间，为空表示不限制)")
+    private String loginMask;
+
 }

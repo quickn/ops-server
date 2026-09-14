@@ -625,6 +625,7 @@ CREATE TABLE `sys_user`  (
   `deleted` tinyint(1) NULL DEFAULT 0 COMMENT '逻辑删除标识(0:未删除;1:已删除)',
   `create_time` datetime NULL DEFAULT NULL COMMENT '创建时间',
   `update_time` datetime NULL DEFAULT NULL COMMENT '更新时间',
+  `login_mask` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '登录掩码(IP白名单，多个以逗号分隔，支持IP、通配符、网段、区间，为空表示不限制)',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `login_name`(`username` ASC) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 288 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '用户信息表' ROW_FORMAT = DYNAMIC;

@@ -46,6 +46,9 @@ public class UserPageVO {
     @Schema(description="角色名称，多个使用英文逗号(,)分割")
     private String roleNames;
 
+    @Schema(description="登录掩码(IP白名单)")
+    private String loginMask;
+
     @Schema(description="创建时间")
     @JsonFormat(pattern = "yyyy-MM-dd")
     private Date createTime;

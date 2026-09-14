@@ -11,6 +11,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.bszn.system.common.constant.SecurityConstants;
 import com.bszn.system.common.constant.SystemConstants;
 import com.bszn.system.converter.UserConverter;
+import com.bszn.system.common.util.LoginMaskUtils;
 import com.bszn.system.common.util.SecurityUtils;
 import com.bszn.system.mapper.SysUserMapper;
 import com.bszn.system.model.dto.UserAuthInfo;
@@ -110,6 +111,9 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         long count = this.count(new LambdaQueryWrapper<SysUser>().eq(SysUser::getUsername, username));
         Assert.isTrue(count == 0, "用户名已存在");
 
+        // 校验登录掩码格式
+        Assert.isTrue(LoginMaskUtils.isValid(userForm.getLoginMask()), "登录掩码格式不正确");
+
         // 实体转换 form->entity
         SysUser entity = userConverter.form2Entity(userForm);
 
@@ -145,6 +149,9 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
                 .ne(SysUser::getId, userId)
         );
         Assert.isTrue(count == 0, "用户名已存在");
+
+        // 校验登录掩码格式
+        Assert.isTrue(LoginMaskUtils.isValid(userForm.getLoginMask()), "登录掩码格式不正确");
 
         // form -> entity
         SysUser entity = userConverter.form2Entity(userForm);

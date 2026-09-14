@@ -62,6 +62,11 @@ public class SysUser extends BaseEntity {
     private String email;
 
     /**
+     * 登录掩码(IP白名单，多个以逗号分隔，支持IP、通配符、网段、区间，为空表示不限制)
+     */
+    private String loginMask;
+
+    /**
      * 逻辑删除标识(0:未删除;1:已删除)
      */
     private Integer deleted;

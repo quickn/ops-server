@@ -63,4 +63,9 @@ public class UserFormBO {
      */
     private List<Long> roleIds;
 
+    /**
+     * 登录掩码(IP白名单)
+     */
+    private String loginMask;
+
 }

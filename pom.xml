@@ -462,6 +462,15 @@
                         <option>-keep class com.bszn.base.sql.** { *; }</option>
 
                         <!--
+                            7.1) 保留 SpEL 权限校验方法名：@PreAuthorize("@ss.hasPerm('sys:user:edit')")。
+                                 方法名写在注解字符串里，ProGuard 静态分析看不到该引用，会把它重命名，
+                                 导致运行时 Failed to evaluate expression '@ss.hasPerm(...)'。
+                                 bean 名 "ss" 来自 @Component("ss") 字符串常量本身不会被混淆，
+                                 但 hasPerm 方法名必须一并保留，故整类保留。
+                        -->
+                        <option>-keep class com.bszn.system.security.service.PermissionService { *; }</option>
+
+                        <!--
                             8) 保留方法/构造器参数名（MethodParameters 属性）。
                                项目继承 spring-boot-starter-parent，编译时带 -parameters，Spring 6.x 的
                                StandardReflectionParameterNameDiscoverer 正是靠这个属性取参数名。

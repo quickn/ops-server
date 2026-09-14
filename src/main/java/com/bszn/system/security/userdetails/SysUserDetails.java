@@ -37,6 +37,8 @@ public class SysUserDetails implements UserDetails {
 
     private Integer dataScope;
 
+    private String loginMask;
+
     public SysUserDetails() {
 
     }
@@ -59,6 +61,7 @@ public class SysUserDetails implements UserDetails {
         this.perms = user.getPerms();
         this.deptId = user.getDeptId();
         this.dataScope = user.getDataScope();
+        this.loginMask = user.getLoginMask();
     }
 
     public Long getUserId() {

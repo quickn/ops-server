@@ -2,17 +2,20 @@ package com.bszn.system.controller;
 
 import cn.hutool.core.util.StrUtil;
 import com.bszn.system.common.constant.SecurityConstants;
+import com.bszn.system.common.exception.BusinessException;
 import com.bszn.system.common.result.Result;
+import com.bszn.system.common.util.LoginMaskUtils;
 import com.bszn.system.common.util.RequestUtils;
-import com.bszn.system.security.captcha.EasyCaptchaService;
 import com.bszn.system.model.dto.CaptchaResult;
 import com.bszn.system.model.dto.LoginResult;
 import com.bszn.system.security.JwtTokenManager;
+import com.bszn.system.security.captcha.EasyCaptchaService;
+import com.bszn.system.security.userdetails.SysUserDetails;
 import io.jsonwebtoken.Claims;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -43,13 +46,23 @@ public class AuthController {
     @McpTool(name = "login", description = "登录")
     public Result<LoginResult> login(
             @Parameter(description = "用户名", example = "admin") @RequestParam String username,
-            @Parameter(description = "密码", example = "123456") @RequestParam String password
+            @Parameter(description = "密码", example = "123456") @RequestParam String password,
+            HttpServletRequest request
     ) {
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
                 username.toLowerCase().trim(),
                 password
         );
         Authentication authentication = authenticationManager.authenticate(authenticationToken);
+
+        // 校验登录掩码(IP白名单)
+        SysUserDetails userDetails = (SysUserDetails) authentication.getPrincipal();
+        String clientIp = RequestUtils.getClientIp(request);
+        if (!LoginMaskUtils.matches(clientIp, userDetails.getLoginMask())) {
+            throw new BusinessException("当前登录IP[" + clientIp + "]不在登录掩码允许范围内，禁止登录");
+        }
+        log.info("用户[{}]登录成功 登录IP{}", userDetails.getUsername(), clientIp);
+
         // 生成token
         String accessToken = jwtTokenManager.createToken(authentication);
         LoginResult loginResult = LoginResult.builder()

@@ -32,4 +32,6 @@ public class UserAuthInfo {
 
     private Integer dataScope;
 
+    private String loginMask;
+
 }
