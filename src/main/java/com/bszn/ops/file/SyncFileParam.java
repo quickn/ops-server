@@ -37,4 +37,9 @@ public class SyncFileParam {
      */
     private Integer syncType;
 
+
+    private String remark;
+
+    private Integer timeout = 300;
+
 }

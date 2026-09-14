@@ -4,6 +4,7 @@ import com.bszn.monitor.agent.Agent;
 import com.bszn.monitor.agent.AgentQuery;
 import com.bszn.monitor.agent.AgentService;
 import com.bszn.monitor.agent.AgentVo;
+import com.bszn.monitor.cmdlog.CmdLogInfo;
 import com.bszn.monitor.msg.IMsgService;
 import com.bszn.system.common.exception.BusinessException;
 import jakarta.annotation.Resource;
@@ -87,8 +88,11 @@ public class FileServiceImpl implements IFileService {
                     user.trim(),
                     jumpServerAgent.getRemoteIp().trim(),
                     targetPath.trim() + File.separator);
-            result.append(msgService.sendCMDMsgAndResponse(syncFileParam.getSourceAgentId(), "跳板机同步", rsyncCmd, 300))
-                    .append(" === 第一段结果集结束 === ");
+            CmdLogInfo cmdLogInfo = CmdLogInfo.builder().agentId(syncFileParam.getSourceAgentId())
+                    .command("跳板机同步")
+                    .script(rsyncCmd).remark(syncFileParam.getRemark())
+                    .timeout(syncFileParam.getTimeout()).build();
+            result.append(msgService.sendMsgAndResponse(cmdLogInfo).getData()).append(" === 第一段结果集结束 === ");
         }
         AgentQuery agentQuery = new AgentQuery(jumpServerAgent.getServiceId());
         agentQuery.setIsJumpServer(false);
@@ -110,7 +114,11 @@ public class FileServiceImpl implements IFileService {
                     command.append(" && ");
                 }
             }
-            result.append(msgService.sendCMDMsgAndResponse(jumpServerAgent.getId(), "跳板机同步", command.toString(), 120));
+            CmdLogInfo cmdLogInfo = CmdLogInfo.builder().agentId(jumpServerAgent.getId())
+                    .command("跳板机同步")
+                    .script(command.toString()).remark(syncFileParam.getRemark())
+                    .timeout(syncFileParam.getTimeout()).build();
+            result.append(msgService.sendMsgAndResponse(cmdLogInfo).getData());
             log.info("同步结果：{}", result);
         }
         return true;
