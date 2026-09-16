@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration debug="false" scan="true" scanPeriod="30 seconds">
+
+    <contextName>nacos</contextName>
+
+    <!--注意：不能用反斜杠\，否则路径识别不出来 -->
+
+    <!--日志格式 时间+级别+线程+类名+方法名+信息 -->
+    <property name="log.pattern"
+              value="[%X{TRACE_ID}] %d{yyyy-MM-dd HH:mm:ss} [%p] [%t] %c [%method] %msg%n"/>
+
+    <springProperty scope="context" name="log.path" source="logging.path" defaultValue="./logs"/>
+    <springProperty scope="context" name="maxHistory" source="logging.maxHistory" defaultValue="31"/>
+    <springProperty scope="context" name="maxFileSize" source="logging.maxFileSize" defaultValue="100MB"/>
+    <springProperty scope="context" name="totalSizeCap" source="logging.totalSizeCap" defaultValue="31GB"/>
+
+    <!-- 不带彩色的日志在控制台输出时候的设置 -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <!-- 格式化输出：%d表示日期，%thread表示线程名，%-5level：级别从左显示5个字符宽度%msg：日志消息，%n是换行符-->
+            <pattern>${log.pattern}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 日志记录器，日期滚动记录 -->
+    <appender name="FILEERROR" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!-- 正在记录的日志文件的路径及文件名 -->
+        <file>${log.path}/error.log</file>
+        <!-- 日志记录器的滚动策略，按日期，按大小记录 -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <!-- 归档的日志文件的路径，例如今天是2013-12-21日志，当前写的日志文件路径为file节点指定，可以将此文件与file指定文件路径设置为不同路径，从而将当前日志文件或归档日志文件置不同的目录。
+            而2013-12-21的日志文件在由fileNamePattern指定。%d{yyyy-MM-dd}指定日期格式，%i指定索引 -->
+            <fileNamePattern>${log.path}/error/error-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>${maxFileSize}</maxFileSize>
+            <maxHistory>${maxHistory}</maxHistory>
+            <!--每个文件最多100MB，保留15天的历史记录，但最多5GB-->
+            <totalSizeCap>${totalSizeCap}</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <!-- 追加方式记录日志 -->
+        <append>true</append>
+        <!-- 日志文件的格式 -->
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>===%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger Line:%-3L - %msg%n</pattern>
+            <charset>utf-8</charset>
+        </encoder>
+        <!-- 此日志文件只记录error级别的 与 info日志分离 -->
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>error</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+    </appender>
+
+    <!-- 日志记录器，日期滚动记录 -->
+    <appender name="FILEINFO" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!-- 正在记录的日志文件的路径及文件名 -->
+        <file>${log.path}/info.log</file>
+        <!-- 日志记录器的滚动策略，按日期，按大小记录 -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <!-- 归档的日志文件的路径，例如今天是2013-12-21日志，当前写的日志文件路径为file节点指定，可以将此文件与file指定文件路径设置为不同路径，从而将当前日志文件或归档日志文件置不同的目录。
+            而2013-12-21的日志文件在由fileNamePattern指定。%d{yyyy-MM-dd}指定日期格式，%i指定索引 -->
+            <fileNamePattern>${log.path}/info/info-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>${maxFileSize}</maxFileSize>
+            <maxHistory>${maxHistory}</maxHistory>
+            <!--每个文件最多100MB，保留15天的历史记录，但最多5GB-->
+            <totalSizeCap>${totalSizeCap}</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <!-- 追加方式记录日志 -->
+        <append>true</append>
+        <!-- 日志文件的格式 -->
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>${log.pattern}</pattern>
+            <charset>utf-8</charset>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
+    <!--log4jdbc -->
+    <logger name="jdbc.sqltiming" level="error"/>
+    <logger name="com.ibatis.common.jdbc.SimpleDataSource" level="error"/>
+    <logger name="com.ibatis.common.jdbc.ScriptRunner" level="error"/>
+    <logger name="com.ibatis.sqlmap.engine.impl.SqlMapClientDelegate" level="error"/>
+    <logger name="java.sql.Connection" level="error"/>
+    <logger name="java.sql.Statement" level="error"/>
+    <logger name="java.sql.PreparedStatement" level="error"/>
+    <logger name="java.sql.ResultSet" level="error"/>
+    <logger name="org.springframework" level="error"/>
+    <logger name="com.alibaba.nacos.client.naming" level="error"/>
+    <root level="info">
+        <appender-ref ref="FILEERROR"/>
+        <appender-ref ref="FILEINFO"/>
+    </root>
+
+</configuration>

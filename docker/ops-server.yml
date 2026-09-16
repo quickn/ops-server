@@ -1,0 +1,78 @@
+version: '3'
+services:
+  ops-admin:
+    build:
+      context: ${contextPath}/docker/ops-admin
+      dockerfile: ./Dockerfile
+      args:
+        contextPath: ${contextPath}
+        profileActive: ${profileActive}
+        uid: ${uid}
+    ports:
+      - 8989:8989
+    extra_hosts:
+      nacos-server: ${nacosServer}
+      mysql-server: ${mysqlServer}
+      redis-server: ${redisServer}
+      rabbitmq-server: ${rabbitmqServer}
+    container_name: ops-admin
+    network_mode: "host"
+    hostname: ops-admin
+    image: ops-admin
+    restart: always
+    volumes:
+      - ${logPath}/ops-admin:${logPath}
+      - ${contextPath}/docker/config:${contextPath}/config
+      - /etc/timezone:/etc/timezone
+      - /etc/localtime:/etc/localtime
+    logging:
+      driver: json-file
+      options:
+        max-size: "1024m"
+        max-file: "5"
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 200M
+  ops-receiver:
+    build:
+      context: ${contextPath}/docker/ops-receiver/
+      dockerfile: ./Dockerfile
+      args:
+        contextPath: ${contextPath}
+        profileActive: ${profileActive}
+        uid: ${uid}
+    ports:
+      - 9999:9999
+    extra_hosts:
+      nacos-server: ${nacosServer}
+      mysql-server: ${mysqlServer}
+      redis-server: ${redisServer}
+      rabbitmq-server: ${rabbitmqServer}
+    container_name: ops-receiver
+    network_mode: "host"
+    hostname: ops-receiver
+    image: ops-receiver
+    restart: always
+    volumes:
+      - ${logPath}/ops-receiver:${logPath}
+      - ${contextPath}/docker/config:${contextPath}/config
+      - /etc/timezone:/etc/timezone
+      - /etc/localtime:/etc/localtime
+    logging:
+      driver: json-file
+      options:
+        max-size: "1024m"
+        max-file: "5"
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 200M

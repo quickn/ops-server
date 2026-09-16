@@ -1,0 +1,31 @@
+package com.cloud.ops.project;
+
+import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.cloud.base.sql.IQuery;
+import com.cloud.base.sql.PageForm;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Data;
+
+/**
+ * Created by Liuyun on 2023-09-09 11:51
+ **/
+@Data
+public class ProjectDto extends PageForm<Project> implements IQuery {
+
+    @Schema(description = "项目名")
+    private String name;
+
+    @Schema(description = "全等项目名")
+    private String nameEq;
+
+    /**
+     * 链式wrapper构建
+     */
+    public LambdaQueryWrapper<Project> buildLambda() {
+        return Wrappers.<Project>lambdaQuery()
+                .like(StrUtil.isNotEmpty(name), Project::getName, name).eq(StrUtil.isNotEmpty(nameEq), Project::getName, nameEq).orderByDesc(Project::getUpdateTime);
+    }
+
+}
