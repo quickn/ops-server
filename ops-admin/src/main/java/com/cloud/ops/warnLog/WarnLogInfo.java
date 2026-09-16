@@ -1,7 +1,7 @@
 package com.cloud.ops.warnLog;
 
 import com.cloud.base.ServiceBaseEntity;
-import com.cloud.server.StaticKeys;
+import com.cloud.ops.server.StaticKeys;
 import lombok.Data;
 
 @Data

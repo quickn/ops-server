@@ -1,4 +1,4 @@
-package com.cloud.job;
+package com.cloud.ops.job;
 
 import com.alibaba.fastjson2.JSONObject;
 import com.cloud.ops.agent.AgentService;

@@ -1,4 +1,4 @@
-package com.cloud.job;
+package com.cloud.ops.job;
 
 import com.cloud.ops.heath.ApiHeathMonitorService;
 import com.xxl.job.core.handler.annotation.XxlJob;

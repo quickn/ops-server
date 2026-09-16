@@ -2,7 +2,7 @@ package com.cloud.ops;
 
 import com.cloud.ops.msg.CmdCacheMsgService;
 import com.cloud.ops.msg.IMsgService;
-import com.cloud.mq.MsgResult;
+import com.cloud.ops.mq.MsgResult;
 import com.cloud.system.common.result.Result;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;

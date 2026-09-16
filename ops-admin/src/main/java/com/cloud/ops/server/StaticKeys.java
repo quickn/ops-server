@@ -1,4 +1,4 @@
-package com.cloud.server;
+package com.cloud.ops.server;
 
 import com.cloud.ops.email.MailConfig;
 

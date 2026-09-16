@@ -7,7 +7,7 @@ import com.cloud.ops.agent.Agent;
 import com.cloud.ops.agent.AgentService;
 import com.cloud.ops.cmdlog.CmdLogInfo;
 import com.cloud.ops.msg.IMsgService;
-import com.cloud.mq.MsgResult;
+import com.cloud.ops.mq.MsgResult;
 import com.cloud.ops.file.IFileService;
 import com.cloud.ops.file.SyncFileParam;
 import com.cloud.system.common.exception.BusinessException;

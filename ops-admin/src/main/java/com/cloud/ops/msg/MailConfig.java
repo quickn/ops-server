@@ -1,4 +1,4 @@
-package com.cloud.msg;
+package com.cloud.ops.msg;
 
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;

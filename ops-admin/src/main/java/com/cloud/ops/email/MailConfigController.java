@@ -2,8 +2,8 @@ package com.cloud.ops.email;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.cloud.ops.warnLog.WarnLogInfoService;
-import com.cloud.msg.WarnMailUtil;
-import com.cloud.server.StaticKeys;
+import com.cloud.ops.msg.WarnMailUtil;
+import com.cloud.ops.server.StaticKeys;
 import com.cloud.system.common.result.Result;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

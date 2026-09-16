@@ -1,9 +1,9 @@
 package com.cloud.ops.msg;
 
 
-import com.cloud.constant.MonitorMsgType;
+import com.cloud.ops.constant.MonitorMsgType;
 import com.cloud.ops.cmdlog.CmdLogInfo;
-import com.cloud.mq.MsgResult;
+import com.cloud.ops.mq.MsgResult;
 
 public interface IMsgService {
 

@@ -1,4 +1,4 @@
-package com.cloud.mq;
+package com.cloud.ops.mq;
 
 import lombok.Data;
 

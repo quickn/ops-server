@@ -1,4 +1,4 @@
-package com.cloud.msg;
+package com.cloud.ops.msg;
 
 import java.util.HashMap;
 import java.util.Map;

@@ -119,14 +119,31 @@
 
     </dependencies>
 
+
     <build>
-        <!-- 产物名与 docker/monitor-collector/Dockerfile 中的 monitor-collector.jar 保持一致 -->
-        <finalName>monitor-collector</finalName>
+        <finalName>${project.artifactId}</finalName>
+        <resources>
+            <resource>
+
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
         <plugins>
-            <!-- 打成可执行 jar（repackage）；ProGuard 混淆配置继承父 pom -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>${spring.boot.version}</version>
+                <configuration>
+                    <finalName>${project.build.finalName}</finalName>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

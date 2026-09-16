@@ -1,7 +1,7 @@
 package com.cloud.ops.agent;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.cloud.mq.MsgResult;
+import com.cloud.ops.mq.MsgResult;
 import com.cloud.ops.cmd.ClientMsgForm;
 
 import java.util.List;

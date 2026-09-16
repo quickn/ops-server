@@ -3,7 +3,7 @@ package com.cloud.ops.msg;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import com.cloud.base.cache.IRedisService;
-import com.cloud.mq.MsgResult;
+import com.cloud.ops.mq.MsgResult;
 import com.cloud.system.common.exception.BusinessException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -1,4 +1,4 @@
-package com.cloud.msg;
+package com.cloud.ops.msg;
 
 import cn.hutool.extra.spring.SpringUtil;
 import com.cloud.ops.agent.Agent;
@@ -7,7 +7,7 @@ import com.cloud.ops.email.MailConfigService;
 import com.cloud.ops.heath.ApiHeathMonitor;
 import com.cloud.ops.warnLog.WarnLogInfo;
 import com.cloud.ops.warnLog.WarnLogInfoService;
-import com.cloud.server.StaticKeys;
+import com.cloud.ops.server.StaticKeys;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.mail.DefaultAuthenticator;
 import org.apache.commons.mail.HtmlEmail;

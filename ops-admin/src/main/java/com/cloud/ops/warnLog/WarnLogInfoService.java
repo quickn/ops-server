@@ -3,7 +3,7 @@ package com.cloud.ops.warnLog;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.cloud.ops.agent.Agent;
 import com.cloud.ops.email.MailConfig;
-import com.cloud.server.SystemInfo;
+import com.cloud.ops.system.SystemInfo;
 
 /**
  * Created by Liuyun on 2023-09-09 17:03

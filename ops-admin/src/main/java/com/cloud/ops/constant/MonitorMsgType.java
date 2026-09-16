@@ -1,4 +1,4 @@
-package com.cloud.constant;
+package com.cloud.ops.constant;
 
 public class MonitorMsgType {
     public static final String CMD = "cmd";

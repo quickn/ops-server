@@ -1,4 +1,4 @@
-package com.cloud.nginx;
+package com.cloud.ops.nginx;
 
 import com.cloud.ops.msg.IMsgService;
 import com.cloud.ops.file.FileForm;

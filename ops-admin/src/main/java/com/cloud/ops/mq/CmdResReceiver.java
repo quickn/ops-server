@@ -1,4 +1,4 @@
-package com.cloud.mq;
+package com.cloud.ops.mq;
 
 import com.cloud.ops.msg.CmdCacheMsgService;
 import com.cloud.utils.IpUtil;

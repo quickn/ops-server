@@ -1,7 +1,7 @@
-package com.cloud.mq;
+package com.cloud.ops.mq;
 
 import com.cloud.base.util.MyIdWorker;
-import com.cloud.constant.MonitorMsgType;
+import com.cloud.ops.constant.MonitorMsgType;
 import com.cloud.ops.agent.Agent;
 import com.cloud.ops.agent.AgentService;
 import com.cloud.ops.cmdlog.CmdLogInfo;

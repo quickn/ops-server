@@ -6,7 +6,7 @@ import com.cloud.ops.agent.AgentMapper;
 import com.cloud.ops.msg.IMsgService;
 import com.cloud.ops.service.ServiceInfo;
 import com.cloud.ops.service.ServiceInfoService;
-import com.cloud.mq.MsgResult;
+import com.cloud.ops.mq.MsgResult;
 import com.cloud.ops.cmd.LogCmdForm;
 import com.cloud.system.common.exception.BusinessException;
 import jakarta.annotation.Resource;
