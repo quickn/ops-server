@@ -2,7 +2,6 @@ package com.cloud.base.http;
 
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
-import com.cloud.ops.heath.ApiHeathMonitor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
@@ -38,16 +37,16 @@ public class RestUtil {
         return JSONUtil.parseObj(responseEntity.getBody());
     }
 
-    public ResponseEntity<String> post(ApiHeathMonitor apiHeathMonitor) {
+    public ResponseEntity<String> post(String url, String contentType, String param) {
         HttpHeaders headers = new HttpHeaders();
-        if ("x-www-form-urlencoded".equals(apiHeathMonitor.getContentType())) {
+        if ("x-www-form-urlencoded".equals(contentType)) {
             headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
         } else {
             headers.setContentType(MediaType.APPLICATION_JSON_UTF8);
         }
         headers.add("Accept", MediaType.APPLICATION_JSON_UTF8.toString());
-        HttpEntity<String> httpEntity = new HttpEntity<>(apiHeathMonitor.getParam(), headers);
-        return restTemplate.postForEntity(apiHeathMonitor.getApiUrl(), httpEntity, String.class);
+        HttpEntity<String> httpEntity = new HttpEntity<>(param, headers);
+        return restTemplate.postForEntity(url, httpEntity, String.class);
     }
 
     public int get(String url) {

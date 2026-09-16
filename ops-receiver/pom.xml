@@ -18,6 +18,13 @@
     </properties>
 
     <dependencies>
+        <!-- 公共基础模块：通用基础设施 + 监控公共模型（ops-admin / ops-receiver 复用） -->
+        <dependency>
+            <groupId>com.cloud</groupId>
+            <artifactId>ops-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- ========== 基础 ========== -->
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -97,19 +104,55 @@
             <version>1.6.2</version>
         </dependency>
 
-        <!--配置中心客户端-->
+        <!--
+            Nacos 配置中心客户端（已停用，勿直接恢复）
+            ============================================================
+            停用原因：
+              com.alibaba.boot:nacos-config-spring-boot-starter:0.3.0-RC 内部依赖
+              nacos-spring-context:2.1.0-RC，其 DefaultYamlConfigParse.createYaml() 使用
+              snakeyaml 1.x 才有的 new SafeConstructor() 无参构造；
+              而 Spring Boot 3.2+（本项目 3.5.13）引入的是 snakeyaml 2.4，
+              SafeConstructor 只剩 SafeConstructor(LoaderOptions) 一个构造方法，
+              于是启动阶段（EnvironmentPostProcessor）必然抛出：
+                java.lang.NoSuchMethodError:
+                org.yaml.snakeyaml.constructor.SafeConstructor: method 'void <init>()' not found
+              该 starter 早已停止维护（官方 issue 被以 not planned 关闭），升级无法修复。
+
+            影响范围：
+              该依赖虽然声明在 ops-receiver，但会随 ops-receiver 传递到 ops-admin
+              （见 ops-admin/pom.xml 对 ops-receiver 的依赖），会导致两个应用启动时都崩溃。
+
+            为何可以直接停用：
+              项目中没有使用任何 Nacos 配置中心能力（无 @NacosValue /
+              @NacosPropertySource / @NacosConfigurationProperties / @NacosConfigListener），
+              application.yml 中的配置项全部为本地配置，不依赖远程下发。
+
+            若日后确实需要 Nacos 配置中心，请改用 Spring Cloud Alibaba 方案：
+              com.alibaba.cloud:spring-cloud-starter-alibaba-nacos-config
+              + spring-cloud-alibaba-dependencies BOM
+              + spring.config.import=nacos:<dataId>.yaml
+            不要在 Spring Boot 3.2+ 下重新启用下面这个 starter。
+        -->
+        <!--
         <dependency>
             <groupId>com.alibaba.boot</groupId>
             <artifactId>nacos-config-spring-boot-starter</artifactId>
             <version>${nacos-config-spring-boot.version}</version>
         </dependency>
+        -->
 
-        <!-- 覆盖内部的 nacos-client 版本 -->
-        <dependency>
+        <!--
+            仅保留 nacos-client：
+            controller/AgentController 使用了 com.alibaba.nacos.api.model.v2.Result
+            （该类位于 nacos-client 中），需保留该依赖；
+            同时显式指定版本，覆盖其它组件传递进来的旧版本。
+            注意：nacos-client 不含任何 Spring 自动装配，不会触发配置中心的启动逻辑。
+        -->
+<!--        <dependency>
             <groupId>com.alibaba.nacos</groupId>
             <artifactId>nacos-client</artifactId>
             <version>2.3.2</version>
-        </dependency>
+        </dependency>-->
 
         <dependency>
             <groupId>com.github.xiaoymin</groupId>
@@ -136,6 +179,12 @@
                 <version>${spring.boot.version}</version>
                 <configuration>
                     <finalName>${project.build.finalName}</finalName>
+                    <!--
+                        打包双产物：
+                          * ops-receiver.jar      —— 普通 jar，供 ops-admin 作为依赖引入（与 admin 一起启动）
+                          * ops-receiver-exec.jar —— Spring Boot 可执行 jar，供独立启动
+                    -->
+                    <classifier>exec</classifier>
                 </configuration>
                 <executions>
                     <execution>

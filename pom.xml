@@ -18,6 +18,7 @@
     </parent>
 
     <modules>
+        <module>ops-common</module>
         <module>ops-admin</module>
         <module>ops-receiver</module>
     </modules>
@@ -73,7 +74,15 @@
         <!-- 必须与 proguard-base 匹配的 proguard-core 版本（proguard-base 7.5.0 对应 core 9.1.4） -->
         <proguard.core.version>9.1.4</proguard.core.version>
         <nacos-config-spring-boot.version>0.3.0-RC</nacos-config-spring-boot.version>
-
+        <!--
+            切勿在此覆盖 snakeyaml 版本（尤其不要降到 1.x）：
+            Spring Boot 3.5 的 YamlPropertySourceLoader 依赖 snakeyaml 2.x 才有的
+            org.yaml.snakeyaml.inspector.TagInspector，若把 snakeyaml.version 固定为 1.33，
+            连 application.yml 都无法解析，启动即抛：
+              java.lang.NoClassDefFoundError: org/yaml/snakeyaml/inspector/TagInspector
+            保持 Spring Boot 父 POM 默认版本（2.4）即可；
+            需要 1.x snakeyaml 的 nacos-config-spring-boot-starter 已在 ops-receiver/pom.xml 中停用。
+        -->
     </properties>
 
     <dependencies>

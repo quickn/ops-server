@@ -13,4 +13,11 @@ public class MyIdWorker {
     public static long getId() {
         return IdWorker.getId();
     }
+
+    /**
+     * 雪花算法ID（字符串形式，兼容 char(32) 类型主键）
+     */
+    public static Long getUUID() {
+        return IdWorker.getId();
+    }
 }

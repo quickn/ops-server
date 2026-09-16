@@ -15,6 +15,23 @@
 
 
     <dependencies>
+        <!-- 公共基础模块：通用基础设施（sql / mapper / util / http / spring / log 等） -->
+        <dependency>
+            <groupId>com.cloud</groupId>
+            <artifactId>ops-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!--
+            采集接收模块（ops-receiver）：以依赖方式引入，启动时与 ops-admin 一起加载其 Bean / Mapper。
+            此处使用的是 receiver 的普通 jar（非 exec 可执行包，可执行包为 ops-receiver-exec.jar）。
+        -->
+        <dependency>
+            <groupId>com.cloud</groupId>
+            <artifactId>ops-receiver</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>

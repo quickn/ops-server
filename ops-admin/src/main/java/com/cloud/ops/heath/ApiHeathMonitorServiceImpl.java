@@ -75,7 +75,7 @@ public class ApiHeathMonitorServiceImpl extends ServiceImpl<ApiHeathMonitorMappe
         ResponseEntity response = null;
         try {
             if ("post".equals(heathMonitor.getRequestMethod())) {
-                response = restUtil.post(heathMonitor);
+                response = restUtil.post(heathMonitor.getApiUrl(), heathMonitor.getContentType(), heathMonitor.getParam());
                 status = response.getStatusCode().value();
                 updateTemp.setBody(response.getBody().toString());
             } else {

@@ -6,7 +6,6 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.cloud.base.sql.annotation.*;
 import com.cloud.base.sql.enums.MySqlKeyword;
-import jodd.util.StringUtil;
 import org.apache.ibatis.builder.annotation.ProviderMethodResolver;
 import org.apache.ibatis.jdbc.SQL;
 
@@ -255,7 +254,7 @@ public class BaseProviderMethodResolver implements ProviderMethodResolver {
                 if (ignore) {
                     continue;
                 }
-                if (StringUtil.isNotEmpty(columnDb.sql()) && MySqlKeyword.APPEND.getSqlSegment().equals(sqlKeyword.getSqlSegment())) {
+                if (StringUtils.isNotEmpty(columnDb.sql()) && MySqlKeyword.APPEND.getSqlSegment().equals(sqlKeyword.getSqlSegment())) {
                     if (value != null) {
                         newMap.put(MySqlKeyword.APPEND.getSqlSegment() + i, columnDb.sql());
                         i++;
@@ -270,7 +269,7 @@ public class BaseProviderMethodResolver implements ProviderMethodResolver {
                 newMap.put(columnName, " " + sqlKeyword.getSqlSegment());
                 continue;
             }
-            if (value == null || StringUtil.isEmpty(value.toString())) {//值为空不作为查询条件
+            if (value == null || StringUtils.isEmpty(value.toString())) {//值为空不作为查询条件
                 if (MySqlKeyword.NOT_EXISTS.getSqlSegment().equals(sqlKeyword.getSqlSegment())) {
                     newMap.put(sqlKeyword.getSqlSegment(), "(" + columnDb.sql() + ")");
                 }
