@@ -11,3 +11,4 @@ target
 *.log
 logs
 resources/static
+${project.build.directory}
