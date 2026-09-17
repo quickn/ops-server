@@ -47,6 +47,7 @@ public class ProjectJobHandler {
     @SneakyThrows
     @XxlJob("syncJarJobHandler")
     public void syncJarJobHandler() {
+        log.info("定时同步Jar开始");
         JobContext ctx = buildJobContext();
         try {
             CmdLogInfoSessionUtil.set(ctx.cmdLogInfo);
@@ -66,6 +67,7 @@ public class ProjectJobHandler {
             log.error("执行异常", e);
         } finally {
             CmdLogInfoSessionUtil.remove();
+            log.info("定时同步Jar结束");
         }
 
     }
@@ -74,7 +76,8 @@ public class ProjectJobHandler {
      * 发布job
      */
     @XxlJob("deployJobHandler")
-    public void deployJobHandler() throws Exception {
+    public void deployJobHandler() {
+        log.info("定时部署开始");
         JobContext ctx = buildJobContext();
         try {
             String[] projectNames = ctx.projectNames;
@@ -87,7 +90,11 @@ public class ProjectJobHandler {
             CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
         } catch (Exception e) {
             log.error("执行异常", e);
+        } finally {
+            CmdLogInfoSessionUtil.remove();
+            log.info("定时部署结束");
         }
+
     }
 
     /**
