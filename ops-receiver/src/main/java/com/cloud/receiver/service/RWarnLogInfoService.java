@@ -1,25 +1,45 @@
-package com.cloud.ops.warnLog;
+package com.cloud.receiver.service;
 
+import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.cloud.base.util.DateUtil;
+import com.cloud.base.util.MyIdWorker;
 import com.cloud.ops.agent.Agent;
 import com.cloud.ops.alert.WarnLogInfo;
 import com.cloud.ops.alert.WarnLogInfoMapper;
 import com.cloud.ops.server.StaticKeys;
+import com.cloud.ops.system.SystemInfo;
 import com.cloud.receiver.util.msg.WarnMailUtil;
+import com.cloud.receiver.util.staticvar.BatchData;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @Slf4j
-public class WarnLogInfoServiceImpl extends ServiceImpl<WarnLogInfoMapper, WarnLogInfo> implements WarnLogInfoService {
+public class RWarnLogInfoService extends ServiceImpl<WarnLogInfoMapper, WarnLogInfo> {
 
-    @Autowired
+    @Resource
     private WarnLogInfoMapper logInfoMapper;
+
+    @Resource
+    private RAgentConfigServiceImpl rAgentConfigService;
+
+
+    public void saveRecord(List<WarnLogInfo> recordList) {
+        if (recordList.isEmpty()) {
+            return;
+        }
+        for (WarnLogInfo logInfo : recordList) {
+            logInfo.setId(MyIdWorker.getId());
+        }
+        this.saveBatch(recordList);
+    }
 
     public void save(String hostname, String infoContent, String state) {
         WarnLogInfo logInfo = new WarnLogInfo();
@@ -46,8 +66,11 @@ public class WarnLogInfoServiceImpl extends ServiceImpl<WarnLogInfoMapper, WarnL
         return sendEmail;
     }
 
-
     public boolean saveErrorLog(String title, String infoContent, String emailContent, Agent agentConfig) {
+        return this.saveErrorLog(title, infoContent, emailContent, agentConfig, null);
+    }
+
+    public boolean saveErrorLog(String title, String infoContent, String emailContent, Agent agentConfig, String threshold) {
         if (StringUtils.isEmpty(title)) {
             return false;
         }
@@ -60,11 +83,46 @@ public class WarnLogInfoServiceImpl extends ServiceImpl<WarnLogInfoMapper, WarnL
         logInfo.setState(StaticKeys.LOG_ERROR);
         logInfo.setInfoContent(infoContent);
         logInfo.setSendEmail(sendEmail);
+        logInfo.setThreshold(threshold);
         logInfoMapper.insert(logInfo);
         if (sendEmail && StringUtils.isNotEmpty(emailContent)) {
             WarnMailUtil.sendWarnMail(agentConfig, title, emailContent);
         }
         return sendEmail;
+    }
+
+    public void insertBatch() {
+        try {
+            if (BatchData.LOG_INFO_LIST.isEmpty()) {
+                return;
+            }
+            List<WarnLogInfo> LOG_INFO_LIST = new ArrayList<>();
+            LOG_INFO_LIST.addAll(BatchData.LOG_INFO_LIST);
+            BatchData.LOG_INFO_LIST.clear();
+            this.saveRecord(LOG_INFO_LIST);
+        } catch (Exception e) {
+            log.error("error", e);
+        }
+    }
+
+    public void saveAgentJsonObject(JSONObject agentJsonObject, Agent agentConfig) {
+        String warnLogInfo = agentJsonObject.getString("warnLogInfo");
+        if (StringUtils.isEmpty(warnLogInfo)) {
+            return;
+        }
+        this.saveErrorLog(agentJsonObject.getString("title"), warnLogInfo, warnLogInfo
+                , agentConfig, agentJsonObject.getString("threshold"));
+    }
+
+    public void saveErrorLog(String title, String infoContent, SystemInfo systemInfo) {
+        if (StringUtils.isEmpty(title)) {
+            return;
+        }
+        Agent agentConfig = rAgentConfigService.getServiceIdAndHostname(systemInfo.getServiceId(), systemInfo.getHostname());
+        if (agentConfig == null) {
+            return;
+        }
+        this.saveErrorLog(title, infoContent, infoContent, agentConfig);
     }
 
 }

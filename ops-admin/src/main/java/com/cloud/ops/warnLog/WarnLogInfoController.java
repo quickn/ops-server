@@ -1,6 +1,8 @@
 package com.cloud.ops.warnLog;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.cloud.ops.alert.WarnLogInfo;
+import com.cloud.ops.alert.WarnLogInfoMapper;
 import com.cloud.system.common.result.Result;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

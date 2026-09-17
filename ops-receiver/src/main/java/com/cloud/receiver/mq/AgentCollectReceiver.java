@@ -1,6 +1,6 @@
 package com.cloud.receiver.mq;
 
-import com.cloud.receiver.service.AgentServiceImpl;
+import com.cloud.receiver.service.RAgentServiceImpl;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Message;
@@ -24,7 +24,7 @@ import java.nio.charset.StandardCharsets;
 public class AgentCollectReceiver {
 
     @Resource
-    AgentServiceImpl agentServiceImpl;
+    RAgentServiceImpl rAgentService;
 
 
     /**
@@ -44,7 +44,7 @@ public class AgentCollectReceiver {
     public void onReceiver(Message msg) {
         String message = new String(msg.getBody(), StandardCharsets.UTF_8);
         log.info("指令响应 {}", message);
-        agentServiceImpl.collect(message, null);
+        rAgentService.collect(message, null);
     }
 
 }

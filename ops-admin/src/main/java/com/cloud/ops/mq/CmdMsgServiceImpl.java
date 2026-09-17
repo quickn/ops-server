@@ -1,11 +1,11 @@
 package com.cloud.ops.mq;
 
 import com.cloud.base.util.MyIdWorker;
-import com.cloud.ops.constant.MonitorMsgType;
 import com.cloud.ops.agent.Agent;
 import com.cloud.ops.agent.AgentService;
 import com.cloud.ops.cmdlog.CmdLogInfo;
 import com.cloud.ops.cmdlog.ICmdLogInfoService;
+import com.cloud.ops.constant.MonitorMsgType;
 import com.cloud.ops.encryption.CryptoService;
 import com.cloud.ops.encryption.EncryptRequest;
 import com.cloud.ops.msg.CmdCacheMsgService;
@@ -14,10 +14,10 @@ import com.cloud.system.common.exception.BusinessException;
 import com.cloud.system.common.util.SecurityUtils;
 import com.cloud.utils.CmdLogInfoSessionUtil;
 import com.cloud.utils.IpUtil;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -26,20 +26,20 @@ import java.time.LocalDateTime;
 @Slf4j
 public class CmdMsgServiceImpl implements IMsgService {
 
-    @Autowired
+    @Resource
     private RabbitTemplate rabbitTemplate;
 
-    @Autowired
+    @Resource
     private CmdCacheMsgService cmdCacheMsgService;
 
-    @Autowired
+    @Resource
     private CryptoService cryptoService;
 
-    @Autowired
-    private ICmdLogInfoService cmdLogInfoService;
+    @Resource
+    private ICmdLogInfoService iCmdLogInfoService;
 
-    @Autowired
-    AgentService agentConfigService;
+    @Resource
+    AgentService agentService;
 
 
     @Override
@@ -90,7 +90,7 @@ public class CmdMsgServiceImpl implements IMsgService {
             msgType = MonitorMsgType.CMD;
         }
         Integer timeout = cmdLogInfo.getTimeout();
-        Agent byId = agentConfigService.getById(agentId);
+        Agent byId = agentService.getById(agentId);
         if (byId == null)
             throw new BusinessException("agent 不存在");
         CmdLogInfo session = CmdLogInfoSessionUtil.get();
@@ -105,7 +105,7 @@ public class CmdMsgServiceImpl implements IMsgService {
         cmdLogInfo.setServiceName(byId.getServiceName());
         cmdLogInfo.setAgentIp(byId.getHostname());
         cmdLogInfo.setCreateTime(LocalDateTime.now());
-        cmdLogInfoService.save(cmdLogInfo);
+        iCmdLogInfoService.save(cmdLogInfo);
         Long msgId = cmdLogInfo.getId();
         long startTime = System.currentTimeMillis();
         String messageId = sendMsg(agentId, cmdLogInfo.getCommand(), script, msgType, timeout);
@@ -115,7 +115,7 @@ public class CmdMsgServiceImpl implements IMsgService {
         } catch (Exception exception) {
             log.error("发送消息异常", exception);
             int timeConsuming = (int) ((System.currentTimeMillis() - startTime) / 1000);
-            cmdLogInfoService.updateResult(msgId, exception.getMessage(), timeConsuming, false);
+            iCmdLogInfoService.updateResult(msgId, exception.getMessage(), timeConsuming, false);
             throw new BusinessException(exception.getMessage());
         }
         String result = "返回结果为空";
@@ -123,7 +123,7 @@ public class CmdMsgServiceImpl implements IMsgService {
             result = msgResult.getData();
         }
         int timeConsuming = (int) ((System.currentTimeMillis() - startTime) / 1000);
-        cmdLogInfoService.updateResult(msgId, result, timeConsuming, true);
+        iCmdLogInfoService.updateResult(msgId, result, timeConsuming, true);
         assert msgResult != null;
         msgResult.setMsgId(msgId);
         // 保存日志

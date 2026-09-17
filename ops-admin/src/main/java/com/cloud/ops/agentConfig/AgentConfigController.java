@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
@@ -22,14 +23,15 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AgentConfigController {
 
-    private final AgentConfigService configService;
+    @Resource
+    private final AgentConfigService agentConfigService;
 
     @Operation(summary = "获取代理服务配置列表", security = {@SecurityRequirement(name = "Authorization")})
     @GetMapping
     public Result<List<AgentConfigVO>> listConfigs(
             @ParameterObject AgentConfigQuery queryParams
     ) {
-        List<AgentConfigVO> list = configService.listConfigs(queryParams);
+        List<AgentConfigVO> list = agentConfigService.listConfigs(queryParams);
         return Result.success(list);
     }
 
@@ -38,7 +40,7 @@ public class AgentConfigController {
     public Result<AgentConfig> getConfigForm(
             @Parameter(description = "配置ID") @PathVariable Integer id
     ) {
-        AgentConfig agentConfig = configService.getById(id);
+        AgentConfig agentConfig = agentConfigService.getById(id);
         return Result.success(agentConfig);
     }
 
@@ -48,7 +50,7 @@ public class AgentConfigController {
     public Result saveConfig(
             @Valid @RequestBody AgentConfig formData
     ) {
-        configService.saveOrUpdate(formData);
+        agentConfigService.saveOrUpdate(formData);
         return Result.success();
     }
 
@@ -57,7 +59,7 @@ public class AgentConfigController {
     public Result deleteConfigs(
             @Parameter(description = "配置ID，多个以英文逗号(,)分割") @PathVariable("ids") String ids
     ) {
-        boolean result = configService.deleteByIds(ids);
+        boolean result = agentConfigService.deleteByIds(ids);
         return Result.judge(result);
     }
 

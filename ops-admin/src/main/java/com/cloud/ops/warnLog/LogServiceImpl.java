@@ -25,7 +25,6 @@ public class LogServiceImpl implements ILogService {
     private IMsgService iMsgService;
     @Resource
     private AgentMapper agentMapper;
-
     @Resource
     ServiceInfoService serviceInfoService;
 

@@ -3,21 +3,21 @@ package com.cloud.receiver.service;
 import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.cloud.receiver.entity.Agent;
-import com.cloud.receiver.entity.SystemInfo;
-import com.cloud.receiver.entity.WarnLogInfo;
-import com.cloud.receiver.mapper.SystemInfoMapper;
-import com.cloud.receiver.util.DateUtil;
+import com.cloud.base.util.DateUtil;
+import com.cloud.ops.agent.Agent;
+import com.cloud.ops.alert.WarnLogInfo;
+import com.cloud.ops.server.StaticKeys;
+import com.cloud.ops.system.SystemInfo;
+import com.cloud.ops.system.SystemInfoMapper;
 import com.cloud.receiver.util.msg.WarnMailUtil;
 import com.cloud.receiver.util.msg.WarnPools;
-import com.cloud.receiver.util.staticvar.StaticKeys;
 import jakarta.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 @Service
@@ -27,10 +27,10 @@ public class SystemInfoService extends ServiceImpl<SystemInfoMapper, SystemInfo>
     SystemInfoMapper systemInfoMapper;
 
     @Resource
-    WarnLogInfoService logInfoService;
+    RWarnLogInfoService logInfoService;
 
     @Resource
-    AgentConfigServiceImpl iAgentConfigService;
+    RAgentConfigServiceImpl iAgentConfigService;
 
     @Transactional
     public void updateRecord(List<SystemInfo> recordList) {
@@ -69,16 +69,16 @@ public class SystemInfoService extends ServiceImpl<SystemInfoMapper, SystemInfo>
         if (list.isEmpty()) {
             return;
         }
-        Date date = DateUtil.getNowTime();
+        LocalDateTime date = LocalDateTime.now();
         long delayTime = 5 * 60 * 1000;
         List<SystemInfo> updateList = new ArrayList<>();
         List<WarnLogInfo> logInfoList = new ArrayList<>();
         for (SystemInfo systemInfo : list) {
-            Date updateTime = systemInfo.getUpdateTime();
+            LocalDateTime updateTime = systemInfo.getUpdateTime();
             if (updateTime == null) {
                 continue;
             }
-            long diff = date.getTime() - updateTime.getTime();
+            long diff = DateUtil.differMinute(date, updateTime);
             if (diff > delayTime) {
                 if (!StringUtils.isEmpty(WarnPools.MEM_WARN_MAP.get(systemInfo.getId()))) {
                     continue;

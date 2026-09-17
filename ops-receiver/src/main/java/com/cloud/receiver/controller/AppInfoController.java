@@ -16,7 +16,7 @@ import java.util.Map;
 
 @Controller
 @Slf4j
-@RequestMapping("/appInfo")
+@RequestMapping("/receiver/appInfo")
 public class AppInfoController {
 
     @Resource

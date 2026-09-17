@@ -40,8 +40,10 @@ public class StaticKeys {
 
     public static String SPLIT_SXG = "//";//双反斜杠
 
-    public static String DOWN_STATE = "2";
+    public static Integer DOWN_STATE = 2;
 
     public static MailConfig mailConfig = null;
+
+
 
 }

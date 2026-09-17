@@ -1,9 +1,14 @@
 package com.cloud.receiver.service;
 
-import com.cloud.receiver.mapper.*;
+import com.cloud.ops.alert.WarnLogInfoMapper;
+import com.cloud.ops.docker.DockerStatsMapper;
+import com.cloud.ops.processnetstat.ProcessStatMapper;
+import com.cloud.ops.server.StaticKeys;
+import com.cloud.ops.system.CpuStateMapper;
+import com.cloud.ops.system.MemStateMapper;
+import com.cloud.ops.system.SysLoadStateMapper;
 import com.cloud.receiver.util.DateUtil;
 import com.cloud.receiver.util.msg.WarnPools;
-import com.cloud.receiver.util.staticvar.StaticKeys;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -28,7 +33,7 @@ public class IClearDataServiceImpl  {
     @Resource
     ProcessStatMapper processNetStatMapper;
     @Resource
-    WarnLogInfoService logInfoService;
+    RWarnLogInfoService logInfoService;
 
     public void clear() {
         log.info("定时清空历史数据任务开始----------" + DateUtil.getCurrentDateTime());

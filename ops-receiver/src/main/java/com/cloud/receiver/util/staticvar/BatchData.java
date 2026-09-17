@@ -1,6 +1,8 @@
 package com.cloud.receiver.util.staticvar;
-
-import com.cloud.receiver.entity.*;
+import com.cloud.ops.app.AppInfo;
+import com.cloud.ops.app.AppState;
+import com.cloud.ops.system.*;
+import com.cloud.ops.alert.WarnLogInfo;
 
 import java.util.*;
 

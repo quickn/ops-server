@@ -4,9 +4,9 @@ import cn.hutool.extra.spring.SpringUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.cloud.base.http.RestUtil;
-import com.cloud.ops.warnLog.WarnLogInfoService;
-import com.cloud.ops.msg.WarnMailUtil;
+import com.cloud.receiver.service.RWarnLogInfoService;
 import com.cloud.ops.server.StaticKeys;
+import com.cloud.receiver.util.msg.WarnMailUtil;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -24,7 +24,7 @@ public class ApiHeathMonitorServiceImpl extends ServiceImpl<ApiHeathMonitorMappe
     @Autowired
     private ApiHeathMonitorMapper heathMonitorMapper;
     @Resource
-    WarnLogInfoService logInfoService;
+    RWarnLogInfoService logInfoService;
     @Resource
     RestUtil restUtil;
 

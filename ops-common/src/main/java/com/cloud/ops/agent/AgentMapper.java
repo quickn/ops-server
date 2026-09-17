@@ -1,6 +1,7 @@
 package com.cloud.ops.agent;
 
 import com.alibaba.fastjson2.JSONObject;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.cloud.base.mapper.BaseQueryMapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -9,7 +10,7 @@ import org.apache.ibatis.annotations.Select;
 import java.util.List;
 
 @Mapper
-public interface AgentMapper extends BaseQueryMapper<Agent, Agent> {
+public interface AgentMapper extends BaseQueryMapper<Agent, Agent>, BaseMapper<Agent> {
 
     @Select(" select * from agent where service_id =#{serviceId} and hostname=#{hostname}")
     Agent getByServiceIdAndHost(Integer serviceId, String hostname);

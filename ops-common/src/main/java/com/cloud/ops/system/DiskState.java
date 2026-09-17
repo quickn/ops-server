@@ -1,5 +1,6 @@
 package com.cloud.ops.system;
 
+import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.cloud.system.common.base.BaseEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -37,5 +38,10 @@ public class DiskState extends BaseEntity {
 
     @TableField(exist = false)
     private LocalDateTime updateTime;
+
+    @TableField(fill = FieldFill.INSERT)
+    private Integer serviceId;
+
+    private String serviceName;
 
 }

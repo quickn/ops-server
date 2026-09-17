@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 @Controller
 @Slf4j
-@RequestMapping("/schedule")
+@RequestMapping("/receiver/schedule")
 public class ScheduledController {
 
     @Resource

@@ -1,11 +1,18 @@
 package com.cloud.receiver.util.msg;
 
-import com.cloud.receiver.common.ApplicationContextHelper;
-import com.cloud.receiver.entity.*;
-import com.cloud.receiver.service.MailConfigService;
-import com.cloud.receiver.service.WarnLogInfoService;
-import com.cloud.receiver.util.ThreadPoolUtil;
-import com.cloud.receiver.util.staticvar.StaticKeys;
+import com.cloud.base.spring.ApplicationContextHelper;
+import com.cloud.base.util.ThreadPoolUtil;
+import com.cloud.ops.agent.Agent;
+import com.cloud.ops.alert.MailConfigCommonService;
+import com.cloud.ops.app.AppInfo;
+import com.cloud.ops.email.MailConfig;
+import com.cloud.ops.heath.ApiHeathMonitor;
+import com.cloud.ops.server.StaticKeys;
+import com.cloud.ops.system.CpuState;
+import com.cloud.ops.system.DiskState;
+import com.cloud.ops.system.MemState;
+import com.cloud.ops.system.SystemInfo;
+import com.cloud.receiver.service.RWarnLogInfoService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.mail.DefaultAuthenticator;
@@ -18,9 +25,9 @@ public class WarnMailUtil {
 
     public static final String content_suffix = "<p><a target='_blank' href='http://bisenpark.com'>百胜智能</a>敬上";
 
-    private static final WarnLogInfoService logInfoService = ApplicationContextHelper.getBean(WarnLogInfoService.class);
+    private static final RWarnLogInfoService logInfoService = ApplicationContextHelper.getBean(RWarnLogInfoService.class);
 
-    private static final MailConfigService mailConfigService = ApplicationContextHelper.getBean(MailConfigService.class);
+    private static final MailConfigCommonService mailConfigService = ApplicationContextHelper.getBean(MailConfigCommonService.class);
 
 
     /**
@@ -82,14 +89,14 @@ public class WarnMailUtil {
     }
 
     public static void sendWarnMail(Agent agentConfig, String title, String commContent) {
-        if (StaticKeys.mailSet == null) {
+        if (StaticKeys.mailConfig == null) {
             return;
         }
         if (!agentConfig.getIsMail()) {
             return;
         }
-        MailConfig mailSet = StaticKeys.mailSet;
-        sendMail(agentConfig.getServiceId(), mailSet.getToMail(), agentConfig.getServiceName() + " " + title, commContent);
+        MailConfig mailConfig = StaticKeys.mailConfig;
+        sendMail(agentConfig.getServiceId(), mailConfig.getToMail(), agentConfig.getServiceName() + " " + title, commContent);
     }
 
 
@@ -133,10 +140,10 @@ public class WarnMailUtil {
      * @return
      */
     public static boolean sendAppDown(AppInfo appInfo, boolean isDown) {
-        if (StaticKeys.mailSet == null) {
+        if (StaticKeys.mailConfig == null) {
             return false;
         }
-        MailConfig mailSet = StaticKeys.mailSet;
+        MailConfig mailSet = StaticKeys.mailConfig;
         String key = appInfo.getId().toString();
         if (isDown) {
             if (!StringUtils.isEmpty(WarnPools.MEM_WARN_MAP.get(key))) {
@@ -173,14 +180,7 @@ public class WarnMailUtil {
         return false;
     }
 
-    public static String sendMail(Integer serviceId, String mails, String mailTitle, String mailContent) {
-        MailConfig mailConfig = mailConfigService.getByServiceId(serviceId);
-        if (mailConfig == null) {
-            return null;
-        }
-        if (!mailConfig.getIsSendMail()) {
-            return null;
-        }
+    public static String sendMail(MailConfig mailConfig, String mailTitle, String mailContent) {
         ThreadPoolUtil.getInstance().getNewCachedThreadPool().execute(() -> {
             try {
                 HtmlEmail email = new HtmlEmail();
@@ -204,6 +204,18 @@ public class WarnMailUtil {
         return null;
     }
 
+
+    public static String sendMail(Integer serviceId, String mails, String mailTitle, String mailContent) {
+        MailConfig mailConfig = mailConfigService.getByServiceId(serviceId);
+        if (mailConfig == null) {
+            return null;
+        }
+        if (!mailConfig.getIsSendMail()) {
+            return null;
+        }
+        return sendMail(mailConfig, mailTitle, mailContent);
+    }
+
     public static boolean sendDiskWarnInfo(DiskState diskState, Agent agentConfig) {
         if (diskState.getUsePer() == null) {
             return false;
@@ -224,5 +236,9 @@ public class WarnMailUtil {
             logInfoService.saveErrorLog("发送磁盘告警邮件错误", e.toString(), null, agentConfig);
         }
         return true;
+    }
+
+    public static void sendHeathInfo(ApiHeathMonitor heathMonitor, String logTitle, boolean isEmail, Long responseTime) {
+
     }
 }

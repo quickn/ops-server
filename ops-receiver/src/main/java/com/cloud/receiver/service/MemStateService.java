@@ -1,8 +1,8 @@
 package com.cloud.receiver.service;
 
-import com.cloud.receiver.entity.MemState;
-import com.cloud.receiver.mapper.MemStateMapper;
-import com.cloud.receiver.util.MyIdWorker;
+import com.cloud.base.util.MyIdWorker;
+import com.cloud.ops.system.MemState;
+import com.cloud.ops.system.MemStateMapper;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 

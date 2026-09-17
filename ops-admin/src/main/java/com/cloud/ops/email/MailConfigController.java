@@ -1,9 +1,9 @@
 package com.cloud.ops.email;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.cloud.ops.warnLog.WarnLogInfoService;
-import com.cloud.ops.msg.WarnMailUtil;
 import com.cloud.ops.server.StaticKeys;
+import com.cloud.receiver.service.RWarnLogInfoService;
+import com.cloud.receiver.util.msg.WarnMailUtil;
 import com.cloud.system.common.result.Result;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,7 +29,7 @@ public class MailConfigController {
     @Resource
     private MailConfigService mailService;
     @Resource
-    private WarnLogInfoService logInfoService;
+    private RWarnLogInfoService logInfoService;
 
 
     @Operation(summary = "获取最新的数据")

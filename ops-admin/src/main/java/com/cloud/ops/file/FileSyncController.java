@@ -25,7 +25,7 @@ public class FileSyncController {
 
     private final IMsgService msgService;
 
-    private final AgentService agentConfigService;
+    private final AgentService agentService;
 
     @Value("${file.upload.file-path}")
     private String filePath;
@@ -40,7 +40,7 @@ public class FileSyncController {
     @GetMapping("/jump-servers")
     public Result<List<Agent>> getJumpServers() {
         try {
-            List<Agent> jumpServers = agentConfigService.list(Wrappers.<Agent>lambdaQuery().eq(Agent::getIsJumpServer, true));
+            List<Agent> jumpServers = agentService.list(Wrappers.<Agent>lambdaQuery().eq(Agent::getIsJumpServer, true));
             return Result.success(jumpServers);
         } catch (Exception e) {
             log.error("获取跳板机列表失败", e);
@@ -63,7 +63,7 @@ public class FileSyncController {
                 queryWrapper.eq(Agent::getServiceId, serviceId);
             }
             queryWrapper.orderByDesc(Agent::getId);
-            List<Agent> servers = agentConfigService.list(queryWrapper);
+            List<Agent> servers = agentService.list(queryWrapper);
             return Result.success(servers);
         } catch (Exception e) {
             log.error("获取服务器列表失败", e);
@@ -88,7 +88,7 @@ public class FileSyncController {
             if (file.isEmpty()) {
                 return Result.failed("文件不能为空");
             }
-            Agent jumpServer = agentConfigService.getById(agentId);
+            Agent jumpServer = agentService.getById(agentId);
             if (jumpServer == null || !jumpServer.getIsJumpServer()) {
                 return Result.failed("指定的服务器不是跳板机");
             }
@@ -142,7 +142,7 @@ public class FileSyncController {
     @PostMapping("/sync-with-command")
     public Result<String> syncWithCommand(@RequestBody CMDRequest cmdRequest) {
         try {
-            Agent jumpServer = agentConfigService.getById(cmdRequest.getAgentId());
+            Agent jumpServer = agentService.getById(cmdRequest.getAgentId());
             if (jumpServer == null || !jumpServer.getIsJumpServer()) {
                 return Result.failed("指定的服务器不是跳板机");
             }
@@ -168,7 +168,7 @@ public class FileSyncController {
                 return Result.failed("请指定源文件路径");
             }
             // 获取目标服务器信息
-            List<Agent> targetServers = agentConfigService.listByIds(request.getTargetServers());
+            List<Agent> targetServers = agentService.listByIds(request.getTargetServers());
             if (targetServers.isEmpty()) {
                 return Result.failed("未找到选中的服务器信息");
             }

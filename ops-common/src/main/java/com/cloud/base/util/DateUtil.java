@@ -5,6 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -116,6 +118,33 @@ public class DateUtil {
         now.set(Calendar.DATE, now.get(Calendar.DATE) - day);
         return getString(now.getTime(), DATETIME_PATTERN);
     }
+
+
+
+    /**
+     * 获取截止日期与起始日期相差的分钟数
+     *
+     * @param start 起始日期
+     * @param end   截止日期
+     * @return
+     */
+    public static Long differMinute(LocalDateTime start, LocalDateTime end) {
+        if (start == null || end == null) {
+            return 0L;
+        }
+        // end 不在 start 之后（包括相等或早于），返回 0
+        if (!end.isAfter(start)) {
+            return 0L;
+        }
+        // 先取完整分钟数，向下取整
+        long minutes = ChronoUnit.MINUTES.between(start, end);
+        // 如果还有剩余时间，不足一分钟算一分钟，向上取整
+        if (start.plusMinutes(minutes).isBefore(end)) {
+            minutes++;
+        }
+        return minutes;
+    }
+
 
 
 }

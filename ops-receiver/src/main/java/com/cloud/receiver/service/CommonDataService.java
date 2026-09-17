@@ -2,10 +2,8 @@ package com.cloud.receiver.service;
 
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
-import com.cloud.receiver.common.ApplicationContextHelper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -40,7 +38,7 @@ public class CommonDataService {
 
     private DataSource getDataSource() {
         if (dataSource == null) {
-            dataSource = ApplicationContextHelper.getBean(DataSource.class);
+            dataSource = com.cloud.base.spring.ApplicationContextHelper.getBean(DataSource.class);
         }
         return dataSource;
     }

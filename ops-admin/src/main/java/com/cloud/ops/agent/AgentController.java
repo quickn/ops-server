@@ -28,7 +28,7 @@ import java.util.List;
 @RequestMapping("/agent")
 public class AgentController {
     @Resource
-    AgentService iAgentConfigService;
+    AgentService agentService;
     @Resource
     AgentMapper agentMapper;
     @Resource
@@ -48,7 +48,7 @@ public class AgentController {
     @McpTool(name = "agentList", description = "agent列表")
     public Result<List<AgentVo>> list(@ParameterObject AgentQuery agentQuery) {
         log.info("list: {}", agentQuery);
-        return Result.success(iAgentConfigService.list(agentQuery));
+        return Result.success(agentService.list(agentQuery));
     }
 
     @PostMapping("/save")
@@ -57,8 +57,8 @@ public class AgentController {
             ServiceInfo serviceInfo = serviceInfoService.getById(agentConfig.getServiceId());
             agentConfig.setServiceName(serviceInfo.getName());
         }
-        iAgentConfigService.saveOrUpdate(agentConfig);
-        iAgentConfigService.handleAgent(agentConfig.getId(), "restart");
+        agentService.saveOrUpdate(agentConfig);
+        agentService.handleAgent(agentConfig.getId(), "restart");
         return Result.success();
     }
 
@@ -68,7 +68,7 @@ public class AgentController {
     public JSONObject getConf(@RequestBody JSONObject jsonObject) {
         String mac = jsonObject.getStr("mac");
         String hostname = jsonObject.getStr("hostname");
-        Agent agentConfig = iAgentConfigService.getByMac(mac, hostname);
+        Agent agentConfig = agentService.getByMac(mac, hostname);
         if (agentConfig == null) {
             return null;
         }
@@ -79,7 +79,7 @@ public class AgentController {
     @PostMapping("/receiveClientMsg")
     @Operation(summary = "接收终端消息")
     public Result receiveClientMsg(@RequestBody ClientMsgForm clientMsgForm) {
-        iAgentConfigService.receiveClientMsg(clientMsgForm);
+        agentService.receiveClientMsg(clientMsgForm);
         return Result.success();
     }
 
@@ -103,14 +103,14 @@ public class AgentController {
 
     @GetMapping("/handleAgentByServiceId/{serviceId}")
     public Result handleAgentByServiceId(@PathVariable Integer serviceId, @RequestParam String cmd) {
-        iAgentConfigService.handleAgentByServiceId(serviceId, cmd);
+        agentService.handleAgentByServiceId(serviceId, cmd);
         return Result.success();
     }
 
 
     @GetMapping("/handleAgent/{agentId}")
     public Result handleAgent(@PathVariable Long agentId, @RequestParam String cmd) {
-        iAgentConfigService.handleAgent(agentId, cmd);
+        agentService.handleAgent(agentId, cmd);
         return Result.success();
     }
 
@@ -120,7 +120,7 @@ public class AgentController {
         String cmd = jsonObject.getStr("cmd");
         List<MsgResult> result = new ArrayList<>();
         for (Long agentId : ids) {
-            MsgResult msgResult = iAgentConfigService.handleAgent(agentId, cmd);
+            MsgResult msgResult = agentService.handleAgent(agentId, cmd);
             result.add(msgResult);
         }
         return Result.success(result);
@@ -129,7 +129,7 @@ public class AgentController {
 
     @DeleteMapping("/delete/{ids}")
     public Result delete(@PathVariable Integer ids) {
-        iAgentConfigService.removeById(ids);
+        agentService.removeById(ids);
         return Result.success();
     }
 }

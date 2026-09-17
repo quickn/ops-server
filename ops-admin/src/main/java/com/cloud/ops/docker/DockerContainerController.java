@@ -24,7 +24,7 @@ public class DockerContainerController {
     DockerContainerMapper dockerContainerMapper;
 
     @Resource
-    AgentService agentConfigService;
+    AgentService agentService;
 
     @Resource
     IMsgService iMsgService;
@@ -52,7 +52,7 @@ public class DockerContainerController {
     @GetMapping(value = "/restart/{id}")
     public Result restart(@PathVariable Long id) {
         DockerContainer dockerContainer = dockerContainerMapper.selectById(id);
-        Agent agentConfig = agentConfigService.getByServiceIdAndHost(dockerContainer.getServiceId(), dockerContainer.getHostname());
+        Agent agentConfig = agentService.getByServiceIdAndHost(dockerContainer.getServiceId(), dockerContainer.getHostname());
         String msg = iMsgService.sendCMDMsgAndResponse(agentConfig.getId(), "重启容器", "docker restart " + dockerContainer.getNames(), 60);
         return Result.success(msg);
     }
@@ -60,7 +60,7 @@ public class DockerContainerController {
     @GetMapping(value = "/stop/{id}")
     public Result stop(@PathVariable Long id) {
         DockerContainer dockerContainer = dockerContainerMapper.selectById(id);
-        Agent agentConfig = agentConfigService.getByServiceIdAndHost(dockerContainer.getServiceId(), dockerContainer.getHostname());
+        Agent agentConfig = agentService.getByServiceIdAndHost(dockerContainer.getServiceId(), dockerContainer.getHostname());
         String msg = iMsgService.sendCMDMsgAndResponse(agentConfig.getId(), "停止容器", "docker stop " + dockerContainer.getNames(), 60);
         return Result.success(msg);
     }

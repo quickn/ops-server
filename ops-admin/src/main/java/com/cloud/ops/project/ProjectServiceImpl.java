@@ -42,7 +42,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
 
     private final ProjectDeployRecordMapper projectDeployRecordMapper;
 
-    private final AgentService agentConfigService;
+    private final AgentService agentService;
 
     private final IMsgService msgService;
 
@@ -193,7 +193,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
             throw new BusinessException("2个目录相同无法备份");
         }
         // 获取跳板机
-        Agent jump = agentConfigService.getjumpServers(backupRequest.getServiceId());
+        Agent jump = agentService.getjumpServers(backupRequest.getServiceId());
 
         // 根据类型决定复制方向
         String fromDir, toDir;
@@ -418,7 +418,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
      * @return 部署记录
      */
     private ProjectDeployRecord createDeployRecord(Long projectId, Long agentId, String containerName) {
-        Agent byId = agentConfigService.getById(agentId);
+        Agent byId = agentService.getById(agentId);
         ProjectDeployRecord record = new ProjectDeployRecord();
         record.setProjectId(projectId);
         record.setAgentId(agentId);
