@@ -1,17 +1,13 @@
 package com.cloud.ops.job;
 
 import com.alibaba.fastjson2.JSONObject;
-import com.cloud.ops.agent.AgentService;
 import com.cloud.ops.cmdlog.CmdLogInfo;
 import com.cloud.ops.cmdlog.ICmdLogInfoService;
 import com.cloud.ops.docker.DockerContainer;
 import com.cloud.ops.docker.IDockerContainerService;
-import com.cloud.ops.msg.IMsgService;
 import com.cloud.ops.project.DeployRequest;
 import com.cloud.ops.project.IProjectService;
 import com.cloud.ops.project.SyncRequest;
-import com.cloud.ops.job.JobConfig;
-import com.cloud.ops.job.JobConfigMapper;
 import com.cloud.system.common.exception.BusinessException;
 import com.cloud.utils.CmdLogInfoSessionUtil;
 import com.google.common.collect.Lists;
@@ -21,7 +17,6 @@ import jakarta.annotation.Resource;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
@@ -35,18 +30,7 @@ import java.util.concurrent.ExecutorService;
 public class ProjectJobHandler {
 
     @Resource
-    IMsgService iMsgService;
-    @Resource
     IDockerContainerService iDockerContainerService;
-    @Resource
-    AgentService agentService;
-
-    @Value("${python.path}")
-    String pythonPath;
-    @Value("${python.script}")
-    String pythonScript;
-    @Value("${python.url:}")
-    String pythonUrl;
 
     @Resource
     JobConfigMapper jobConfigMapper;

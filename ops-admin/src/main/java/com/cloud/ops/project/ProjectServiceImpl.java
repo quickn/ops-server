@@ -6,10 +6,10 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.cloud.ops.agent.Agent;
 import com.cloud.ops.agent.AgentService;
 import com.cloud.ops.cmdlog.CmdLogInfo;
-import com.cloud.ops.msg.IMsgService;
-import com.cloud.ops.mq.MsgResult;
 import com.cloud.ops.file.IFileService;
 import com.cloud.ops.file.SyncFileParam;
+import com.cloud.ops.mq.MsgResult;
+import com.cloud.ops.msg.IMsgService;
 import com.cloud.system.common.exception.BusinessException;
 import com.cloud.utils.IpUtil;
 import com.cloud.utils.ScriptUtil;
@@ -300,6 +300,13 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
             String scriptPath = workPath + filePath + File.separator + scriptFileName;
             try (FileWriter writer = new FileWriter(scriptPath)) {
                 writer.write(redeployScript);
+            }
+            if (new File(redeployScript).exists()) {
+                throw new BusinessException("脚本未生成");
+            }
+
+            if (downPath.contains("$ip")) {
+                downPath = downPath.replace("$ip", IpUtil.getIPv4Ip());
             }
 
             // 4. 生成脚本下载URL

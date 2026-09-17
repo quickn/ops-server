@@ -21,8 +21,8 @@ import java.util.TimeZone;
 
 @Setter
 @Getter
-@Configuration
-@ConfigurationProperties(prefix = "web")
+//@Configuration
+//@ConfigurationProperties(prefix = "web")
 public class SpringWebMvcConfigurer implements WebMvcConfigurer {
 
     private String rootPath;

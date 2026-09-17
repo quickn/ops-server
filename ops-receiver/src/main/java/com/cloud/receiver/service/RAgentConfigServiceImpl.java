@@ -15,8 +15,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
-import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -31,8 +29,6 @@ public class RAgentConfigServiceImpl extends ServiceImpl<AgentConfigMapper, Agen
 
     @Resource
     AgentMapper agentMapper;
-
-    private HashMap<String, Date> lastUpdateTimeMap = new HashMap<>();
 
     public JSONObject getByMac(String mac, String hostname) {
         List<JSONObject> configMap = agentMapper.getByMac(mac);
@@ -69,20 +65,11 @@ public class RAgentConfigServiceImpl extends ServiceImpl<AgentConfigMapper, Agen
         Agent configCommon = agentMapper.selectOne(Wrappers.<Agent>lambdaQuery()
                 .eq(Agent::getServiceId, agent.getServiceId())
                 .eq(Agent::getIsMonitor, true).isNull(Agent::getMac));
-        String key = serviceId + hostname;
         if (configCommon == null) {
             configCommon = agent;
         } else {
             BeanUtils.copyProperties(agent, configCommon);
         }
-        Date lastUpdateTime = lastUpdateTimeMap.get(key);
-        //更新了配置
-//        if (lastUpdateTime == null || lastUpdateTime.compareTo(agent.getUpdateTime()) != 0) {
-//            configCommon.setUpdate(true);
-//        } else {
-//            configCommon.setUpdate(false);
-//        }
-//        lastUpdateTimeMap.put(key, configCommon.getUpdateTime());
         return configCommon;
     }
 

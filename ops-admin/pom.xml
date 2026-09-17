@@ -432,7 +432,6 @@
                                  但 hasPerm 方法名必须一并保留，故整类保留。
                         -->
                         <option>-keep class com.cloud.system.security.service.PermissionService { *; }</option>
-
                         <!--
                             8) 保留方法/构造器参数名（MethodParameters 属性）。
                                项目继承 spring-boot-starter-parent，编译时带 -parameters，Spring 6.x 的

@@ -75,7 +75,7 @@
         <fastjson.version>2.0.53</fastjson.version>
 
         <!-- 代码混淆（ProGuard）：默认在 package 阶段执行，可用 -Dproguard.skip=true 跳过 -->
-        <proguard.skip>false</proguard.skip>
+        <proguard.skip>true</proguard.skip>
         <proguard-plugin.version>2.6.0</proguard-plugin.version>
         <proguard.version>7.5.0</proguard.version>
         <!-- 必须与 proguard-base 匹配的 proguard-core 版本（proguard-base 7.5.0 对应 core 9.1.4） -->
