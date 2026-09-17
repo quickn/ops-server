@@ -1,0 +1,34 @@
+spring:
+  datasource:
+    type: com.zaxxer.hikari.HikariDataSource
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://rm-bp10zga2v8441h165.mysql.rds.aliyuncs.com:3306/bs_monitor?characterEncoding=utf-8&characterSetResults=utf8&autoReconnect=true&useSSL=false&allowMultiQueries=true
+    username: monitor
+    password: BSzn@1999@2022
+    pool-name: 'bs_monitor'
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 1000
+      max-lifetime: 300000
+      idle-timeout: 250000
+      connection-test-query: SELECT 0
+  data:
+    redis:
+      password: baisheng123
+  rabbitmq:
+    port: 25672
+mybatis-plus:
+  configuration:
+    #log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+# 文件配置
+file:
+  upload:
+    down-path: http://monitor.bisenpark.com/monitor/static
+
+upgradeClient:
+  url: http://monitor.bisenpark.com/monitor/static/ops-agent-go
+  version: 1.0.0
+
+python:
+  url: http://monitor.bisenpark.com/monitor
