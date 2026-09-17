@@ -13,14 +13,15 @@ import com.cloud.receiver.service.RDockerContainerServiceImpl;
 import com.cloud.receiver.util.CamelCaseUtil;
 import com.cloud.receiver.util.TokenUtils;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
-@Controller
+@RestController
+@Tag(name = "Agent接收器")
 @Slf4j
 @RequestMapping("/receiver/agent")
 public class RAgentController {
@@ -48,6 +49,7 @@ public class RAgentController {
 
     @ResponseBody
     @PostMapping("/getConf")
+    @Operation(summary = "获取Agent配置")
     public JSONObject getConf(@RequestBody JSONObject jsonObject) {
         String mac = jsonObject.getString("mac");
         String hostname = jsonObject.getString("hostname");
@@ -69,7 +71,10 @@ public class RAgentController {
             agentUpdate.setClientVersion(version);
             rAgentService.updateById(agentUpdate);
         }
+
         CamelCaseUtil.underlineToCamelCase(agentJsonObject);
+        agentJsonObject.remove("createTime");
+        agentJsonObject.remove("updateTime");
         return agentJsonObject;
     }
 

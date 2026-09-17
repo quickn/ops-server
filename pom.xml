@@ -37,6 +37,13 @@
         <mybatis-plus.version>3.5.7</mybatis-plus.version>
 
         <knife4j.version>4.3.0</knife4j.version>
+        <!--
+            覆盖 knife4j 4.3.0 传递引入的 springdoc-openapi 2.2.0：
+            2.2.0 的 GenericResponseService 调用的 ControllerAdviceBean(Object) 构造器
+            已在 Spring Framework 6.2（Spring Boot 3.5）中移除，
+            运行时抛 NoSuchMethodError，必须升级到 2.8.x。
+        -->
+        <springdoc.version>2.8.9</springdoc.version>
 
         <mapstruct.version>1.5.3.Final</mapstruct.version>
         <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
@@ -84,6 +91,22 @@
             需要 1.x snakeyaml 的 nacos-config-spring-boot-starter 已在 ops-receiver/pom.xml 中停用。
         -->
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!--
+                管理传递依赖版本：knife4j 4.3.0 自带的 springdoc-openapi-starter-webmvc-ui:2.2.0
+                与 Spring Framework 6.2（Boot 3.5）二进制不兼容，统一仲裁到 2.8.9。
+                仅钉住此顶层 artifact 即可，其下游 springdoc-openapi-starter-webmvc-api /
+                springdoc-openapi-starter-common 等会随之按 2.8.9 解析。
+            -->
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                <version>${springdoc.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
 

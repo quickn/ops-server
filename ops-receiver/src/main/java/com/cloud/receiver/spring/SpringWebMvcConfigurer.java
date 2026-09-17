@@ -85,14 +85,18 @@ public class SpringWebMvcConfigurer implements WebMvcConfigurer {
     @Override
     public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
         MappingJackson2HttpMessageConverter jackson2HttpMessageConverter = null;
+        // JSON 转换器在默认列表中的原始下标，处理完后必须原样插回，不能追加到列表末尾
+        int jacksonIndex = -1;
 
         for (int i = converters.size() - 1; i >= 0; i--) {
             HttpMessageConverter<?> messageConverter = converters.get(i);
             if (messageConverter instanceof MappingJackson2CborHttpMessageConverter) {
                 converters.remove(i);
+                continue;
             }
             if (messageConverter instanceof MappingJackson2HttpMessageConverter) {
-                jackson2HttpMessageConverter = (MappingJackson2HttpMessageConverter) converters.get(i);
+                jackson2HttpMessageConverter = (MappingJackson2HttpMessageConverter) messageConverter;
+                jacksonIndex = i;
                 converters.remove(i);
             }
         }
@@ -116,7 +120,17 @@ public class SpringWebMvcConfigurer implements WebMvcConfigurer {
         // 指定返回的时间格式
         objectMapper.setDateFormat(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
         jackson2HttpMessageConverter.setObjectMapper(objectMapper);
-        converters.add(jackson2HttpMessageConverter);
+        /*
+         * 必须插回 JSON 转换器的原始位置（在 YAML 转换器之前），不能直接 add 到末尾。
+         * 原因：Spring Framework 6.2 起默认注册了 MappingJackson2YamlHttpMessageConverter
+         * （位于默认列表最后，且能处理）。若把 JSON 转换器挪到它后面，客户端未显式指定 Accept（如 agent 发送 Accept）时内容协商会优先选中 YAML，
+         * 于是 /receiver/agent/getConf 等接口返回 application/yaml 而不是 JSON。
+         */
+        if (jacksonIndex >= 0) {
+            converters.add(jacksonIndex, jackson2HttpMessageConverter);
+        } else {
+            converters.add(jackson2HttpMessageConverter);
+        }
     }
 
 

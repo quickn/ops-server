@@ -162,6 +162,7 @@
 
     </dependencies>
 
+<!--
 
     <build>
         <finalName>${project.artifactId}</finalName>
@@ -179,11 +180,11 @@
                 <version>${spring.boot.version}</version>
                 <configuration>
                     <finalName>${project.build.finalName}</finalName>
-                    <!--
+                    &lt;!&ndash;
                         打包双产物：
                           * ops-receiver.jar      —— 普通 jar，供 ops-admin 作为依赖引入（与 admin 一起启动）
                           * ops-receiver-exec.jar —— Spring Boot 可执行 jar，供独立启动
-                    -->
+                    &ndash;&gt;
                     <classifier>exec</classifier>
                 </configuration>
                 <executions>
@@ -196,5 +197,6 @@
             </plugin>
         </plugins>
     </build>
+-->
 
 </project>

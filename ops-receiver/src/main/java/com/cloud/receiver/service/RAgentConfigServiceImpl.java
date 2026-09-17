@@ -11,6 +11,7 @@ import com.cloud.receiver.cmd.ClientMsgForm;
 import com.cloud.receiver.constant.MonitorCmdC;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
@@ -45,7 +46,7 @@ public class RAgentConfigServiceImpl extends ServiceImpl<AgentConfigMapper, Agen
         } else {
             // 不要使用 List#getFirst()，它是 JDK 21 (SequencedCollection) 才有的方法，本模块按 release 17 编译
             config = JSONObject.parseObject(configMap.get(0).toJSONString(), Agent.class);
-            if (!hostname.equals(config.getHostname())) {
+            if (StringUtils.isNotEmpty(hostname) && !hostname.equals(config.getHostname())) {
                 Agent agentConfig = new Agent();
                 agentConfig.setId(config.getId());
                 agentConfig.setHostname(hostname);

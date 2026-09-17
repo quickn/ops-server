@@ -152,6 +152,7 @@ logging:
     com.alibaba.boot.nacos: info
 security:
   ignore-paths:
+    - "/receiver/**"
     - "/static/**"
     - "/agent/**"
     - "/api/v1/auth/captcha"
