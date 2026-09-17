@@ -295,14 +295,19 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
             String redeployScript = ScriptUtil.deployScript(project.getName(), project.getDockerfileContent(), project.getDockerComposeContent(), jarPath, type, workPath);
 
 
-            // 3. 将脚本保存为可下载文件
-            String scriptFileName = "redeploy_" + project.getName() + "_" + System.currentTimeMillis() + ".sh";
+            // 3. 将脚本保存为可下载文件（与 deployWithDockerfile 保持一致：文件名固定，不做执行后删除）
+            String scriptFileName = "redeploy_" + project.getName() + ".sh";
             String scriptPath = workPath + filePath + File.separator + scriptFileName;
-            try (FileWriter writer = new FileWriter(scriptPath)) {
+            new File(scriptPath).delete();
+            File scriptFile = new File(scriptPath);
+            if (scriptFile.getParentFile() != null) {
+                scriptFile.getParentFile().mkdirs();
+            }
+            try (FileWriter writer = new FileWriter(scriptFile)) {
                 writer.write(redeployScript);
             }
-            if (new File(redeployScript).exists()) {
-                throw new BusinessException("脚本未生成");
+            if (!scriptFile.exists()) {
+                throw new BusinessException("脚本未生成:" + scriptPath);
             }
 
             if (downPath.contains("$ip")) {
@@ -317,7 +322,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
 
             // 构建下载和执行命令
             String remoteScriptPath = "/tmp/redeploy_" + project.getName() + ".sh";
-            String downloadCmd = String.format("curl -L -o %s '%s'", remoteScriptPath, scriptDownloadUrl);
+            String downloadCmd = String.format("curl -fsSL -o %s '%s'", remoteScriptPath, scriptDownloadUrl);
             String chmodCmd = String.format("chmod +x %s", remoteScriptPath);
             String executeCmd = String.format("bash %s 2>&1", remoteScriptPath);
             String cleanupCmd = String.format("rm -f %s", remoteScriptPath);
@@ -333,10 +338,9 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
 
             String scriptResult = msgResult.getData();
 
-            // 6. 清理本地脚本文件
-            new File(scriptPath).delete();
-
-            // 7. 解析脚本执行结果
+            // 6. 解析脚本执行结果
+            // 注意：这里不能删除本地脚本文件。sendMsgAndResponse 超时返回（如 Agent 离线/繁忙导致指令未及时执行）时，
+            // Agent 仍可能在稍后下载脚本，提前删除会导致 Agent 下载 404（部署失败），deployWithDockerfile 不删除所以正常
             if (scriptResult.contains("DEPLOY_SUCCESS")) {
                 updateDeployRecord(recordId, 2, "重新部署成功！\n" + ScriptUtil.extractDeploySuccessInfo(scriptResult));
                 return true;
@@ -370,6 +374,10 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
             String scriptFileName = "deploy_" + project.getName() + ".sh";
             String scriptPath = workPath + filePath + File.separator + scriptFileName;
             new File(scriptPath).delete();
+            File scriptFile = new File(scriptPath);
+            if (scriptFile.getParentFile() != null) {
+                scriptFile.getParentFile().mkdirs();
+            }
             try (FileWriter writer = new FileWriter(scriptPath)) {
                 writer.write(deployScript);
             }
@@ -384,7 +392,7 @@ public class ProjectServiceImpl extends ServiceImpl<ProjectMapper, Project> impl
 
             // 执行命令
             String remoteScriptPath = String.format("/tmp/deploy_%s.sh", project.getName());
-            String downloadCmd = String.format("curl -s -L -o %s '%s'", remoteScriptPath, scriptDownloadUrl);
+            String downloadCmd = String.format("curl -fsSL -o %s '%s'", remoteScriptPath, scriptDownloadUrl);
             String chmodCmd = String.format("chmod +x %s", remoteScriptPath);
             String executeCmd = String.format("bash -c '%s 2>&1'", remoteScriptPath);
             String cleanupCmd = String.format("rm -f %s", remoteScriptPath);
