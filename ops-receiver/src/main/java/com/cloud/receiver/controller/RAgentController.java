@@ -10,7 +10,6 @@ import com.cloud.receiver.service.RAgentConfigServiceImpl;
 import com.cloud.receiver.service.RAgentServiceImpl;
 import com.cloud.receiver.service.RCmdLogInfoServiceImpl;
 import com.cloud.receiver.service.RDockerContainerServiceImpl;
-import com.cloud.receiver.util.CamelCaseUtil;
 import com.cloud.receiver.util.TokenUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -53,7 +52,8 @@ public class RAgentController {
     public JSONObject getConf(@RequestBody JSONObject jsonObject) {
         String mac = jsonObject.getString("mac");
         String hostname = jsonObject.getString("hostname");
-        JSONObject agentJsonObject = agentConfigService.getByMac(mac, hostname);
+        String version = jsonObject.getString("version");
+        JSONObject agentJsonObject = agentConfigService.getByMac(mac, hostname,version);
         if (agentJsonObject == null) {
             return null;
         }
@@ -64,17 +64,6 @@ public class RAgentController {
             workPath = agentConfig.getWorkPath();
         }
         agentJsonObject.put("workPath", workPath);
-        String version = jsonObject.getString("version");
-        if (StringUtils.isNotEmpty(version) && !version.equals(agentJsonObject.getString("clientVersion"))) {
-            Agent agentUpdate = new Agent();
-            agentUpdate.setId(agentId);
-            agentUpdate.setClientVersion(version);
-            rAgentService.updateById(agentUpdate);
-        }
-
-        CamelCaseUtil.underlineToCamelCase(agentJsonObject);
-        agentJsonObject.remove("createTime");
-        agentJsonObject.remove("updateTime");
         return agentJsonObject;
     }
 

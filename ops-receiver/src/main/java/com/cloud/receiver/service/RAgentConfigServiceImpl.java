@@ -9,6 +9,7 @@ import com.cloud.ops.agentConfig.AgentConfig;
 import com.cloud.ops.agentConfig.AgentConfigMapper;
 import com.cloud.receiver.cmd.ClientMsgForm;
 import com.cloud.receiver.constant.MonitorCmdC;
+import com.cloud.receiver.util.CamelCaseUtil;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -30,9 +31,10 @@ public class RAgentConfigServiceImpl extends ServiceImpl<AgentConfigMapper, Agen
     @Resource
     AgentMapper agentMapper;
 
-    public JSONObject getByMac(String mac, String hostname) {
+    public JSONObject getByMac(String mac, String hostname, String version) {
         List<JSONObject> configMap = agentMapper.getByMac(mac);
         Agent config = null;
+        JSONObject agentJsonObject = null;
         if (configMap.isEmpty()) {
             config = new Agent();
             config.setMac(mac);
@@ -40,20 +42,26 @@ public class RAgentConfigServiceImpl extends ServiceImpl<AgentConfigMapper, Agen
             agentMapper.insert(config);
             return null;
         } else {
+            agentJsonObject = configMap.get(0);
+            CamelCaseUtil.underlineToCamelCase(agentJsonObject);
             // 不要使用 List#getFirst()，它是 JDK 21 (SequencedCollection) 才有的方法，本模块按 release 17 编译
-            config = JSONObject.parseObject(configMap.get(0).toJSONString(), Agent.class);
-            if (StringUtils.isNotEmpty(hostname) && !hostname.equals(config.getHostname())) {
-                Agent agentConfig = new Agent();
-                agentConfig.setId(config.getId());
-                agentConfig.setHostname(hostname);
+            Long agentId = agentJsonObject.getLong("id");
+            if (StringUtils.isNotEmpty(hostname) && !hostname.equals(agentJsonObject.getString("hostname"))) {
+                config = new Agent();
+                config.setId(agentId);
                 config.setHostname(hostname);
-                agentMapper.updateById(agentConfig);
+                config.setClientVersion(version);
+                agentMapper.updateById(config);
+                return agentJsonObject;
+            }
+            if (StringUtils.isNotEmpty(version) && !version.equals(agentJsonObject.getString("clientVersion"))) {
+                config = new Agent();
+                config.setId(agentId);
+                config.setClientVersion(version);
+                agentMapper.updateById(config);
             }
         }
-        if (config.getServiceId() == null) {
-            return configMap.get(0);
-        }
-        return configMap.get(0);
+        return agentJsonObject;
     }
 
     public Agent getServiceIdAndHostname(Integer serviceId, String hostname) {
