@@ -10,7 +10,7 @@ import lombok.Data;
  * @author haoxr
  * @since 2022/1/14
  */
-@Schema 
+@Schema
 @Data
 public class UserPageQuery extends BasePageQuery {
 
@@ -22,5 +22,12 @@ public class UserPageQuery extends BasePageQuery {
 
     @Schema(description="部门ID")
     private Long deptId;
+
+    /**
+     * 当前登录用户ID(用于多租户数据隔离，非超级管理员只能查看自己及自己创建的用户)
+     * 为空表示无数据权限限制(超级管理员)
+     */
+    @Schema(description="当前登录用户ID(多租户过滤条件，内部使用)", hidden = true)
+    private Long currentUserId;
 
 }

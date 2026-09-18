@@ -45,6 +45,8 @@ public class SysRoleServiceImpl extends ServiceImpl<SysRoleMapper, SysRole> impl
 
     /**
      * 角色分页列表
+     * <p>
+     * 非超级管理员不显示超级管理员角色(id=1 / code=ROOT)
      *
      * @param queryParams
      * @return
@@ -55,6 +57,7 @@ public class SysRoleServiceImpl extends ServiceImpl<SysRoleMapper, SysRole> impl
         int pageNum = queryParams.getPageNum();
         int pageSize = queryParams.getPageSize();
         String keywords = queryParams.getKeywords();
+        boolean isRoot = SecurityUtils.isRoot();
 
         // 查询数据
         Page<SysRole> rolePage = this.page(new Page<>(pageNum, pageSize),
@@ -65,7 +68,9 @@ public class SysRoleServiceImpl extends ServiceImpl<SysRoleMapper, SysRole> impl
                                                 .or()
                                                 .like(StrUtil.isNotBlank(keywords), SysRole::getCode, keywords)
                         )
-                        .ne(!SecurityUtils.isRoot(), SysRole::getCode, SystemConstants.ROOT_ROLE_CODE) // 非超级管理员不显示超级管理员角色
+                        // 非超级管理员不显示超级管理员角色(双重防御：同时按 id 和 code 过滤)
+                        .ne(!isRoot, SysRole::getId, SystemConstants.ROOT_ROLE_ID)
+                        .ne(!isRoot, SysRole::getCode, SystemConstants.ROOT_ROLE_CODE)
         );
 
         // 实体转换
@@ -75,14 +80,24 @@ public class SysRoleServiceImpl extends ServiceImpl<SysRoleMapper, SysRole> impl
 
     /**
      * 角色下拉列表
+     * <p>
+     * 多租户数据隔离规则:
+     * <ul>
+     *     <li>超级管理员(role_id=1)可看到所有角色</li>
+     *     <li>其他用户不可看到超级管理员角色(id=1 / code=ROOT)，防止越权分配</li>
+     * </ul>
      *
      * @return
      */
     @Override
     public List<Option> listRoleOptions() {
+        boolean isRoot = SecurityUtils.isRoot();
         // 查询数据
         List<SysRole> roleList = this.list(new LambdaQueryWrapper<SysRole>()
-                .ne(!SecurityUtils.isRoot(), SysRole::getCode, SystemConstants.ROOT_ROLE_CODE)
+                // 非超级管理员：排除 id=1 的系统管理员角色（双重防御：同时按 id 和 code 过滤）
+                .ne(!isRoot, SysRole::getId, SystemConstants.ROOT_ROLE_ID)
+                .ne(!isRoot, SysRole::getCode, SystemConstants.ROOT_ROLE_CODE)
+                .ne(!isRoot, SysRole::getCode, SystemConstants.ADMIN_ROLE_CODE)
                 .select(SysRole::getId, SysRole::getName)
                 .orderByAsc(SysRole::getSort)
         );

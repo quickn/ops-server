@@ -1,6 +1,7 @@
 package com.cloud.system.handler.mybatisplus;
 
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
+import com.cloud.system.common.util.SecurityUtils;
 import org.apache.ibatis.reflection.MetaObject;
 import org.springframework.stereotype.Component;
 
@@ -17,13 +18,15 @@ import java.time.LocalDateTime;
 public class MyMetaObjectHandler implements MetaObjectHandler {
 
     /**
-     * 新增填充创建时间
+     * 新增填充创建时间、创建人
      *
      * @param metaObject
      */
     @Override
     public void insertFill(MetaObject metaObject) {
         this.strictInsertFill(metaObject, "createTime", () -> LocalDateTime.now(), LocalDateTime.class);
+        // 自动填充创建人ID(用于多租户数据隔离)
+        this.strictInsertFill(metaObject, "createBy", SecurityUtils::getUserId, Long.class);
         //this.strictUpdateFill(metaObject, "updateTime", () -> LocalDateTime.now(), LocalDateTime.class);
     }
 

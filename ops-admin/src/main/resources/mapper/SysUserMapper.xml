@@ -25,6 +25,10 @@
                 LEFT JOIN sys_role r ON sur.role_id = r.id
         <where>
             u.deleted = 0 AND u.username != 'root'
+            <!-- 多租户数据隔离: 非超级管理员只能查看自己及自己创建的用户 -->
+            <if test='queryParams.currentUserId != null'>
+                AND (u.id = #{queryParams.currentUserId} OR u.create_by = #{queryParams.currentUserId})
+            </if>
             <if test='queryParams.keywords!=null and queryParams.keywords.trim() neq ""'>
                 AND (
                     u.username LIKE CONCAT('%',#{queryParams.keywords},'%')
@@ -77,6 +81,10 @@
         FROM sys_user
         WHERE id = #{userId}
           AND deleted = 0
+          <!-- 多租户数据隔离: 非超级管理员只能查看自己及自己创建的用户的详情 -->
+          <if test='currentUserId != null'>
+              AND (id = #{currentUserId} OR create_by = #{currentUserId})
+          </if>
     </select>
 
     <!-- 用户认证信息映射 -->
@@ -129,6 +137,10 @@
                 LEFT JOIN sys_dept d ON u.dept_id = d.id
         <where>
             u.deleted = 0 AND u.username != 'root'
+            <!-- 多租户数据隔离: 非超级管理员只能导出自己及自己创建的用户 -->
+            <if test='currentUserId != null'>
+                AND (u.id = #{currentUserId} OR u.create_by = #{currentUserId})
+            </if>
             <if test='keywords!=null and keywords.trim() neq ""'>
                 AND (u.username LIKE CONCAT('%',#{keywords},'%')
                 OR u.nickname LIKE CONCAT('%',#{keywords},'%')

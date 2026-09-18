@@ -24,5 +24,12 @@ public interface SystemConstants {
      */
     String ROOT_ROLE_CODE = "ROOT";
 
+    String ADMIN_ROLE_CODE = "ADMIN";
+
+    /**
+     * 超级管理员角色ID(系统管理员角色)
+     */
+    Long ROOT_ROLE_ID = 1L;
+
 
 }

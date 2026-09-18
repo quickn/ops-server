@@ -10,6 +10,7 @@ import com.cloud.system.model.bo.UserFormBO;
 import com.cloud.system.model.query.UserPageQuery;
 import com.cloud.system.model.vo.UserExportVO;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
@@ -35,10 +36,11 @@ public interface SysUserMapper extends BaseMapper<SysUser> {
     /**
      * 获取用户表单详情
      *
-     * @param userId 用户ID
+     * @param userId        用户ID
+     * @param currentUserId 当前登录用户ID(用于多租户数据隔离，为空表示不限制)
      * @return
      */
-    UserFormBO getUserDetail(Long userId);
+    UserFormBO getUserDetail(@Param("userId") Long userId, @Param("currentUserId") Long currentUserId);
 
     /**
      * 根据用户名获取认证信息

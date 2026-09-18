@@ -1,5 +1,6 @@
 package com.cloud.system.controller;
 
+import cn.hutool.core.lang.Assert;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.ExcelWriter;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
@@ -41,6 +42,12 @@ import java.util.List;
 
 /**
  * 用户控制器
+ * <p>
+ * 多租户数据隔离规则:
+ * <ul>
+ *     <li>超级管理员(role_id=1)可以查看和管理所有用户记录</li>
+ *     <li>其他角色的用户只能查看和管理: ① 自己 ② 自己创建的用户(create_by=当前用户ID)</li>
+ * </ul>
  *
  * @author haoxr
  * @since 2022/10/16
@@ -53,7 +60,7 @@ public class SysUserController {
 
     private final SysUserService userService;
 
-    @Operation(summary = "用户分页列表", security = {@SecurityRequirement(name = "Authorization")})
+    @Operation(summary = "用户分页列表(多租户：超级管理员看全部，其他角色只能看自己及自己创建的用户)", security = {@SecurityRequirement(name = "Authorization")})
     @GetMapping("/page")
     public PageResult<UserPageVO> getUserPage(
             @ParameterObject UserPageQuery queryParams
@@ -62,7 +69,7 @@ public class SysUserController {
         return PageResult.success(result);
     }
 
-    @Operation(summary = "新增用户", security = {@SecurityRequirement(name = "Authorization")})
+    @Operation(summary = "新增用户(创建人自动记录为当前操作用户)", security = {@SecurityRequirement(name = "Authorization")})
     @PostMapping
     @PreAuthorize("@ss.hasPerm('sys:user:add')")
     @PreventDuplicateSubmit
@@ -73,26 +80,31 @@ public class SysUserController {
         return Result.judge(result);
     }
 
-    @Operation(summary = "用户表单数据", security = {@SecurityRequirement(name = "Authorization")})
+    @Operation(summary = "用户表单数据(多租户：非超级管理员只能查看自己及自己创建的用户)", security = {@SecurityRequirement(name = "Authorization")})
     @GetMapping("/{userId}/form")
     public Result<UserForm> getUserForm(
             @Parameter(description = "用户ID") @PathVariable Long userId
     ) {
+        // 多租户校验：非超级管理员只能查看自己及自己创建的用户
+        Assert.isTrue(userService.hasAccessPermission(userId), "无权访问该用户信息");
         UserForm formData = userService.getUserFormData(userId);
+        Assert.notNull(formData, "用户不存在或无访问权限");
         return Result.success(formData);
     }
 
-    @Operation(summary = "修改用户", security = {@SecurityRequirement(name = "Authorization")})
+    @Operation(summary = "修改用户(多租户：非超级管理员只能修改自己及自己创建的用户)", security = {@SecurityRequirement(name = "Authorization")})
     @PutMapping(value = "/{userId}")
     @PreAuthorize("@ss.hasPerm('sys:user:edit')")
     public Result updateUser(
             @Parameter(description = "用户ID") @PathVariable Long userId,
             @RequestBody @Validated UserForm userForm) {
+        // 多租户校验：非超级管理员只能修改自己及自己创建的用户
+        Assert.isTrue(userService.hasAccessPermission(userId), "您只能编辑自己或自己创建的用户，无权编辑其他用户");
         boolean result = userService.updateUser(userId, userForm);
         return Result.judge(result);
     }
 
-    @Operation(summary = "删除用户", security = {@SecurityRequirement(name = "Authorization")})
+    @Operation(summary = "删除用户(多租户：非超级管理员只能删除自己及自己创建的用户)", security = {@SecurityRequirement(name = "Authorization")})
     @DeleteMapping("/{ids}")
     @PreAuthorize("@ss.hasPerm('sys:user:delete')")
     public Result deleteUsers(
@@ -102,23 +114,27 @@ public class SysUserController {
         return Result.judge(result);
     }
 
-    @Operation(summary = "修改用户密码", security = {@SecurityRequirement(name = "Authorization")})
+    @Operation(summary = "修改用户密码(多租户：非超级管理员只能重置自己及自己创建的用户密码)", security = {@SecurityRequirement(name = "Authorization")})
     @PatchMapping(value = "/{userId}/password")
     @PreAuthorize("@ss.hasPerm('sys:user:reset_pwd')")
     public Result updatePassword(
             @Parameter(description = "用户ID") @PathVariable Long userId,
             @RequestParam String password
     ) {
+        // 多租户校验：非超级管理员只能重置自己及自己创建的用户密码
+        Assert.isTrue(userService.hasAccessPermission(userId), "您只能重置自己或自己创建的用户密码");
         boolean result = userService.updatePassword(userId, password);
         return Result.judge(result);
     }
 
-    @Operation(summary = "修改用户状态", security = {@SecurityRequirement(name = "Authorization")})
+    @Operation(summary = "修改用户状态(多租户：非超级管理员只能修改自己及自己创建的用户状态)", security = {@SecurityRequirement(name = "Authorization")})
     @PatchMapping(value = "/{userId}/status")
     public Result updateUserStatus(
             @Parameter(description = "用户ID") @PathVariable Long userId,
             @Parameter(description = "用户状态(1:启用;0:禁用)") @RequestParam Integer status
     ) {
+        // 多租户校验：非超级管理员只能修改自己及自己创建的用户状态
+        Assert.isTrue(userService.hasAccessPermission(userId), "您只能修改自己或自己创建的用户状态");
         boolean result = userService.update(new LambdaUpdateWrapper<SysUser>()
                 .eq(SysUser::getId, userId)
                 .set(SysUser::getStatus, status)
@@ -149,7 +165,7 @@ public class SysUserController {
         excelWriter.finish();
     }
 
-    @Operation(summary = "导入用户", security = {@SecurityRequirement(name = "Authorization")})
+    @Operation(summary = "导入用户(导入的用户创建人自动记录为当前操作用户)", security = {@SecurityRequirement(name = "Authorization")})
     @PostMapping("/_import")
     public Result importUsers(@Parameter(description = "部门ID") Long deptId, MultipartFile file) throws IOException {
         UserImportListener listener = new UserImportListener(deptId);
@@ -157,7 +173,7 @@ public class SysUserController {
         return Result.success(msg);
     }
 
-    @Operation(summary = "导出用户", security = {@SecurityRequirement(name = "Authorization")})
+    @Operation(summary = "导出用户(多租户：超级管理员导出全部，其他角色只导出自己及自己创建的用户)", security = {@SecurityRequirement(name = "Authorization")})
     @GetMapping("/_export")
     public void exportUsers(UserPageQuery queryParams, HttpServletResponse response) throws IOException {
         String fileName = "用户列表.xlsx";

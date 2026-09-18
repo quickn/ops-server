@@ -39,6 +39,18 @@ public interface SysUserService extends IService<SysUser> {
 
 
     /**
+     * 校验当前登录用户对目标用户是否具有访问权限(多租户数据隔离)
+     * <p>
+     * 超级管理员(role_id=1)对所有用户有访问权限；
+     * 其他用户只能访问自己及自己创建的用户(create_by=当前用户ID)
+     *
+     * @param targetUserId 目标用户ID
+     * @return true-有权限  false-无权限
+     */
+    boolean hasAccessPermission(Long targetUserId);
+
+
+    /**
      * 新增用户
      *
      * @param userForm 用户表单对象

@@ -315,6 +315,7 @@ CREATE TABLE `sys_user`  (
                              `create_time` datetime NULL DEFAULT NULL COMMENT '创建时间',
                              `update_time` datetime NULL DEFAULT NULL COMMENT '更新时间',
                              `login_mask` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '登录掩码(IP白名单，多个以逗号分隔，支持IP、通配符、网段、区间，为空表示不限制)',
+                             `create_by` bigint NULL DEFAULT NULL COMMENT '创建人ID(用于多租户数据隔离)',
                              PRIMARY KEY (`id`) USING BTREE,
                              UNIQUE INDEX `login_name`(`username` ASC) USING BTREE
                              ) ENGINE = InnoDB AUTO_INCREMENT = 288 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '用户信息表' ROW_FORMAT = DYNAMIC;

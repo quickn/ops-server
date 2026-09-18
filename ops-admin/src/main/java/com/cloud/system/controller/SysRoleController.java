@@ -38,9 +38,12 @@ public class SysRoleController {
         return PageResult.success(result);
     }
 
-    @Operation(summary = "角色下拉列表",security = {@SecurityRequirement(name = "Authorization")})
+    @Operation(summary = "角色下拉列表(多租户：超级管理员可见所有角色，非系统管理员不可见系统管理员角色)",
+            security = {@SecurityRequirement(name = "Authorization")})
     @GetMapping("/options")
     public Result<List<Option>> listRoleOptions() {
+        // 非系统管理员(非ROOT角色)的用户，下拉列表中过滤掉系统管理员角色(id=1 / code=ROOT)，
+        // 防止越权给用户分配系统管理员角色。
         List<Option> list = roleService.listRoleOptions();
         return Result.success(list);
     }

@@ -69,6 +69,10 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
     @Override
     public IPage<UserPageVO> getUserPage(UserPageQuery queryParams) {
 
+        // 多租户数据隔离: 非超级管理员只能查看自己及自己创建的用户
+        Long currentUserId = SecurityUtils.isRoot() ? null : SecurityUtils.getUserId();
+        queryParams.setCurrentUserId(currentUserId);
+
         // 参数构建
         int pageNum = queryParams.getPageNum();
         int pageSize = queryParams.getPageSize();
@@ -91,10 +95,43 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
      */
     @Override
     public UserForm getUserFormData(Long userId) {
-        UserFormBO userFormBO = this.baseMapper.getUserDetail(userId);
+        // 多租户数据隔离: 非超级管理员只能查看自己及自己创建的用户
+        Long currentUserId = SecurityUtils.isRoot() ? null : SecurityUtils.getUserId();
+        UserFormBO userFormBO = this.baseMapper.getUserDetail(userId, currentUserId);
         // 实体转换po->form
         UserForm userForm = userConverter.bo2Form(userFormBO);
         return userForm;
+    }
+
+    /**
+     * 校验当前登录用户对目标用户是否具有访问权限(多租户数据隔离)
+     *
+     * @param targetUserId 目标用户ID
+     * @return true-有权限  false-无权限
+     */
+    @Override
+    public boolean hasAccessPermission(Long targetUserId) {
+        // 超级管理员(role_id=1)对所有用户有访问权限
+        if (SecurityUtils.isRoot()) {
+            return true;
+        }
+        // 目标用户ID为空，拒绝访问
+        if (targetUserId == null) {
+            return false;
+        }
+        // 自己对自己有访问权限
+        Long currentUserId = SecurityUtils.getUserId();
+        if (currentUserId == null) {
+            return false;
+        }
+        if (currentUserId.equals(targetUserId)) {
+            return true;
+        }
+        // 自己创建的用户对自己可见(create_by = 当前用户ID)
+        Long count = this.baseMapper.selectCount(new LambdaQueryWrapper<SysUser>()
+                .eq(SysUser::getId, targetUserId)
+                .eq(SysUser::getCreateBy, currentUserId));
+        return count != null && count > 0;
     }
 
     /**
@@ -113,6 +150,9 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
 
         // 校验登录掩码格式
         Assert.isTrue(LoginMaskUtils.isValid(userForm.getLoginMask()), "登录掩码格式不正确");
+
+        // 多租户防御性校验: 非超级管理员不能给用户分配系统管理员角色(id=1)
+        validateRootRoleAssignment(userForm.getRoleIds());
 
         // 实体转换 form->entity
         SysUser entity = userConverter.form2Entity(userForm);
@@ -153,6 +193,9 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         // 校验登录掩码格式
         Assert.isTrue(LoginMaskUtils.isValid(userForm.getLoginMask()), "登录掩码格式不正确");
 
+        // 多租户防御性校验: 非超级管理员不能给用户分配系统管理员角色(id=1)
+        validateRootRoleAssignment(userForm.getRoleIds());
+
         // form -> entity
         SysUser entity = userConverter.form2Entity(userForm);
 
@@ -167,6 +210,19 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
     }
 
     /**
+     * 校验非超级管理员不能给用户分配系统管理员角色(多租户防御性校验)
+     *
+     * @param roleIds 待分配的角色ID集合
+     */
+    private void validateRootRoleAssignment(List<Long> roleIds) {
+        if (SecurityUtils.isRoot() || CollectionUtil.isEmpty(roleIds)) {
+            return;
+        }
+        Assert.isTrue(!roleIds.contains(SystemConstants.ROOT_ROLE_ID),
+                "无权分配系统管理员角色(角色ID=1)");
+    }
+
+    /**
      * 删除用户
      *
      * @param idsStr 用户ID，多个以英文逗号(,)分割
@@ -175,9 +231,19 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
     @Override
     public boolean deleteUsers(String idsStr) {
         Assert.isTrue(StrUtil.isNotBlank(idsStr), "删除的用户数据为空");
-        // 逻辑删除
+        // 多租户数据隔离: 非超级管理员只能删除自己及自己创建的用户
         List<Long> ids = Arrays.asList(idsStr.split(",")).stream()
                 .map(idStr -> Long.parseLong(idStr)).collect(Collectors.toList());
+        if (!SecurityUtils.isRoot()) {
+            Long currentUserId = SecurityUtils.getUserId();
+            // 查询待删除用户中不属于当前租户范围的用户
+            Long count = this.baseMapper.selectCount(new LambdaQueryWrapper<SysUser>()
+                    .in(SysUser::getId, ids)
+                    .and(wrapper -> wrapper.ne(SysUser::getId, currentUserId)
+                            .ne(SysUser::getCreateBy, currentUserId)));
+            Assert.isTrue(count == null || count == 0, "您只能删除自己或自己创建的用户，无权删除其他用户");
+        }
+        // 逻辑删除
         boolean result = this.removeByIds(ids);
         return result;
 
@@ -230,6 +296,9 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
      */
     @Override
     public List<UserExportVO> listExportUsers(UserPageQuery queryParams) {
+        // 多租户数据隔离: 非超级管理员只能导出自己及自己创建的用户
+        Long currentUserId = SecurityUtils.isRoot() ? null : SecurityUtils.getUserId();
+        queryParams.setCurrentUserId(currentUserId);
         List<UserExportVO> list = this.baseMapper.listExportUsers(queryParams);
         return list;
     }
