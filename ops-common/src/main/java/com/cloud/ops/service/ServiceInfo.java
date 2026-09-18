@@ -23,6 +23,11 @@ public class ServiceInfo {
     private Integer id;
 
     /**
+     * 用户ID
+     */
+    private Long userId;
+
+    /**
      * 服务名称
      */
     private String name;

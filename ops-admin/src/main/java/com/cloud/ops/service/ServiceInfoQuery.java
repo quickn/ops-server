@@ -5,6 +5,7 @@ import com.cloud.base.sql.PageForm;
 import com.cloud.base.sql.annotation.OrderBy;
 import com.cloud.base.sql.annotation.SelectSql;
 import com.cloud.base.sql.annotation.Where;
+import lombok.Builder;
 import lombok.Data;
 
 /**
@@ -13,8 +14,22 @@ import lombok.Data;
 @Data
 @SelectSql(" * from service_info ")
 @OrderBy(" sort desc ")
+@Builder
 public class ServiceInfoQuery extends PageForm implements IQuery {
 
     @Where
     private String name;
+
+
+
+    /**
+     * 用户ID
+     */
+    @Where
+    private Long userId;
+
+
+    public Long getUserId() {
+        return userId;
+    }
 }

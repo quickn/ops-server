@@ -18,6 +18,9 @@ nacos:
       enable: true
       log-enable: true
 spring:
+  devtools:
+    restart:
+      enabled: false
   ai:
     mcp:
       server:

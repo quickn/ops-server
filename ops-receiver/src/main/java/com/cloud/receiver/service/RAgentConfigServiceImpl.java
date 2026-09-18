@@ -46,22 +46,15 @@ public class RAgentConfigServiceImpl extends ServiceImpl<AgentConfigMapper, Agen
             CamelCaseUtil.underlineToCamelCase(agentJsonObject);
             // 不要使用 List#getFirst()，它是 JDK 21 (SequencedCollection) 才有的方法，本模块按 release 17 编译
             Long agentId = agentJsonObject.getLong("id");
-            if (StringUtils.isNotEmpty(hostname) && !hostname.equals(agentJsonObject.getString("hostname"))) {
-                config = new Agent();
-                config.setId(agentId);
+            config = new Agent();
+            config.setId(agentId);
+            if (StringUtils.isNotBlank(hostname)) {
                 config.setHostname(hostname);
-                config.setClientVersion(version);
-                agentMapper.updateById(config);
-                return agentJsonObject;
             }
-            if (StringUtils.isNotEmpty(version) && !version.equals(agentJsonObject.getString("clientVersion"))) {
-                config = new Agent();
-                config.setId(agentId);
-                config.setClientVersion(version);
-                agentMapper.updateById(config);
-            }
+            config.setClientVersion(version);
+            agentMapper.updateById(config);
+            return agentJsonObject;
         }
-        return agentJsonObject;
     }
 
     public Agent getServiceIdAndHostname(Integer serviceId, String hostname) {
