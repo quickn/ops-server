@@ -9,10 +9,15 @@
     <property name="log.pattern"
               value="[%X{TRACE_ID}] %d{yyyy-MM-dd HH:mm:ss} [%p] [%t] %c [%method] %msg%n"/>
 
-    <springProperty scope="context" name="log.path" source="logging.path" defaultValue="./logs"/>
-    <springProperty scope="context" name="maxHistory" source="logging.maxHistory" defaultValue="31"/>
-    <springProperty scope="context" name="maxFileSize" source="logging.maxFileSize" defaultValue="100MB"/>
-    <springProperty scope="context" name="totalSizeCap" source="logging.totalSizeCap" defaultValue="31GB"/>
+
+    <property name="log.path" value="/home/park/logs" />
+
+    <!-- 固定滚动策略参数（可根据需要修改） -->
+    <property name="maxHistory" value="180" />
+    <!-- 优先按天分割：单文件上限调大，正常情况下一天一个归档文件，仅单日日志量超过该值时按大小分片 -->
+    <property name="maxFileSize" value="1GB" />
+    <property name="totalSizeCap" value="50GB" />
+
 
     <!-- 不带彩色的日志在控制台输出时候的设置 -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
@@ -30,7 +35,7 @@
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
             <!-- 归档的日志文件的路径，例如今天是2013-12-21日志，当前写的日志文件路径为file节点指定，可以将此文件与file指定文件路径设置为不同路径，从而将当前日志文件或归档日志文件置不同的目录。
             而2013-12-21的日志文件在由fileNamePattern指定。%d{yyyy-MM-dd}指定日期格式，%i指定索引 -->
-            <fileNamePattern>${log.path}/error/error-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <fileNamePattern>${log.path}/error/error-%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
             <maxFileSize>${maxFileSize}</maxFileSize>
             <maxHistory>${maxHistory}</maxHistory>
             <!--每个文件最多100MB，保留15天的历史记录，但最多5GB-->
@@ -60,7 +65,7 @@
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
             <!-- 归档的日志文件的路径，例如今天是2013-12-21日志，当前写的日志文件路径为file节点指定，可以将此文件与file指定文件路径设置为不同路径，从而将当前日志文件或归档日志文件置不同的目录。
             而2013-12-21的日志文件在由fileNamePattern指定。%d{yyyy-MM-dd}指定日期格式，%i指定索引 -->
-            <fileNamePattern>${log.path}/info/info-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <fileNamePattern>${log.path}/info/info-%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
             <maxFileSize>${maxFileSize}</maxFileSize>
             <maxHistory>${maxHistory}</maxHistory>
             <!--每个文件最多100MB，保留15天的历史记录，但最多5GB-->

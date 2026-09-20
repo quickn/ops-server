@@ -54,8 +54,8 @@ public class LogCmdForm {
     @ApiModelProperty("超时时间")
     Integer timeout = 60;
 
-    @ApiModelProperty("日志条数")
-    Integer limit = 200;
+    @ApiModelProperty("日志条数 默认500条 -1:不限制")
+    Integer limit = 500;
 
     @ApiModelProperty("只统计条数")
     boolean onlyCount = false;

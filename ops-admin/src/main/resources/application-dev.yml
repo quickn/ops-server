@@ -20,7 +20,8 @@ python:
   path: D:\app\miniconda3\python
   script: D:\Users\liuyun\IdeaProjects\py-sync\bs
   url: http://localhost:8989
-
+logging:
+  config: classpath:logback.xml
 #security:
 #  ignore-paths:
 #    - "/**"
