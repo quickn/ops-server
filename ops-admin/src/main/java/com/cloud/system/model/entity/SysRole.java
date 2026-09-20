@@ -1,6 +1,8 @@
 package com.cloud.system.model.entity;
 
+import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.cloud.system.common.base.BaseEntity;
@@ -47,4 +49,10 @@ public class SysRole extends BaseEntity {
      * 数据权限
      */
     private Integer dataScope;
+
+    /**
+     * 创建人ID(用于多租户数据隔离，非超级管理员可查看自己创建的角色)
+     */
+    @TableField(fill = FieldFill.INSERT)
+    private Long createBy;
 }

@@ -44,6 +44,22 @@
         ORDER BY t1.sort asc
     </select>
 
+    <!-- 获取用户拥有的菜单ID集合（含其祖先节点，保证树形结构完整） -->
+    <select id="listMenuIdsByUserId" resultType="java.lang.Long">
+        SELECT DISTINCT m.id
+        FROM sys_role_menu rm
+                 INNER JOIN sys_menu m ON m.id = rm.menu_id
+                 INNER JOIN sys_user_role ur ON ur.role_id = rm.role_id
+        WHERE ur.user_id = #{userId}
+        UNION
+        SELECT DISTINCT p.id
+        FROM sys_role_menu rm
+                 INNER JOIN sys_menu m ON m.id = rm.menu_id
+                 INNER JOIN sys_user_role ur ON ur.role_id = rm.role_id
+                 INNER JOIN sys_menu p ON CONCAT(',', m.tree_path, ',') LIKE CONCAT('%,', p.id, ',%')
+        WHERE ur.user_id = #{userId}
+    </select>
+
     <!-- 获取角色拥有的权限集合 -->
     <select id="listRolePerms" resultType="java.lang.String">
         SELECT

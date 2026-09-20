@@ -592,6 +592,7 @@ CREATE TABLE `sys_role`  (
   `status` tinyint(1) NULL DEFAULT 1 COMMENT '角色状态(1-正常；0-停用)',
   `data_scope` tinyint NULL DEFAULT NULL COMMENT '数据权限(0-所有数据；1-部门及子部门数据；2-本部门数据；3-本人数据)',
   `deleted` tinyint(1) NOT NULL DEFAULT 0 COMMENT '逻辑删除标识(0-未删除；1-已删除)',
+  `create_by` bigint NULL DEFAULT NULL COMMENT '创建人ID(用于多租户数据隔离)',
   `create_time` datetime NULL DEFAULT NULL COMMENT '更新时间',
   `update_time` datetime NULL DEFAULT NULL COMMENT '创建时间',
   PRIMARY KEY (`id`) USING BTREE,

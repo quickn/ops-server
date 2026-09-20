@@ -27,4 +27,12 @@ public interface SysMenuMapper extends BaseMapper<SysMenu> {
      * @return
      */
     Set<String> listRolePerms(Set<String> roles);
+
+    /**
+     * 获取用户拥有的菜单ID集合（含其祖先节点，保证树形结构完整）
+     *
+     * @param userId 用户ID
+     * @return 菜单ID集合
+     */
+    Set<Long> listMenuIdsByUserId(Long userId);
 }

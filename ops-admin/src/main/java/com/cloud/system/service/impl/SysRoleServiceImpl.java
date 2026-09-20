@@ -7,7 +7,6 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.cloud.system.common.constant.SystemConstants;
 import com.cloud.system.common.model.Option;
 import com.cloud.system.converter.RoleConverter;
 import com.cloud.system.mapper.SysRoleMapper;
@@ -46,7 +45,11 @@ public class SysRoleServiceImpl extends ServiceImpl<SysRoleMapper, SysRole> impl
     /**
      * 角色分页列表
      * <p>
-     * 非超级管理员不显示超级管理员角色(id=1 / code=ROOT)
+     * 角色可见规则:
+     * <ul>
+     *     <li>超级管理员(role_id=1)可看到所有角色</li>
+     *     <li>其他用户仅可看到自己创建的角色</li>
+     * </ul>
      *
      * @param queryParams
      * @return
@@ -68,9 +71,8 @@ public class SysRoleServiceImpl extends ServiceImpl<SysRoleMapper, SysRole> impl
                                                 .or()
                                                 .like(StrUtil.isNotBlank(keywords), SysRole::getCode, keywords)
                         )
-                        // 非超级管理员不显示超级管理员角色(双重防御：同时按 id 和 code 过滤)
-                        .ne(!isRoot, SysRole::getId, SystemConstants.ROOT_ROLE_ID)
-                        .ne(!isRoot, SysRole::getCode, SystemConstants.ROOT_ROLE_CODE)
+                        // 非超级管理员：仅显示自己创建的角色
+                        .eq(!isRoot, SysRole::getCreateBy, SecurityUtils.getUserId())
         );
 
         // 实体转换
@@ -81,10 +83,10 @@ public class SysRoleServiceImpl extends ServiceImpl<SysRoleMapper, SysRole> impl
     /**
      * 角色下拉列表
      * <p>
-     * 多租户数据隔离规则:
+     * 角色可见规则:
      * <ul>
      *     <li>超级管理员(role_id=1)可看到所有角色</li>
-     *     <li>其他用户不可看到超级管理员角色(id=1 / code=ROOT)，防止越权分配</li>
+     *     <li>其他用户可看到：自己当前拥有的角色 + 自己创建的角色</li>
      * </ul>
      *
      * @return
@@ -93,14 +95,24 @@ public class SysRoleServiceImpl extends ServiceImpl<SysRoleMapper, SysRole> impl
     public List<Option> listRoleOptions() {
         boolean isRoot = SecurityUtils.isRoot();
         // 查询数据
-        List<SysRole> roleList = this.list(new LambdaQueryWrapper<SysRole>()
-                // 非超级管理员：排除 id=1 的系统管理员角色（双重防御：同时按 id 和 code 过滤）
-                .ne(!isRoot, SysRole::getId, SystemConstants.ROOT_ROLE_ID)
-                .ne(!isRoot, SysRole::getCode, SystemConstants.ROOT_ROLE_CODE)
-                .ne(!isRoot, SysRole::getCode, SystemConstants.ADMIN_ROLE_CODE)
+        LambdaQueryWrapper<SysRole> queryWrapper = new LambdaQueryWrapper<SysRole>()
                 .select(SysRole::getId, SysRole::getName)
-                .orderByAsc(SysRole::getSort)
-        );
+                .orderByAsc(SysRole::getSort);
+
+        if (!isRoot) {
+            // 非超级管理员：返回「自己拥有的角色」+「自己创建的角色」
+            Long userId = SecurityUtils.getUserId();
+            List<Long> roleIds = sysUserRoleService.list(new LambdaQueryWrapper<SysUserRole>()
+                            .eq(SysUserRole::getUserId, userId))
+                    .stream()
+                    .map(SysUserRole::getRoleId)
+                    .collect(Collectors.toList());
+            queryWrapper.and(w -> w.in(CollectionUtil.isNotEmpty(roleIds), SysRole::getId, roleIds)
+                    .or()
+                    .eq(SysRole::getCreateBy, userId));
+        }
+
+        List<SysRole> roleList = this.list(queryWrapper);
 
         // 实体转换
         List<Option> list = roleConverter.entities2Options(roleList);

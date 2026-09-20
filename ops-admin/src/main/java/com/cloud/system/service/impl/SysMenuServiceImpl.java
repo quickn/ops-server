@@ -9,6 +9,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.cloud.system.common.constant.SystemConstants;
 import com.cloud.system.common.enums.MenuTypeEnum;
 import com.cloud.system.common.enums.StatusEnum;
+import com.cloud.system.common.util.SecurityUtils;
 import com.cloud.system.converter.MenuConverter;
 import com.cloud.system.mapper.SysMenuMapper;
 import com.cloud.system.model.bo.RouteBO;
@@ -41,6 +42,8 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
 
     /**
      * 菜单列表
+     * <p>
+     * 非超级管理员仅返回自己拥有的菜单（含祖先节点），用于分配角色权限时只能选择自己已有的权限菜单。
      *
      * @param queryParams {@link MenuQuery}
      */
@@ -50,6 +53,15 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
                 .like(StrUtil.isNotBlank(queryParams.getKeywords()), SysMenu::getName, queryParams.getKeywords())
                 .orderByAsc(SysMenu::getSort)
         );
+
+        // 非超级管理员：仅保留自己拥有的菜单（含祖先节点）
+        if (!SecurityUtils.isRoot()) {
+            Long userId = SecurityUtils.getUserId();
+            Set<Long> ownedMenuIds = this.baseMapper.listMenuIdsByUserId(userId);
+            menus = menus.stream()
+                    .filter(menu -> CollectionUtil.contains(ownedMenuIds, menu.getId()))
+                    .collect(Collectors.toList());
+        }
 
         Set<Long> parentIds = menus.stream()
                 .map(SysMenu::getParentId)
@@ -95,10 +107,22 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper, SysMenu> impl
 
     /**
      * 菜单下拉数据
+     * <p>
+     * 非超级管理员仅返回自己角色下的菜单（含祖先节点），保证树形结构完整。
      */
     @Override
     public List<Option> listMenuOptions() {
         List<SysMenu> menuList = this.list(new LambdaQueryWrapper<SysMenu>().orderByAsc(SysMenu::getSort));
+
+        // 非超级管理员：仅保留自己角色下的菜单（含祖先节点）
+        if (!SecurityUtils.isRoot()) {
+            Long userId = SecurityUtils.getUserId();
+            Set<Long> ownedMenuIds = this.baseMapper.listMenuIdsByUserId(userId);
+            menuList = menuList.stream()
+                    .filter(menu -> CollectionUtil.contains(ownedMenuIds, menu.getId()))
+                    .collect(Collectors.toList());
+        }
+
         return recurMenuOptions(SystemConstants.ROOT_NODE_ID, menuList);
     }
 
