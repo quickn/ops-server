@@ -9,8 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-
 @Service
 @Slf4j
 public class RCmdLogInfoServiceImpl extends ServiceImpl<CmdLogInfoMapper, CmdLogInfo> {
@@ -31,7 +29,6 @@ public class RCmdLogInfoServiceImpl extends ServiceImpl<CmdLogInfoMapper, CmdLog
                 .script(script)
                 .result(cmdLogInfoResult)
                 .isSuccess(!agentJsonObject.getBooleanValue("isError", true))
-                .createTime(LocalDateTime.now())
                 .build();
         this.save(cmdLogInfo);
     }

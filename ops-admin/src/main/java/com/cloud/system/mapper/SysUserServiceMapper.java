@@ -24,4 +24,12 @@ public interface SysUserServiceMapper extends BaseMapper<SysUserService> {
      * @return 服务列表
      */
     List<ServiceInfo> listServiceByUserId(@Param("userId") Long userId);
+
+    /**
+     * 根据用户ID获取关联的服务ID集合
+     *
+     * @param userId 用户ID
+     * @return 服务ID集合
+     */
+    List<Integer> listServiceIdsByUserId(@Param("userId") Long userId);
 }

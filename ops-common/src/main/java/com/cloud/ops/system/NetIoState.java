@@ -3,8 +3,6 @@ package com.cloud.ops.system;
 import com.cloud.ops.base.MonitorBaseEntity;
 import lombok.Data;
 
-import java.util.Date;
-
 
 @Data
 public class NetIoState extends MonitorBaseEntity {
@@ -60,11 +58,5 @@ public class NetIoState extends MonitorBaseEntity {
      * 每秒钟接收的多播数据包,rxmcst/s
      */
     private String rxmcst;
-
-    /**
-     * 创建时间
-     */
-    private Date createTime;
-
 
 }

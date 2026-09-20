@@ -36,11 +36,4 @@ public class MemState extends MonitorBaseEntity {
      */
     private Double usePer;
 
-
-    /**
-     * 创建时间
-     */
-    private Date createTime;
-
-
 }

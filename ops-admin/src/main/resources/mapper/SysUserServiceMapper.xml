@@ -21,4 +21,11 @@
         ORDER BY si.sort DESC, si.id ASC
     </select>
 
+    <!-- 根据用户ID查询关联的服务ID集合 -->
+    <select id="listServiceIdsByUserId" resultType="java.lang.Integer">
+        SELECT sus.service_id
+        FROM sys_user_service sus
+        WHERE sus.user_id = #{userId}
+    </select>
+
 </mapper>

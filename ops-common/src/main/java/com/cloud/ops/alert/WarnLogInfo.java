@@ -1,11 +1,11 @@
 package com.cloud.ops.alert;
 
-import com.cloud.base.ServiceBaseEntity;
+import com.cloud.ops.base.MonitorBaseEntity;
 import com.cloud.ops.server.StaticKeys;
 import lombok.Data;
 
 @Data
-public class WarnLogInfo extends ServiceBaseEntity {
+public class WarnLogInfo extends MonitorBaseEntity {
 
     /**
      *

@@ -2,11 +2,11 @@ package com.cloud.ops.operation;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
-import com.cloud.base.ServiceBaseEntity;
+import com.cloud.ops.base.MonitorBaseEntity;
 import lombok.Data;
 
 @Data
-public class ExternalLink extends ServiceBaseEntity {
+public class ExternalLink extends MonitorBaseEntity {
 
     @TableId(type = IdType.AUTO)
     private Long id;

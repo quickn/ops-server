@@ -2,7 +2,7 @@ package com.cloud.ops.processnetstat;
 
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.cloud.base.ServiceBaseEntity;
+import com.cloud.ops.base.MonitorBaseEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
  */
 @Data
 @TableName("process_stat")
-public class ProcessStat extends ServiceBaseEntity {
+public class ProcessStat extends MonitorBaseEntity {
 
     @Schema(description = "进程编号")
     private Integer pid;

@@ -4,8 +4,6 @@ import com.cloud.base.util.DateUtil;
 import com.cloud.ops.base.MonitorBaseEntity;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.Date;
-
 
 public class AppState extends MonitorBaseEntity {
 
@@ -37,11 +35,6 @@ public class AppState extends MonitorBaseEntity {
      */
     private String dateStr;
 
-    /**
-     * 创建时间
-     */
-    private Date createTime;
-
 
     public Double getCpuPer() {
         return cpuPer;
@@ -66,26 +59,6 @@ public class AppState extends MonitorBaseEntity {
 
     public void setMemPer(Double memPer) {
         this.memPer = memPer;
-    }
-
-    public Date getCreateTime() {
-        return createTime;
-    }
-
-    public void setCreateTime(Date createTime) {
-        this.createTime = createTime;
-    }
-
-    public String getDateStr() {
-        String str = DateUtil.getDateTimeString(createTime);
-        if (!StringUtils.isEmpty(str) && str.length() > 16) {
-            return str.substring(5);
-        }
-        return dateStr;
-    }
-
-    public void setDateStr(String dateStr) {
-        this.dateStr = dateStr;
     }
 
 

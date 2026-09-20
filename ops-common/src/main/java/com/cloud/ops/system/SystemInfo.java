@@ -1,16 +1,21 @@
 package com.cloud.ops.system;
 
+import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
-import com.cloud.base.ServiceBaseEntity;
+import com.cloud.ops.base.MonitorBaseEntity;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+
+import java.time.LocalDateTime;
 
 /**
  * 系统信息
  */
 @Data
-public class SystemInfo extends ServiceBaseEntity {
+public class SystemInfo extends MonitorBaseEntity {
 
     private static final long serialVersionUID = 879979812204191283L;
 
@@ -55,5 +60,9 @@ public class SystemInfo extends ServiceBaseEntity {
 
     @Schema(description = "备注")
     private String remark;
+
+    @TableField(fill = FieldFill.UPDATE)
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime updateTime;
 
 }

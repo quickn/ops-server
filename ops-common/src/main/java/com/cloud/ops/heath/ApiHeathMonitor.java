@@ -1,6 +1,6 @@
 package com.cloud.ops.heath;
 
-import com.cloud.base.ServiceBaseEntity;
+import com.cloud.ops.base.MonitorBaseEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -8,7 +8,7 @@ import lombok.Data;
  * 接口健康监控
  */
 @Data
-public class ApiHeathMonitor extends ServiceBaseEntity {
+public class ApiHeathMonitor extends MonitorBaseEntity {
 
     private static final long serialVersionUID = -2913111613773445949L;
 

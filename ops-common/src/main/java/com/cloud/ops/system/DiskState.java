@@ -1,19 +1,15 @@
 package com.cloud.ops.system;
 
-import com.baomidou.mybatisplus.annotation.FieldFill;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.cloud.system.common.base.BaseEntity;
+import com.cloud.ops.base.MonitorBaseEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
-
-import java.time.LocalDateTime;
 
 
 /**
  * 磁盘状态
  */
 @Data
-public class DiskState extends BaseEntity {
+public class DiskState extends MonitorBaseEntity {
 
     private static final long serialVersionUID = 879979812204191283L;
 
@@ -35,13 +31,5 @@ public class DiskState extends BaseEntity {
 
     @Schema(description = "已使用百分比")
     private Double usePer;
-
-    @TableField(exist = false)
-    private LocalDateTime updateTime;
-
-    @TableField(fill = FieldFill.INSERT)
-    private Integer serviceId;
-
-    private String serviceName;
 
 }

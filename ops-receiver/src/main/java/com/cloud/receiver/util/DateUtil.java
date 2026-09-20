@@ -5,6 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -77,8 +79,9 @@ public class DateUtil {
         return getString(date, DATE_PATTERN);
     }
 
-    public static String getDateTimeString(Date date) {
-        return getString(date, DATETIME_PATTERN);
+    public static String getDateTimeString(LocalDateTime dateTime) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(DATETIME_PATTERN);
+        return dateTime.format(formatter);
     }
 
     public static String getString(Date date, String pattern) {

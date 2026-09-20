@@ -1,12 +1,12 @@
 package com.cloud.ops.email;
 
-import com.cloud.base.ServiceBaseEntity;
+import com.cloud.ops.base.MonitorBaseEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 
 @Data
-public class MailConfig extends ServiceBaseEntity {
+public class MailConfig extends MonitorBaseEntity {
 
     private static final long serialVersionUID = -8284741180883299533L;
 

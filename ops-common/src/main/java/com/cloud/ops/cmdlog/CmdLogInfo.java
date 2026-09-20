@@ -1,15 +1,10 @@
 package com.cloud.ops.cmdlog;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
-import com.fasterxml.jackson.annotation.JsonFormat;
+import com.baomidou.mybatisplus.annotation.*;
+import com.cloud.ops.base.MonitorBaseEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;
-import org.springframework.format.annotation.DateTimeFormat;
-
-import java.time.LocalDateTime;
 
 /**
  * @author wzh
@@ -19,15 +14,14 @@ import java.time.LocalDateTime;
 @Data
 @Builder
 @TableName("cmd_log_info")
-public class CmdLogInfo {
+public class CmdLogInfo extends MonitorBaseEntity {
 
     @TableId(type = IdType.AUTO)
     private Long id;
 
-    @Schema(description = "环境id")
+    @TableField(fill = FieldFill.INSERT)
     private Integer serviceId;
 
-    @Schema(description = "环境")
     private String serviceName;
 
     @Schema(description = "服务器id")
@@ -65,11 +59,6 @@ public class CmdLogInfo {
 
     @Schema(description = "备注")
     private String remark;
-
-    @Schema(description = "创建时间")
-    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime createTime;
 
 }
 

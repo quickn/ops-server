@@ -1,19 +1,16 @@
 package com.cloud.ops.docker;
 
-import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.cloud.base.ServiceBaseEntity;
+import com.cloud.ops.base.MonitorBaseEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
-
-import java.time.LocalDateTime;
 
 /**
  * Created by Liuyun on 2023-07-27 15:16
  **/
 @Data
 @TableName("docker_stats")
-public class DockerStats extends ServiceBaseEntity {
+public class DockerStats extends MonitorBaseEntity {
 
     @Schema(description = "名称")
     private String names;
@@ -38,8 +35,5 @@ public class DockerStats extends ServiceBaseEntity {
 
     @Schema(description = "网络进出量")
     private String netIo;
-
-    @TableField(exist = false)
-    private LocalDateTime updateTime;
 
 }

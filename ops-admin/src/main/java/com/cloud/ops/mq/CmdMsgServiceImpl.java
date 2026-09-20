@@ -104,7 +104,6 @@ public class CmdMsgServiceImpl implements IMsgService {
         cmdLogInfo.setServiceId(byId.getServiceId());
         cmdLogInfo.setServiceName(byId.getServiceName());
         cmdLogInfo.setAgentIp(byId.getHostname());
-        cmdLogInfo.setCreateTime(LocalDateTime.now());
         iCmdLogInfoService.save(cmdLogInfo);
         Long msgId = cmdLogInfo.getId();
         long startTime = System.currentTimeMillis();

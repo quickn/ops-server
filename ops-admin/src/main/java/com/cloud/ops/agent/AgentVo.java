@@ -1,12 +1,15 @@
 package com.cloud.ops.agent;
 
 import cn.hutool.core.bean.BeanUtil;
-import com.cloud.base.ServiceBaseEntity;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.cloud.ops.base.MonitorBaseEntity;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
 
 /**
  * Created by Liuyun on 2023-07-28 11:16
@@ -15,7 +18,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class AgentVo extends ServiceBaseEntity {
+public class AgentVo extends MonitorBaseEntity {
 
     public AgentVo(Agent agentConfig) {
         BeanUtil.copyProperties(agentConfig, this);
@@ -44,5 +47,7 @@ public class AgentVo extends ServiceBaseEntity {
 
     @Schema(description = "容器状态")
     private String status;
+
+    private LocalDateTime updateTime;
 
 }

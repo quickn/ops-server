@@ -1,12 +1,12 @@
 package com.cloud.ops.jar;
 
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.cloud.base.ServiceBaseEntity;
+import com.cloud.ops.base.MonitorBaseEntity;
 import lombok.Data;
 
 @Data
 @TableName("jar_package")
-public class JarPackage extends ServiceBaseEntity {
+public class JarPackage extends MonitorBaseEntity {
 
     private String fileName;
     private String originalName;

@@ -3,7 +3,7 @@ package com.cloud.ops.agent;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.cloud.base.ServiceBaseEntity;
+import com.cloud.ops.base.MonitorBaseEntity;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -14,7 +14,7 @@ import lombok.Data;
 
 @Data
 @TableName("agent")
-public class Agent extends ServiceBaseEntity {
+public class Agent extends MonitorBaseEntity {
 
     @TableId(type = IdType.AUTO)
     private Long id;
