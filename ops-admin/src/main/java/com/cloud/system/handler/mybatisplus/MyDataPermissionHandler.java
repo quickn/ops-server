@@ -5,6 +5,7 @@ import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.toolkit.ObjectUtils;
 import com.baomidou.mybatisplus.core.toolkit.StringPool;
+import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.baomidou.mybatisplus.extension.plugins.handler.DataPermissionHandler;
 import com.cloud.base.mapper.BaseQueryMapper;
 import com.cloud.base.spring.ApplicationContextHelper;
@@ -13,7 +14,7 @@ import com.cloud.system.common.annotation.DataPermission;
 import com.cloud.system.common.base.IBaseEnum;
 import com.cloud.system.common.enums.DataScopeEnum;
 import com.cloud.system.common.util.SecurityUtils;
-import com.cloud.system.mapper.SysUserServiceMapper;
+import com.cloud.system.mapper.SysDeptServiceMapper;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.jsqlparser.expression.Expression;
@@ -23,6 +24,7 @@ import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -137,14 +139,17 @@ public class MyDataPermissionHandler implements DataPermissionHandler {
     }
 
     /**
-     * 按 serviceId 过滤：仅显示当前登录用户有权限的 service 数据。
+     * 按 serviceId 过滤：仅显示当前登录用户所在部门有权限的 service 数据。
      */
     private Expression serviceIdFilter(Expression where) {
-        Long userId = SecurityUtils.getUserId();
-        if (userId == null) {
+        if (SecurityUtils.getUser() == null) {
             return where;
         }
-        List<Integer> serviceIds = getServiceIds(userId);
+        Long deptId = SecurityUtils.getDeptId();
+        if (deptId == null) {
+            return where;
+        }
+        List<Integer> serviceIds = getServiceIds(deptId);
         if (CollectionUtil.isEmpty(serviceIds)) {
             // 无任何服务权限，返回恒假条件
             String falseSql = " 1 = 0 ";
@@ -162,15 +167,15 @@ public class MyDataPermissionHandler implements DataPermissionHandler {
     }
 
     /**
-     * 获取当前用户有权限的服务ID集合。
+     * 获取当前用户所在部门有权限的服务ID集合。
      */
-    private List<Integer> getServiceIds(Long userId) {
+    private List<Integer> getServiceIds(Long deptId) {
         try {
-            SysUserServiceMapper mapper = ApplicationContextHelper.getBean(SysUserServiceMapper.class);
-            return mapper.listServiceIdsByUserId(userId);
+            SysDeptServiceMapper mapper = ApplicationContextHelper.getBean(SysDeptServiceMapper.class);
+            return mapper.listServiceIdsByDeptId(deptId);
         } catch (Exception e) {
-            log.warn("查询用户服务权限失败: userId={}", userId, e);
-            return java.util.Collections.emptyList();
+            log.warn("查询部门服务权限失败: deptId={}", deptId, e);
+            return Collections.emptyList();
         }
     }
 
@@ -205,7 +210,7 @@ public class MyDataPermissionHandler implements DataPermissionHandler {
         DataScopeEnum dataScopeEnum = IBaseEnum.getEnumByValue(dataScope, DataScopeEnum.class);
 
         Long deptId, userId;
-        String appendSqlStr;
+        String appendSqlStr = "";
         switch (dataScopeEnum) {
             case ALL:
                 return where;
@@ -219,8 +224,15 @@ public class MyDataPermissionHandler implements DataPermissionHandler {
                 break;
             // 默认部门及子部门数据权限
             default:
-                deptId = SecurityUtils.getDeptId();
-                appendSqlStr = deptColumnName + " IN ( SELECT id FROM sys_dept WHERE id = " + deptId + " OR FIND_IN_SET( " + deptId + " , tree_path ) )";
+                if (SecurityUtils.isRoot()) {
+                    deptId = SecurityUtils.getDeptId();
+                    appendSqlStr = deptColumnName + " IN ( SELECT id FROM sys_dept WHERE id = " + deptId + " OR FIND_IN_SET( " + deptId + " , tree_path ) )";
+                }else {
+                    if(StringUtils.isEmpty(deptAlias)){
+                        userId = SecurityUtils.getUserId();
+                        appendSqlStr = userColumnName + StringPool.EQUALS + userId;
+                    }
+                }
                 break;
         }
 

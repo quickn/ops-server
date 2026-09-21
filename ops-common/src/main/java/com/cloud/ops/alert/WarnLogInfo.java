@@ -1,7 +1,6 @@
 package com.cloud.ops.alert;
 
 import com.cloud.ops.base.MonitorBaseEntity;
-import com.cloud.ops.server.StaticKeys;
 import lombok.Data;
 
 @Data
@@ -38,14 +37,5 @@ public class WarnLogInfo extends MonitorBaseEntity {
 
     public WarnLogInfo() {
 
-    }
-
-    public WarnLogInfo(String title, String infoContent, Integer serviceId, String serviceName, boolean sendEmail) {
-        this.title = title;
-        this.infoContent = infoContent;
-        this.state = StaticKeys.LOG_ERROR;
-        this.sendEmail = sendEmail;
-        this.setServiceId(serviceId);
-        this.setServiceName(serviceName);
     }
 }

@@ -6,13 +6,13 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.cloud.system.common.constant.SystemConstants;
 import com.cloud.system.common.enums.StatusEnum;
+import com.cloud.system.common.model.Option;
 import com.cloud.system.converter.DeptConverter;
 import com.cloud.system.mapper.SysDeptMapper;
 import com.cloud.system.model.entity.SysDept;
 import com.cloud.system.model.form.DeptForm;
 import com.cloud.system.model.query.DeptQuery;
 import com.cloud.system.model.vo.DeptVO;
-import com.cloud.system.common.model.Option;
 import com.cloud.system.service.SysDeptService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -43,7 +43,6 @@ public class SysDeptServiceImpl extends ServiceImpl<SysDeptMapper, SysDept> impl
         // 查询参数
         String keywords = queryParams.getKeywords();
         Integer status = queryParams.getStatus();
-
         // 查询数据
         List<SysDept> deptList = this.list(
                 new LambdaQueryWrapper<SysDept>()
@@ -94,13 +93,12 @@ public class SysDeptServiceImpl extends ServiceImpl<SysDeptMapper, SysDept> impl
      */
     @Override
     public List<Option> listDeptOptions() {
-
-        List<SysDept> deptList = this.list(new LambdaQueryWrapper<SysDept>()
+        LambdaQueryWrapper<SysDept> wrapper = new LambdaQueryWrapper<SysDept>()
                 .eq(SysDept::getStatus, StatusEnum.ENABLE.getValue())
-                .select(SysDept::getId, SysDept::getParentId, SysDept::getName)
-                .orderByAsc(SysDept::getSort)
-        );
+                .select(SysDept::getId, SysDept::getParentId, SysDept::getName, SysDept::getTreePath)
+                .orderByAsc(SysDept::getSort);
 
+        List<SysDept> deptList = this.list(wrapper);
         Set<Long> parentIds = deptList.stream()
                 .map(SysDept::getParentId)
                 .collect(Collectors.toSet());

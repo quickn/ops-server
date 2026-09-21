@@ -12,14 +12,14 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * 用户服务关联表
+ * 部门服务关联表
  *
  * @author liuyun
  * @since 2026-09-18
  */
 @Data
-@TableName("sys_user_service")
-public class SysUserService implements Serializable {
+@TableName("sys_dept_service")
+public class SysDeptService implements Serializable {
 
     /**
      * 主键
@@ -38,9 +38,9 @@ public class SysUserService implements Serializable {
     private String serviceName;
 
     /**
-     * 用户ID
+     * 部门ID
      */
-    private Long userId;
+    private Long deptId;
 
     /**
      * 创建时间

@@ -23,13 +23,13 @@ public class ServiceInfoQuery extends PageForm implements IQuery {
 
 
     /**
-     * 用户ID
+     * 创建人ID(用于多租户数据隔离)
      */
     @Where
-    private Long userId;
+    private Long createBy;
 
 
-    public Long getUserId() {
-        return userId;
+    public Long getCreateBy() {
+        return createBy;
     }
 }

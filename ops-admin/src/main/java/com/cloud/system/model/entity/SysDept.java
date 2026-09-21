@@ -1,6 +1,8 @@
 package com.cloud.system.model.entity;
 
+import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 
 import com.cloud.system.common.base.BaseEntity;
@@ -47,8 +49,10 @@ public class SysDept extends BaseEntity {
      */
     private Integer deleted;
 
+    @TableField(fill = FieldFill.INSERT)
     private Long createBy;
 
+    @TableField(fill = FieldFill.INSERT)
     private Long updateBy;
 
 }

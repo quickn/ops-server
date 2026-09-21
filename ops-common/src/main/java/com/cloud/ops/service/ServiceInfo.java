@@ -23,9 +23,10 @@ public class ServiceInfo {
     private Integer id;
 
     /**
-     * 用户ID
+     * 创建人ID(用于多租户数据隔离)
      */
-    private Long userId;
+    @TableField(fill = FieldFill.INSERT)
+    private Long createBy;
 
     /**
      * 服务名称

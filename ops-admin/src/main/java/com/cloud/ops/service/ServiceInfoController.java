@@ -6,9 +6,9 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.cloud.system.common.result.Result;
 import com.cloud.system.common.util.SecurityUtils;
-import com.cloud.system.mapper.SysUserServiceMapper;
-import com.cloud.system.model.entity.SysUserService;
-import com.cloud.system.model.form.UserServicesForm;
+import com.cloud.system.mapper.SysDeptServiceMapper;
+import com.cloud.system.model.entity.SysDeptService;
+import com.cloud.system.model.form.DeptServicesForm;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -37,13 +37,13 @@ public class ServiceInfoController {
     ServiceInfoService serviceInfoService;
 
     @Resource
-    SysUserServiceMapper sysUserServiceMapper;
+    SysDeptServiceMapper sysDeptServiceMapper;
 
     @ResponseBody
     @GetMapping("/listAll")
     public Result listAll() {
         List<ServiceInfo> list = serviceInfoMapper.query(ServiceInfoQuery.builder()
-                .userId(SecurityUtils.getUserId()).build());
+                .createBy(SecurityUtils.getUserId()).build());
         return Result.success(list);
     }
 
@@ -51,7 +51,7 @@ public class ServiceInfoController {
     @GetMapping("/listPage")
     @McpTool(name = "serviceList", description = "服务列表")
     public Result serviceList(@ParameterObject ServiceInfoQuery systemInfoQuery) {
-        systemInfoQuery.setUserId(SecurityUtils.getUserId());
+        systemInfoQuery.setCreateBy(SecurityUtils.getUserId());
         Page<ServiceInfo> list = serviceInfoMapper.queryPage(systemInfoQuery, serviceInfoMapper.getPage());
         return Result.success(list);
     }
@@ -59,7 +59,7 @@ public class ServiceInfoController {
     @ResponseBody
     @PostMapping("/save")
     public Result save(@RequestBody ServiceInfo serviceInfo) {
-        serviceInfo.setUserId(SecurityUtils.getUserId());
+        // createBy 由 MyMetaObjectHandler 自动填充，无需手动设置
         serviceInfoService.saveOrUpdate(serviceInfo);
         return Result.success();
     }
@@ -73,52 +73,56 @@ public class ServiceInfoController {
     }
 
     /**
-     * 根据用户ID获取关联的服务列表
+     * 根据当前登录用户所在部门获取关联的服务列表
      *
      * @return 服务列表
      */
     @ResponseBody
-    @GetMapping("/listByUserId")
-    @McpTool(name = "serviceListByUser", description = "根据用户获取关联服务")
-    public Result listByUserId() {
-        Long currentUserId = SecurityUtils.getUserId();
-        if (currentUserId == null) {
+    @GetMapping("/listByDeptId")
+    @McpTool(name = "serviceListByDept", description = "根据部门获取关联服务")
+    public Result listByDeptId() {
+        Long currentDeptId = SecurityUtils.getDeptId();
+        if (currentDeptId == null) {
             return Result.success(Collections.emptyList());
         }
-        List<ServiceInfo> list = sysUserServiceMapper.listServiceByUserId(currentUserId);
+        List<ServiceInfo> list = sysDeptServiceMapper.listServiceByDeptId(currentDeptId);
+        if (list.isEmpty()) {
+            return listAll();
+        }
         return Result.success(list);
     }
 
     /**
-     * 获取指定用户已分配的服务列表
+     * 获取指定部门已分配的服务列表
      *
-     * @param userId 目标用户ID
+     * @param deptId 目标部门ID
      * @return 服务列表
      */
     @ResponseBody
-    @GetMapping("/listUserServices/{userId}")
-    public Result listUserServices(@PathVariable Long userId) {
-        List<ServiceInfo> list = sysUserServiceMapper.listServiceByUserId(userId);
+    @GetMapping("/listDeptServices/{deptId}")
+    public Result listDeptServices(@PathVariable Long deptId) {
+        List<ServiceInfo> list = sysDeptServiceMapper.listServiceByDeptId(deptId);
+
         return Result.success(list);
     }
 
     /**
-     * 给用户分配服务（只能分配当前登录用户名下的服务）
+     * 给部门分配服务（只能分配当前登录用户名下的服务）
      *
-     * @param form userId: 目标用户ID, serviceIds: 勾选的服务ID集合
+     * @param form deptId: 目标部门ID, serviceIds: 勾选的服务ID集合
      * @return Result
      */
     @ResponseBody
     @PostMapping("/assignServices")
     @Transactional(rollbackFor = Exception.class)
-    public Result assignServices(@RequestBody UserServicesForm form) {
+    public Result assignServices(@RequestBody DeptServicesForm form) {
         Long currentUserId = SecurityUtils.getUserId();
         Assert.notNull(currentUserId, "未获取到当前登录用户");
-        Assert.notNull(form.getUserId(), "目标用户ID不能为空");
+        Assert.notNull(form.getDeptId(), "目标部门ID不能为空");
 
-        // 删除目标用户原有的服务关联
-        sysUserServiceMapper.delete(new LambdaQueryWrapper<SysUserService>()
-                .eq(SysUserService::getUserId, form.getUserId()));
+        // 删除目标部门原有的服务关联
+        sysDeptServiceMapper.delete(new LambdaQueryWrapper<SysDeptService>()
+                .eq(SysDeptService::getDeptId, form.getDeptId()));
 
         if (CollectionUtil.isEmpty(form.getServiceIds())) {
             return Result.success();
@@ -126,7 +130,7 @@ public class ServiceInfoController {
 
         // 只允许分配当前用户名下的服务
         List<ServiceInfo> ownedServices = serviceInfoMapper.query(ServiceInfoQuery.builder()
-                .userId(currentUserId).build());
+                .createBy(currentUserId).build());
         Map<Integer, ServiceInfo> ownedServiceMap = ownedServices.stream()
                 .collect(Collectors.toMap(ServiceInfo::getId, Function.identity()));
 
@@ -135,12 +139,12 @@ public class ServiceInfoController {
             if (service == null) {
                 continue;
             }
-            SysUserService userServices = new SysUserService();
-            userServices.setUserId(form.getUserId());
-            userServices.setServiceId(service.getId());
-            userServices.setServiceName(service.getName());
-            userServices.setCreateTime(LocalDateTime.now());
-            sysUserServiceMapper.insert(userServices);
+            SysDeptService deptService = new SysDeptService();
+            deptService.setDeptId(form.getDeptId());
+            deptService.setServiceId(service.getId());
+            deptService.setServiceName(service.getName());
+            deptService.setCreateTime(LocalDateTime.now());
+            sysDeptServiceMapper.insert(deptService);
         }
         return Result.success();
     }

@@ -469,6 +469,7 @@ CREATE TABLE `service_info`  (
   `sort` int NULL DEFAULT NULL COMMENT '排序',
   `label` varchar(20) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '标签',
   `work_path` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '工作目录',
+  `create_by` bigint NULL DEFAULT NULL COMMENT '创建人ID(用于多租户数据隔离)',
   `create_time` datetime NULL DEFAULT NULL,
   `update_time` datetime NULL DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE
@@ -506,6 +507,19 @@ CREATE TABLE `sys_dept`  (
   `update_by` bigint NULL DEFAULT NULL COMMENT '修改人ID',
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 171 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '部门表' ROW_FORMAT = DYNAMIC;
+
+-- ----------------------------
+-- Table structure for sys_dept_service
+-- ----------------------------
+DROP TABLE IF EXISTS `sys_dept_service`;
+CREATE TABLE `sys_dept_service`  (
+  `id` int NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `service_id` int NULL DEFAULT NULL COMMENT '服务ID',
+  `service_name` varchar(60) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '服务名称',
+  `dept_id` bigint NULL DEFAULT NULL COMMENT '部门ID',
+  `create_time` datetime NULL DEFAULT NULL COMMENT '创建时间',
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '部门服务关联表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for sys_dict
