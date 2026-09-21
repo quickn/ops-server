@@ -10,11 +10,12 @@ import com.baomidou.mybatisplus.extension.plugins.handler.DataPermissionHandler;
 import com.cloud.base.mapper.BaseQueryMapper;
 import com.cloud.base.spring.ApplicationContextHelper;
 import com.cloud.ops.base.MonitorBaseEntity;
+import com.cloud.ops.base.MultiTenantEntity;
+import com.cloud.ops.service.ServiceInfoMapper;
 import com.cloud.system.common.annotation.DataPermission;
 import com.cloud.system.common.base.IBaseEnum;
 import com.cloud.system.common.enums.DataScopeEnum;
 import com.cloud.system.common.util.SecurityUtils;
-import com.cloud.system.mapper.SysDeptServiceMapper;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.jsqlparser.expression.Expression;
@@ -28,6 +29,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * 数据权限控制器
@@ -39,10 +41,11 @@ import java.util.Set;
 public class MyDataPermissionHandler implements DataPermissionHandler {
 
     /**
-     * 需要按 serviceId 做数据过滤的标准查询方法白名单。
+     * 需要自动附加数据过滤条件的标准查询方法白名单。
      * <p>
      * 仅对这些方法（BaseQueryMapper 的 query 系列 + MyBatis-Plus BaseMapper 的标准查询）
-     * 自动附加 service_id 过滤，避免对自定义 @Select 方法（可能含 join 导致 service_id 歧义）误过滤。
+     * 自动附加 service_id（{@link MonitorBaseEntity}）或 create_by（{@link MultiTenantEntity}）
+     * 过滤，避免对自定义 @Select 方法（可能含 join 导致列名歧义）误过滤。
      */
     private static final Set<String> SERVICE_FILTER_METHODS = Set.of(
             // BaseQueryMapper 查询方法
@@ -67,6 +70,14 @@ public class MyDataPermissionHandler implements DataPermissionHandler {
         if (entityClass != null && MonitorBaseEntity.class.isAssignableFrom(entityClass)
                 && SERVICE_FILTER_METHODS.contains(methodName)) {
             return serviceIdFilter(where);
+        }
+
+        // 实现 MultiTenantEntity 的实体（含 create_by 列），非root用户仅能查询自己创建的数据
+        boolean multiTenantEntity = entityClass != null
+                && MultiTenantEntity.class.isAssignableFrom(entityClass)
+                && SERVICE_FILTER_METHODS.contains(methodName);
+        if (multiTenantEntity) {
+            return createByFilter(where);
         }
 
         // 查找当前 Mapper 方法上的 @DataPermission 注解（部门数据范围过滤）
@@ -171,12 +182,22 @@ public class MyDataPermissionHandler implements DataPermissionHandler {
      */
     private List<Integer> getServiceIds(Long deptId) {
         try {
-            SysDeptServiceMapper mapper = ApplicationContextHelper.getBean(SysDeptServiceMapper.class);
-            return mapper.listServiceIdsByDeptId(deptId);
+            ServiceInfoMapper mapper = ApplicationContextHelper.getBean(ServiceInfoMapper.class);
+            return mapper.listServiceIdsByDeptId();
         } catch (Exception e) {
             log.warn("查询部门服务权限失败: deptId={}", deptId, e);
             return Collections.emptyList();
         }
+    }
+
+    /**
+     * 按 create_by 过滤：非root用户仅可见自己创建的多租户数据（{@link MultiTenantEntity}）。
+     */
+    private Expression createByFilter(Expression where) {
+        if (SecurityUtils.getUser() == null) {
+            return where;
+        }
+        return dataScopeFilter("", "", "", "create_by", where);
     }
 
     private Expression appendExpression(Expression where, String appendSqlStr) {
@@ -216,24 +237,31 @@ public class MyDataPermissionHandler implements DataPermissionHandler {
                 return where;
             case DEPT:
                 deptId = SecurityUtils.getDeptId();
-                appendSqlStr = deptColumnName + StringPool.EQUALS + deptId;
+                if (StringUtils.isNotEmpty(deptColumnName)) {
+                    appendSqlStr = deptColumnName + StringPool.EQUALS + deptId;
+                } else {
+                    appendSqlStr = userColumnName + " IN (" + SecurityUtils.getCurrentDeptAllUserIds().stream()
+                            .map(String::valueOf).collect(Collectors.joining(",")) + ")";
+                }
                 break;
             case SELF:
                 userId = SecurityUtils.getUserId();
                 appendSqlStr = userColumnName + StringPool.EQUALS + userId;
                 break;
             // 默认部门及子部门数据权限
-            default:
+            case DEPT_AND_SUB:
                 if (SecurityUtils.isRoot()) {
                     deptId = SecurityUtils.getDeptId();
                     appendSqlStr = deptColumnName + " IN ( SELECT id FROM sys_dept WHERE id = " + deptId + " OR FIND_IN_SET( " + deptId + " , tree_path ) )";
-                }else {
-                    if(StringUtils.isEmpty(deptAlias)){
+                } else {
+                    if (StringUtils.isEmpty(deptAlias)) {
                         userId = SecurityUtils.getUserId();
                         appendSqlStr = userColumnName + StringPool.EQUALS + userId;
                     }
                 }
                 break;
+            default:
+                return where;
         }
 
         if (StrUtil.isBlank(appendSqlStr)) {

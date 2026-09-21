@@ -3,8 +3,11 @@ package com.cloud.system.common.util;
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.convert.Convert;
 import cn.hutool.core.util.StrUtil;
+import com.cloud.base.spring.ApplicationContextHelper;
 import com.cloud.system.common.constant.SystemConstants;
+import com.cloud.system.mapper.SysUserMapper;
 import com.cloud.system.security.userdetails.SysUserDetails;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -12,9 +15,12 @@ import org.springframework.util.PatternMatchUtils;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Slf4j
 public class SecurityUtils {
 
     /**
@@ -138,6 +144,33 @@ public class SecurityUtils {
 
         boolean hasPerm = perms.stream().anyMatch(item -> PatternMatchUtils.simpleMatch(perm, item));
         return hasPerm;
+    }
+
+    /**
+     * 获取当前登录用户所在部门及子部门下的所有用户ID集合
+     * <p>
+     * 包含当前用户本身；已自动排除已删除用户与 root 超级管理员。
+     * 可用于按"当前用户所在部门范围"对其他业务实体做多租户数据隔离。
+     *
+     * @return 用户ID集合；若用户未登录或无部门返回空集合
+     */
+    public static Set<Long> getCurrentDeptAllUserIds() {
+        SysUserDetails user = getUser();
+        if (user == null) {
+            return Collections.emptySet();
+        }
+        Long deptId = Convert.toLong(user.getDeptId());
+        if (deptId == null) {
+            return Collections.emptySet();
+        }
+        try {
+            SysUserMapper userMapper = ApplicationContextHelper.getBean(SysUserMapper.class);
+            List<Long> userIds = userMapper.listUserIdsByDeptTree(deptId);
+            return CollectionUtil.isNotEmpty(userIds) ? new HashSet<>(userIds) : Collections.emptySet();
+        } catch (Exception e) {
+            log.warn("查询当前用户部门下所有用户失败: deptId={}", deptId, e);
+            return Collections.emptySet();
+        }
     }
 
 }

@@ -436,6 +436,7 @@ CREATE TABLE `project`  (
   `docker_compose_content` varchar(3000) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT '' COMMENT 'docker compose 内容',
   `status` tinyint NOT NULL DEFAULT 0 COMMENT '状态：0-未部署 1-部署中 2-部署成功 3-部署失败',
   `remark` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '描述',
+  `create_by` bigint NULL DEFAULT NULL COMMENT '创建人ID(用于多租户数据隔离)',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id` DESC) USING BTREE

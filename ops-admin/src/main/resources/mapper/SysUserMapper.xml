@@ -156,4 +156,14 @@
         GROUP BY u.id
     </select>
 
+    <!-- 获取指定部门及子部门下的所有用户ID（多租户数据隔离用，不走数据权限） -->
+    <select id="listUserIdsByDeptTree" resultType="java.lang.Long">
+        SELECT u.id
+        FROM sys_user u
+                 INNER JOIN sys_dept d ON u.dept_id = d.id
+        WHERE u.deleted = 0
+          AND u.username != 'root'
+          AND concat(',', concat(d.tree_path, ',', d.id), ',') LIKE concat('%,', #{deptId}, ',%')
+    </select>
+
 </mapper>

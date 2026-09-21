@@ -1,6 +1,7 @@
 package com.cloud.ops.project;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.cloud.system.common.annotation.DataPermission;
 import com.cloud.system.common.result.Result;
 import com.cloud.system.common.util.SecurityUtils;
 import io.swagger.annotations.ApiParam;
@@ -31,6 +32,7 @@ public class ProjectController {
     @GetMapping("/page")
     @Operation(summary = "获取项目列表（分页）")
     @McpTool(name = "projectList", description = "项目列表")
+    @DataPermission(deptAlias = "p")
     public Result<IPage<Project>> page(ProjectDto dto) {
         log.info("dto: {}", dto);
         return Result.success(projectService.page(dto.getPage(), dto.buildLambda()));

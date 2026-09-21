@@ -1,6 +1,7 @@
 package com.cloud.ops.project;
 
 import com.baomidou.mybatisplus.annotation.*;
+import com.cloud.ops.base.MultiTenantEntity;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -17,7 +18,7 @@ import java.time.LocalDateTime;
 @Data
 @TableName("project")
 @Schema(description = "项目实体")
-public class Project implements Serializable {
+public class Project implements Serializable, MultiTenantEntity {
 
     @TableId(type = IdType.AUTO)
     private Long id;
@@ -48,6 +49,12 @@ public class Project implements Serializable {
 
     @Schema(description = "描述")
     private String remark;
+
+    /**
+     * 创建人ID(用于多租户数据隔离)
+     */
+    @TableField(fill = FieldFill.INSERT)
+    private Long createBy;
 
     @TableField(fill = FieldFill.INSERT)
     @Schema(description = "创建时间")

@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.cloud.system.common.model.Option;
+import com.cloud.system.common.util.SecurityUtils;
 import com.cloud.system.converter.RoleConverter;
 import com.cloud.system.mapper.SysRoleMapper;
 import com.cloud.system.model.entity.SysRole;
@@ -19,7 +20,6 @@ import com.cloud.system.model.vo.RolePageVO;
 import com.cloud.system.service.SysRoleMenuService;
 import com.cloud.system.service.SysRoleService;
 import com.cloud.system.service.SysUserRoleService;
-import com.cloud.system.common.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
@@ -128,6 +128,10 @@ public class SysRoleServiceImpl extends ServiceImpl<SysRoleMapper, SysRole> impl
     @Override
     public boolean saveRole(RoleForm roleForm) {
 
+        if (!SecurityUtils.isRoot() && roleForm.getDataScope() == 0) {
+            Assert.isTrue(false, "非超级管理员不允许保存全部数据权限");
+        }
+
         Long roleId = roleForm.getId();
         String roleCode = roleForm.getCode();
 
@@ -149,7 +153,7 @@ public class SysRoleServiceImpl extends ServiceImpl<SysRoleMapper, SysRole> impl
      * 获取角色表单数据
      *
      * @param roleId 角色ID
-     * @return  {@link RoleForm} – 角色表单数据
+     * @return {@link RoleForm} – 角色表单数据
      */
     @Override
     public RoleForm getRoleForm(Long roleId) {

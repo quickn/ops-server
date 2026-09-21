@@ -19,17 +19,4 @@ public class ServiceInfoQuery extends PageForm implements IQuery {
 
     @Where
     private String name;
-
-
-
-    /**
-     * 创建人ID(用于多租户数据隔离)
-     */
-    @Where
-    private Long createBy;
-
-
-    public Long getCreateBy() {
-        return createBy;
-    }
 }

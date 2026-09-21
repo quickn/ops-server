@@ -51,6 +51,17 @@ public interface SysUserMapper extends BaseMapper<SysUser> {
     UserAuthInfo getUserAuthInfo(String username);
 
     /**
+     * 获取指定部门及子部门下的所有用户ID（用于多租户数据隔离）
+     * <p>
+     * 结果已过滤已删除用户和 root 超级管理员；不走数据权限过滤（无注解），
+     * 供系统上下文主动按"当前用户所在部门范围"做用户筛选使用。
+     *
+     * @param deptId 部门ID
+     * @return 用户ID集合
+     */
+    List<Long> listUserIdsByDeptTree(@Param("deptId") Long deptId);
+
+    /**
      * 获取导出用户列表
      *
      * @param queryParams
