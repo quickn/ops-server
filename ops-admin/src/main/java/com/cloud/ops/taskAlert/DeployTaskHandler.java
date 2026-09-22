@@ -19,7 +19,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * 定时部署任务处理器
  *
- * <p>脚本内容约定为 JSON：
+ * <p>任务参数约定为 JSON：
  * <pre>
  * {
  *   "projectNames": "projectA,projectB",
@@ -48,14 +48,14 @@ public class DeployTaskHandler implements TaskTypeHandler {
 
     @Override
     public void handle(TaskAlert taskAlert, TaskAlertRecord record) {
-        if (StringUtils.isBlank(taskAlert.getScript())) {
+        if (StringUtils.isBlank(taskAlert.getTaskParams())) {
             record.setState(1);
             record.setResult("部署配置为空");
             return;
         }
         JSONObject jsonObject;
         try {
-            jsonObject = JSONObject.parseObject(taskAlert.getScript());
+            jsonObject = JSONObject.parseObject(taskAlert.getTaskParams());
         } catch (Exception e) {
             record.setState(1);
             record.setResult("部署配置解析失败：" + e.getMessage());

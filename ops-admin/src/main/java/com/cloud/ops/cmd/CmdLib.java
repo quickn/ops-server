@@ -1,8 +1,7 @@
 package com.cloud.ops.cmd;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.*;
+import com.cloud.ops.base.MultiTenantEntity;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -18,7 +17,7 @@ import java.time.LocalDateTime;
  */
 @Data
 @TableName("cmd_lib")
-public class CmdLib implements Serializable {
+public class CmdLib implements Serializable, MultiTenantEntity {
 
     @Serial
     private static final long serialVersionUID = 1L;
@@ -37,6 +36,12 @@ public class CmdLib implements Serializable {
 
     @Schema(description = "类型:shell python")
     private String type;
+
+    /**
+     * 创建人ID(用于多租户数据隔离)
+     */
+    @TableField(fill = FieldFill.INSERT)
+    private Long createBy;
 
 
     @Schema(description = "更新时间")

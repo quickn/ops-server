@@ -84,7 +84,7 @@ public class MyDataPermissionHandler implements DataPermissionHandler {
 
         // 继承 ServiceBaseEntity 的实体，按 serviceId 做数据过滤
         Class<?> entityClass = resolveEntityClass(clazz);
-        if (entityClass != null && MonitorBaseEntity.class.isAssignableFrom(entityClass)
+            if (entityClass != null && MonitorBaseEntity.class.isAssignableFrom(entityClass)
                 && SERVICE_FILTER_METHODS.contains(methodName)) {
             return serviceIdFilter(where);
         }

@@ -15,7 +15,7 @@ import java.util.List;
  * 定时同步 Jar 任务处理器
  *
  * <p>参考 {@code ProjectJobHandler#syncJarJobHandler}：从源服务器同步 Jar 包到各项目。
- * 脚本内容约定为 JSON：
+ * 任务参数约定为 JSON：
  * <pre>
  * {
  *   "projectNames": "projectA,projectB",
@@ -39,14 +39,14 @@ public class SyncJarTaskHandler implements TaskTypeHandler {
 
     @Override
     public void handle(TaskAlert taskAlert, TaskAlertRecord record) {
-        if (StringUtils.isBlank(taskAlert.getScript())) {
+        if (StringUtils.isBlank(taskAlert.getTaskParams())) {
             record.setState(1);
             record.setResult("同步配置为空");
             return;
         }
         JSONObject jsonObject;
         try {
-            jsonObject = JSONObject.parseObject(taskAlert.getScript());
+            jsonObject = JSONObject.parseObject(taskAlert.getTaskParams());
         } catch (Exception e) {
             record.setState(1);
             record.setResult("同步配置解析失败：" + e.getMessage());

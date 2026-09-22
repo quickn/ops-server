@@ -30,8 +30,8 @@ public class TaskAlert extends MonitorBaseEntity {
     @Schema(description = "任务类型: shell脚本 / 接口检测 / 数据库备份 等")
     private String taskType;
 
-    @Schema(description = "脚本内容")
-    private String script;
+    @Schema(description = "任务参数")
+    private String taskParams;
 
     @Schema(description = "cron 表达式")
     private String cron;
