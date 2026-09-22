@@ -712,4 +712,46 @@ CREATE TABLE `user_key`  (
   INDEX `idx_user_id`(`user_id` ASC) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = '用户密钥表' ROW_FORMAT = Dynamic;
 
+-- ----------------------------
+-- Table structure for task_alert
+-- ----------------------------
+DROP TABLE IF EXISTS `task_alert`;
+CREATE TABLE `task_alert`  (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `task_name` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '任务名称',
+  `task_type` varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '任务类型',
+  `command` text CHARACTER SET utf8 COLLATE utf8_general_ci NULL COMMENT '执行命令',
+  `script` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL COMMENT '脚本内容',
+  `cron` varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT 'cron 表达式',
+  `agent_id` bigint NULL DEFAULT NULL COMMENT '关联主机Id',
+  `service_id` int NULL DEFAULT NULL COMMENT '环境id',
+  `service_name` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '环境名',
+  `is_enabled` tinyint(1) NULL DEFAULT 1 COMMENT '是否启用告警',
+  `status` tinyint(1) NULL DEFAULT 1 COMMENT '状态: 1-启动 0-停止',
+  `is_email` tinyint(1) NULL DEFAULT 0 COMMENT '是否发送邮件告警',
+  `fail_threshold` int NULL DEFAULT 1 COMMENT '连续失败次数阈值',
+  `remark` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '备注',
+  `create_time` datetime NULL DEFAULT NULL COMMENT '创建时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `idx_service_id`(`service_id` ASC) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = '任务告警配置' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for task_alert_record
+-- ----------------------------
+DROP TABLE IF EXISTS `task_alert_record`;
+CREATE TABLE `task_alert_record`  (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `task_id` bigint NULL DEFAULT NULL COMMENT '任务告警Id',
+  `state` int NULL DEFAULT NULL COMMENT '执行状态: 0成功 1失败',
+  `result` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL COMMENT '执行结果',
+  `time_consuming` bigint NULL DEFAULT NULL COMMENT '耗时(毫秒)',
+  `is_alert` tinyint(1) NULL DEFAULT 0 COMMENT '是否已发送告警',
+  `service_id` int NULL DEFAULT NULL COMMENT '环境id',
+  `service_name` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '环境名',
+  `create_time` datetime NULL DEFAULT NULL COMMENT '创建时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `idx_task_id`(`task_id` ASC) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = '任务告警执行记录' ROW_FORMAT = Dynamic;
+
 SET FOREIGN_KEY_CHECKS = 1;
