@@ -10,13 +10,13 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.cloud.system.common.constant.SecurityConstants;
 import com.cloud.system.common.constant.SystemConstants;
-import com.cloud.system.converter.UserConverter;
 import com.cloud.system.common.util.LoginMaskUtils;
 import com.cloud.system.common.util.SecurityUtils;
+import com.cloud.system.converter.UserConverter;
 import com.cloud.system.mapper.SysUserMapper;
-import com.cloud.system.model.dto.UserAuthInfo;
 import com.cloud.system.model.bo.UserBO;
 import com.cloud.system.model.bo.UserFormBO;
+import com.cloud.system.model.dto.UserAuthInfo;
 import com.cloud.system.model.entity.SysUser;
 import com.cloud.system.model.form.UserForm;
 import com.cloud.system.model.query.UserPageQuery;
@@ -59,6 +59,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
     private final SysRoleService roleService;
 
     private final RedisTemplate redisTemplate;
+
 
     /**
      * 获取用户分页列表
@@ -327,9 +328,13 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         userInfoVO.setRoles(roles);
 
         // 用户权限集合
-        Set<String> perms = (Set<String>) redisTemplate.opsForValue().get(SecurityConstants.USER_PERMS_CACHE_PREFIX+ user.getId());
+        Set<String> perms = (Set<String>) redisTemplate.opsForValue().get(SecurityConstants.USER_PERMS_CACHE_PREFIX + user.getId());
         userInfoVO.setPerms(perms);
 
+        if (!SecurityUtils.isRoot()) {
+            userInfoVO.setDeptUsers(SecurityUtils.getCurrentDeptAllUserIds());
+        }
+        userInfoVO.setDataScope(SecurityUtils.getDataScope());
         return userInfoVO;
     }
 

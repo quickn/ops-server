@@ -55,6 +55,16 @@ public class MyDataPermissionHandler implements DataPermissionHandler {
             "selectCount", "selectMaps", "selectObjs", "selectMap", "selectMapsPage"
     );
 
+    /**
+     * MyBatis-Plus BaseMapper 标准删除方法集合。
+     * <p>
+     * 对实现 {@link MultiTenantEntity} 的实体（含 create_by 列），删除操作需附加
+     * {@code create_by = 当前用户} 过滤，保证用户只能删除自己创建的数据。
+     */
+    private static final Set<String> MULTI_TENANT_DELETE_METHODS = Set.of(
+            "delete", "deleteById", "deleteBatchIds", "deleteByIds"
+    );
+
     @Override
     @SneakyThrows
     public Expression getSqlSegment(Expression where, String mappedStatementId) {
@@ -65,6 +75,13 @@ public class MyDataPermissionHandler implements DataPermissionHandler {
         Class<?> clazz = Class.forName(mappedStatementId.substring(0, mappedStatementId.lastIndexOf(StringPool.DOT)));
         String methodName = mappedStatementId.substring(mappedStatementId.lastIndexOf(StringPool.DOT) + 1);
 
+
+        // 查找当前 Mapper 方法上的 @DataPermission 注解（部门数据范围过滤）
+        DataPermission annotation = findDataPermission(clazz, methodName);
+        if (annotation != null) {
+            return dataScopeFilter(annotation.deptAlias(), annotation.deptIdColumnName(), annotation.userAlias(), annotation.userIdColumnName(), where);
+        }
+
         // 继承 ServiceBaseEntity 的实体，按 serviceId 做数据过滤
         Class<?> entityClass = resolveEntityClass(clazz);
         if (entityClass != null && MonitorBaseEntity.class.isAssignableFrom(entityClass)
@@ -72,18 +89,12 @@ public class MyDataPermissionHandler implements DataPermissionHandler {
             return serviceIdFilter(where);
         }
 
-        // 实现 MultiTenantEntity 的实体（含 create_by 列），非root用户仅能查询自己创建的数据
+        // 实现 MultiTenantEntity 的实体（含 create_by 列），非root用户仅能查询/删除自己创建的数据
         boolean multiTenantEntity = entityClass != null
                 && MultiTenantEntity.class.isAssignableFrom(entityClass)
-                && SERVICE_FILTER_METHODS.contains(methodName);
+                && (SERVICE_FILTER_METHODS.contains(methodName) || MULTI_TENANT_DELETE_METHODS.contains(methodName));
         if (multiTenantEntity) {
             return createByFilter(where);
-        }
-
-        // 查找当前 Mapper 方法上的 @DataPermission 注解（部门数据范围过滤）
-        DataPermission annotation = findDataPermission(clazz, methodName);
-        if (annotation != null) {
-            return dataScopeFilter(annotation.deptAlias(), annotation.deptIdColumnName(), annotation.userAlias(), annotation.userIdColumnName(), where);
         }
 
         return where;
@@ -156,6 +167,9 @@ public class MyDataPermissionHandler implements DataPermissionHandler {
         if (SecurityUtils.getUser() == null) {
             return where;
         }
+        if (SecurityUtils.isRoot()) {
+            return where;
+        }
         Long deptId = SecurityUtils.getDeptId();
         if (deptId == null) {
             return where;
@@ -191,13 +205,23 @@ public class MyDataPermissionHandler implements DataPermissionHandler {
     }
 
     /**
-     * 按 create_by 过滤：非root用户仅可见自己创建的多租户数据（{@link MultiTenantEntity}）。
+     * 按 create_by 过滤：非root用户仅可见/可删除自己创建的多租户数据（{@link MultiTenantEntity}）。
+     * <p>
+     * 该过滤与数据范围（dataScope）无关，无论用户的数据范围为何，多租户数据均只能访问自己创建的记录。
      */
     private Expression createByFilter(Expression where) {
         if (SecurityUtils.getUser() == null) {
             return where;
         }
-        return dataScopeFilter("", "", "", "create_by", where);
+        if (SecurityUtils.isRoot()) {
+            return where;
+        }
+        Long userId = SecurityUtils.getUserId();
+        if (userId == null) {
+            return where;
+        }
+        String appendSqlStr = " create_by = " + userId;
+        return appendExpression(where, appendSqlStr);
     }
 
     private Expression appendExpression(Expression where, String appendSqlStr) {
@@ -237,7 +261,7 @@ public class MyDataPermissionHandler implements DataPermissionHandler {
                 return where;
             case DEPT:
                 deptId = SecurityUtils.getDeptId();
-                if (StringUtils.isNotEmpty(deptColumnName)) {
+                if (StringUtils.isNotEmpty(deptColumnName) && !"id".equals(deptIdColumnName)) {
                     appendSqlStr = deptColumnName + StringPool.EQUALS + deptId;
                 } else {
                     appendSqlStr = userColumnName + " IN (" + SecurityUtils.getCurrentDeptAllUserIds().stream()
