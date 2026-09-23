@@ -94,7 +94,7 @@ public class MyDataPermissionHandler implements DataPermissionHandler {
                 && MultiTenantEntity.class.isAssignableFrom(entityClass)
                 && (SERVICE_FILTER_METHODS.contains(methodName) || MULTI_TENANT_DELETE_METHODS.contains(methodName));
         if (multiTenantEntity) {
-            return createByFilter(where);
+            return dataScopeFilter(null, null, "","create_by", where);
         }
 
         return where;
@@ -202,26 +202,6 @@ public class MyDataPermissionHandler implements DataPermissionHandler {
             log.warn("查询部门服务权限失败: deptId={}", deptId, e);
             return Collections.emptyList();
         }
-    }
-
-    /**
-     * 按 create_by 过滤：非root用户仅可见/可删除自己创建的多租户数据（{@link MultiTenantEntity}）。
-     * <p>
-     * 该过滤与数据范围（dataScope）无关，无论用户的数据范围为何，多租户数据均只能访问自己创建的记录。
-     */
-    private Expression createByFilter(Expression where) {
-        if (SecurityUtils.getUser() == null) {
-            return where;
-        }
-        if (SecurityUtils.isRoot()) {
-            return where;
-        }
-        Long userId = SecurityUtils.getUserId();
-        if (userId == null) {
-            return where;
-        }
-        String appendSqlStr = " create_by = " + userId;
-        return appendExpression(where, appendSqlStr);
     }
 
     private Expression appendExpression(Expression where, String appendSqlStr) {
