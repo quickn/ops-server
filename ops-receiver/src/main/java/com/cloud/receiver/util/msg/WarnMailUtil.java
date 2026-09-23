@@ -96,7 +96,7 @@ public class WarnMailUtil {
             return;
         }
         MailConfig mailConfig = StaticKeys.mailConfig;
-        sendMail(agentConfig.getServiceId(), mailConfig.getToMail(), agentConfig.getServiceName() + " " + title, commContent);
+        sendMail(null, mailConfig.getToMail(), agentConfig.getServiceName() + " " + title, commContent);
     }
 
 
@@ -154,7 +154,7 @@ public class WarnMailUtil {
                 String commContent = "进程已经超过10分钟未上报数据，可能已经下线：" + appInfo.getHostname() + "，" + appInfo.getAppName()
                         + "。如果不再监控该进程在列表删除即可，同时不会再收到该进程告警邮件";
                 //发送邮件
-                sendMail(appInfo.getServiceId(), mailSet.getToMail(), title, commContent);
+                sendMail(null, mailSet.getToMail(), title, commContent);
                 //标记已发送过告警信息
                 WarnPools.MEM_WARN_MAP.put(key, "1");
                 //记录发送信息
@@ -169,7 +169,7 @@ public class WarnMailUtil {
                 String title = "进程恢复上线通知：" + appInfo.getHostname() + "，" + appInfo.getAppName();
                 String commContent = "进程恢复上线通知：" + appInfo.getHostname() + "，" + appInfo.getAppName();
                 //发送邮件
-                sendMail(appInfo.getServiceId(), mailSet.getToMail(), title, commContent);
+                sendMail(null, mailSet.getToMail(), title, commContent);
                 //记录发送信息
                 logInfoService.save(title, commContent, StaticKeys.LOG_ERROR);
             } catch (Exception e) {
@@ -189,7 +189,7 @@ public class WarnMailUtil {
                 email.setSSLOnConnect(true);
                 email.setAuthenticator(new DefaultAuthenticator(mailConfig.getFromMailName().trim(), mailConfig.getFromPwd().trim()));
                 email.setFrom(mailConfig.getFromMailName().trim());//发信者
-                email.setSubject("[百胜智能] " + mailTitle);//标题
+                email.setSubject("[OPS预警] " + mailTitle);//标题
                 email.setCharset("UTF-8");//编码格式
                 email.setHtmlMsg(mailContent + content_suffix);//内容
                 email.addTo(mailConfig.getToMail().trim().split(";"));
@@ -205,14 +205,15 @@ public class WarnMailUtil {
     }
 
 
-    public static String sendMail(Integer serviceId, String mails, String mailTitle, String mailContent) {
-        MailConfig mailConfig = mailConfigService.getByServiceId(serviceId);
+    public static String sendMail(Long createBy, String mails, String mailTitle, String mailContent) {
+        MailConfig mailConfig = mailConfigService.getByUserId(createBy);
         if (mailConfig == null) {
             return null;
         }
         if (!mailConfig.getIsSendMail()) {
             return null;
         }
+        mailConfig.setToMail(mails);
         return sendMail(mailConfig, mailTitle, mailContent);
     }
 

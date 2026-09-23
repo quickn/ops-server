@@ -1,14 +1,20 @@
 package com.cloud.ops.email;
 
-import com.cloud.ops.base.MonitorBaseEntity;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.cloud.ops.base.MultiTenantCreateByEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 
 @Data
-public class MailConfig extends MonitorBaseEntity {
+public class MailConfig extends MultiTenantCreateByEntity {
 
-    private static final long serialVersionUID = -8284741180883299533L;
+    /**
+     * 主键
+     */
+    @TableId(type = IdType.ASSIGN_ID)
+    private Long id;
 
     @Schema(description = "是否发送邮件告警")
     private Boolean isSendMail;

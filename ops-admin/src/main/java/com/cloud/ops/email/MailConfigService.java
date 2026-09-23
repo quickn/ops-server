@@ -6,9 +6,5 @@ import com.baomidou.mybatisplus.extension.service.IService;
  * Created by Liuyun on 2023-09-11 14:56
  **/
 public interface MailConfigService extends IService<MailConfig> {
-
-    MailConfig getByServiceId(Integer serviceId);
-
     void saveNew(MailConfig MailSet);
-
 }

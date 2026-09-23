@@ -45,8 +45,8 @@ public class TaskAlert extends MonitorBaseEntity {
     @Schema(description = "状态: 1-启动 0-停止")
     private Integer status;
 
-    @Schema(description = "是否发送邮件告警")
-    private Boolean isEmail;
+    @Schema(description = "关联预警规则ID")
+    private Long ruleId;
 
     @Schema(description = "连续失败次数阈值，超过则告警")
     private Integer failThreshold;

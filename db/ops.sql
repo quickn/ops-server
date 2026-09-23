@@ -727,7 +727,7 @@ CREATE TABLE `task_alert`  (
   `service_name` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '环境名',
   `is_enabled` tinyint(1) NULL DEFAULT 1 COMMENT '是否启用告警',
   `status` tinyint(1) NULL DEFAULT 1 COMMENT '状态: 1-启动 0-停止',
-  `is_email` tinyint(1) NULL DEFAULT 0 COMMENT '是否发送邮件告警',
+  `rule_id` bigint NULL DEFAULT NULL COMMENT '关联预警规则ID',
   `fail_threshold` int NULL DEFAULT 1 COMMENT '连续失败次数阈值',
   `remark` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '备注',
   `create_time` datetime NULL DEFAULT NULL COMMENT '创建时间',

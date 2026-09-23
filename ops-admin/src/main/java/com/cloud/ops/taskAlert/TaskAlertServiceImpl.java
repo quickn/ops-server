@@ -2,7 +2,7 @@ package com.cloud.ops.taskAlert;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.cloud.receiver.util.msg.WarnMailUtil;
+import com.cloud.ops.alert.AlertRuleService;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -42,6 +42,9 @@ public class TaskAlertServiceImpl extends ServiceImpl<TaskAlertMapper, TaskAlert
 
     @Resource
     private TaskTypeHandlerFactory taskTypeHandlerFactory;
+
+    @Resource
+    private AlertRuleService alertRuleService;
 
     /**
      * 各任务连续失败次数缓存（内存）
@@ -253,7 +256,7 @@ public class TaskAlertServiceImpl extends ServiceImpl<TaskAlertMapper, TaskAlert
                 ? 1 : taskAlert.getFailThreshold();
         int count = failCountMap.getOrDefault(taskAlert.getId(), 0) + 1;
         failCountMap.put(taskAlert.getId(), count);
-        if (count >= threshold && Boolean.TRUE.equals(taskAlert.getIsEmail())) {
+        if (count >= threshold && Boolean.TRUE.equals(taskAlert.getIsEnabled()) && taskAlert.getRuleId() != null) {
             record.setIsAlert(true);
             recordMapper.updateById(record);
             this.sendAlert(taskAlert, record, count);
@@ -261,18 +264,17 @@ public class TaskAlertServiceImpl extends ServiceImpl<TaskAlertMapper, TaskAlert
     }
 
     /**
-     * 发送告警邮件
+     * 通过关联的预警规则发送告警
      */
     private void sendAlert(TaskAlert taskAlert, TaskAlertRecord record, int count) {
         try {
-            String title = "任务告警：" + taskAlert.getTaskName();
             String content = "任务【" + taskAlert.getTaskName() + "】执行失败，已连续失败 " + count + " 次。<br/>"
                     + "任务类型：" + taskAlert.getTaskType() + "<br/>"
                     + "执行结果：" + record.getResult();
-            WarnMailUtil.sendMail(taskAlert.getServiceId(), null, title, content);
-            log.info("任务告警邮件已发送 taskId:{}", taskAlert.getId());
+            alertRuleService.triggerAlert(taskAlert.getRuleId(), content);
+            log.info("任务告警已通过预警规则发送 taskId:{} ruleId:{}", taskAlert.getId(), taskAlert.getRuleId());
         } catch (Exception e) {
-            log.error("发送任务告警邮件失败 taskId:{}", taskAlert.getId(), e);
+            log.error("发送任务告警失败 taskId:{}", taskAlert.getId(), e);
         }
     }
 
