@@ -23,7 +23,7 @@ import java.util.Date;
 @Slf4j
 public class WarnMailUtil {
 
-    public static final String content_suffix = "<p><a target='_blank' href='http://bisenpark.com'>百胜智能</a>敬上";
+    public static final String content_suffix = "<p><a target='_blank' href='http://monitor.bisenpark.com/m-web'>查看监控详情</a>敬上";
 
     private static final RWarnLogInfoService logInfoService = ApplicationContextHelper.getBean(RWarnLogInfoService.class);
 
