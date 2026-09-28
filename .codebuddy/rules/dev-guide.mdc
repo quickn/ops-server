@@ -1,0 +1,213 @@
+---
+description: monitor-server 项目开发指导规范
+globs:
+alwaysApply: true
+---
+
+# monitor-server 开发指导
+
+## 项目概述
+
+monitor-server 是一个 Linux 运维监控系统，基于 Spring Boot 3.5 + Java 21 构建的多模块 Maven 项目。系统包含权限管理、服务器监控、告警预警、Docker 容器监控、命令执行、API 健康监测等功能。
+
+## 技术栈
+
+| 类别 | 技术 | 版本 |
+|------|------|------|
+| 基础框架 | Spring Boot | 3.5.13 |
+| 安全框架 | Spring Security 6 + JWT | - |
+| ORM | MyBatis-Plus | 3.5.7 |
+| 数据库 | MySQL | 8.x |
+| 缓存 | Redis + Redisson | 3.21.0 |
+| API 文档 | Knife4j (springdoc-openapi 2.8.9) | 4.3.0 |
+| 对象映射 | MapStruct | 1.5.3.Final |
+| 定时任务 | XXL-Job | 2.5.0 |
+| 工具库 | Hutool | 5.8.15 |
+| 分布式锁 | Redisson | 3.21.0 |
+| 消息队列 | RabbitMQ (spring-boot-starter-amqp) | - |
+| 序列化 | FastJSON2 | 2.0.53 |
+| 对象存储 | MinIO / 阿里云 OSS | 8.5.2 / 3.16.3 |
+
+## 模块结构
+
+```
+monitor-server/
+├── ops-common/          # 公共基础模块（实体、Mapper、工具、通用配置）
+├── ops-admin/           # 主服务模块（权限管理、监控面板、告警、Docker、MCP Server）- 端口 8989
+├── ops-receiver/        # 监控数据接收服务（RabbitMQ 消费 Agent 上报数据）- 端口 9999
+├── db/                  # 数据库脚本
+├── docker/              # Docker Compose 部署配置
+├── deploy/              # Kubernetes 部署 YAML
+└── Dockerfile           # 容器构建文件
+```
+
+### 模块依赖关系
+
+```
+ops-admin  ──>  ops-common
+ops-receiver ──>  ops-common
+```
+
+两个业务模块独立，仅共享 ops-common。ops-receiver 可独立部署，也可被 ops-admin 以 Maven 依赖引入。
+
+## 包结构规范
+
+### ops-common 包结构
+
+- `com.cloud.base` — 通用基础设施（配置、HTTP工具、Spring辅助、线程池、日志切面、雪花ID）
+- `com.cloud.base.sql` — 动态 SQL 引擎（注解驱动的查询构建器：@Where, @SelectSql, @SelectFrom, @SelectColumn, @OrderBy, @GroupBy, @DataPermission）
+- `com.cloud.ops.*` — 监控领域实体及 Mapper（Agent、系统状态、告警、Docker、命令日志等）
+- `com.cloud.system.common` — 系统基础实体和注解
+
+### ops-admin 包结构
+
+- `com.cloud` — 启动入口 `OpsAdminApplication`
+- `com.cloud.ops.*` — 各业务模块（Controller + Service + Mapper）
+- `com.cloud.security` — Spring Security 配置、JWT 认证、权限校验
+- `com.cloud.system` — 系统管理（用户、角色、菜单、部门、字典）
+
+### ops-receiver 包结构
+
+- `com.cloud` — 启动入口 `OpsReceiverApplication`
+- `com.cloud.receiver.handler` — 消息处理器（RabbitMQ 消费监控数据并入库）
+
+## 编码规范
+
+### 实体命名
+
+| 名称 | 用途 | 示例 |
+|------|------|------|
+| entity | 映射数据库表 | `SysUser`, `Agent`, `CpuState` |
+| bo | 多表关联查询的业务实体 | `UserBO`, `ChartBO` |
+| query | 查询参数对象（参数≥3时使用） | `UserQuery`, `AgentQuery` |
+| form | 表单提交对象 | `UserForm`, `AlertRuleForm` |
+| vo | 视图返回对象 | `UserVO`, `AgentVo`, `ChartVO` |
+| dto | RPC/模块间传输 | `UserDTO`, `MonitorMsgDto` |
+
+### 方法命名
+
+| 作用 | Controller | Service | Mapper |
+|------|-----------|---------|--------|
+| 分页查询 | `getUserPage` | `getUserPage` | `selectUserPage` |
+| 列表查询 | `listUsers` | `listUsers` | `selectUserList` |
+| 单个查询 | `getUser` | `getUser` | `selectById` |
+| 新增 | `saveUser` | `saveUser` | `insert` |
+| 修改 | `updateUser` | `updateUser` | `updateById` |
+| 删除 | `deleteUser` | `deleteUser` | `deleteById` |
+
+### API 路径规范
+
+RESTful 风格，资源名用复数名词：
+
+| 操作 | 方法 | 路径 |
+|------|------|------|
+| 分页查询 | GET | `/api/v1/users` |
+| 详情查询 | GET | `/api/v1/users/{id}` |
+| 新增 | POST | `/api/v1/users` |
+| 修改 | PUT | `/api/v1/users/{id}` |
+| 删除 | DELETE | `/api/v1/users/{id}` |
+| 部分更新 | PATCH | `/api/v1/users/{id}/status` |
+
+### 动态 SQL 注解用法
+
+ops-common 封装了注解驱动的动态 SQL 查询引擎，查询对象使用以下注解：
+
+```java
+public class AgentQuery {
+    @SelectFrom("ops_agent")
+    @SelectColumn("id, agent_name, ip, os_name")
+    @Where("agent_name LIKE '%${agentName}%'")
+    private String agentName;
+
+    @OrderBy("create_time DESC")
+    private String orderBy;
+}
+```
+
+Mapper 继承 `BaseQueryMapper` 即可自动生成查询 SQL，无需手写 XML。
+
+## 安全与认证
+
+- JWT Token 认证，登录后签发 Access Token + Refresh Token
+- Spring Security 6 基于方法级别的权限控制（`@PreAuthorize`）
+- RBAC 权限模型：用户 → 角色 → 菜单/权限
+- 数据权限：`@DataPermission` 注解实现行级数据过滤
+- RSA 加密：登录密码传输加密
+
+## 监控数据流
+
+```
+Agent（被监控机器）──RabbitMQ──> ops-receiver:9999 ──入库──> MySQL
+                                                          │
+ops-admin:8989 <──查询──────────────────────────────────┘
+```
+
+- Agent 通过 RabbitMQ 发送监控数据（CPU、内存、磁盘、网络、进程、Docker等）
+- ops-receiver 通过 `@RabbitListener` 消费消息并落库
+- ops-admin 提供查询接口
+
+## 本地开发环境
+
+### 前置条件
+
+- **JDK 21**（项目 pom.xml 指定 `maven.compiler.source=21`）
+- **Maven 3.8+**
+- **MySQL 8.x**
+- **Redis 6+**
+- **IDEA 插件**：Lombok、MapStruct Support
+
+### 启动步骤
+
+1. 执行 `db/` 目录下的 SQL 脚本初始化数据库
+2. 修改 `ops-admin/src/main/resources/application-dev.yml` 中的 MySQL、Redis 连接配置
+3. 如需独立运行 receiver，修改 `ops-receiver/src/main/resources/application-dev.yml`
+4. 运行 `OpsAdminApplication.main()` 启动主服务（端口 8989）
+5. 运行 `OpsReceiverApplication.main()` 启动接收服务（端口 9999，如需独立部署）
+6. 访问 http://localhost:8989/doc.html 验证 API 文档
+
+### 环境配置
+
+开发环境配置文件位于各模块 `src/main/resources/`：
+- `application.yml` — 主配置（选择 profile）
+- `application-dev.yml` — 开发环境
+- `application-prod.yml` — 生产环境
+
+也可使用根目录 `conf-dev.properties` 作为外部配置覆盖。
+
+## Git 提交规范
+
+遵循 Angular 社区规范：
+
+| 类型 | 说明 |
+|------|------|
+| `feat` | 新功能 |
+| `fix` | 修复 Bug |
+| `style` | 代码风格（不影响运行） |
+| `perf` | 性能优化 |
+| `refactor` | 重构 |
+| `revert` | 回滚 |
+| `test` | 测试 |
+| `docs` | 文档 |
+| `chore` | 构建/依赖/配置变更 |
+
+## 部署方式
+
+### Docker
+
+```bash
+# 构建镜像
+docker build -t monitor-server .
+# 使用 docker-compose
+cd docker && docker-compose up -d
+```
+### ProGuard 代码混淆
+
+生产构建默认启用 ProGuard 混淆（可通过 `-Dproguard.skip=true` 跳过）。
+
+## 常见注意点
+
+1. **文件编码**：所有文件必须使用 UTF-8（不带 BOM），Windows 环境注意避免 GBK
+2. **snakeyaml 版本**：切勿覆盖 snakeyaml 版本到 1.x，Spring Boot 3.5 依赖 snakeyaml 2.x
+3. **springdoc 版本**：knife4j 4.3.0 自带的 springdoc-openapi 2.2.0 与 Spring Framework 6.2 不兼容，父 POM 已仲裁到 2.8.9
+4. **Nacos 配置**：ops-receiver 中的 nacos-config-spring-boot-starter 依赖旧版 snakeyaml，已停用，不可随意启用
+5. **ops-receiver 可选引入**：ops-admin 可通过 Maven 依赖引入 ops-receiver，此时不需要独立启动 receiver

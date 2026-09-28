@@ -26,6 +26,11 @@ public interface TaskTypeHandler {
     String SYNC_JAR_TYPE = "syncJar";
 
     /**
+     * 接口检测任务类型
+     */
+    String API_CHECk_TYPE = "apiCheck";
+
+    /**
      * 该处理器支持的任务类型标识
      */
     String type();

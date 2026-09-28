@@ -30,16 +30,22 @@ public class ApiHeathMonitor extends MonitorBaseEntity {
     @Schema(description = "是否开启监控")
     private Boolean isMonitor;
 
-    @Schema(description = "超时预警时间(秒)")
+    @Schema(description = "超时预警时间(毫秒)")
     private Integer timeoutWarnTime;
+
+    @Schema(description = "断言方式：status-响应码 / body-响应内容 / json-响应JSON字段 / none-不校验")
+    private String assertType;
+
+    @Schema(description = "断言期望值：响应码（数字字符串）或包含的字符串或JSON表达式")
+    private String expectValue;
 
     @Schema(description = "接口返回结果")
     private String body;
 
-    @Schema(description = "健康状态")
+    @Schema(description = "健康状态（200=成功，其它=失败）")
     private Integer heathStatus;
 
-    @Schema(description = "最新响应时间")
+    @Schema(description = "最新响应时间(毫秒)")
     private Long responseTime;
 
 }
