@@ -224,6 +224,11 @@ public class AgentQuery {
 | `docs` | 文档 |
 | `chore` | 构建/依赖/配置变更 |
 
-## License
+## 开源协议
 
 本项目基于 [Apache License 2.0](LICENSE) 开源。
+
+
+## 致谢
+
+本项目后端工程系统管理基于开源模板 [youlai-boot](https://gitee.com/youlaiorg/youlai-boot)（有来开源组织）构建，感谢原作者及开源社区的贡献。
