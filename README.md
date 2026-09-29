@@ -118,6 +118,10 @@ mvn clean package -DskipTests
 - 启动 `ops-admin`：运行 `OpsAdminApplication#main()`（端口 8989）
 - 启动 `ops-receiver`：运行 `OpsReceiverApplication#main()`（端口 9999，如独立部署）
 
+启动前端（可选）：
+   如需可视化操作界面，启动配套前端 [ops-web](https://gitee.com/quickn/ops-web.git)，访问 <http://localhost:3000>，使用 `admin` / `123456` 登录。
+
+
 ### 5. 验证
 
 访问接口文档验证服务是否正常：
@@ -134,14 +138,10 @@ mvn clean package -DskipTests
 ### Docker Compose
 
 ```bash
-cd docker && docker-compose up -d
+bash [deploy_ops-server.sh](docker/deploy_ops-server.sh)
 ```
 
 详见 [docker/ops-server.yml](docker/ops-server.yml)（包含 `ops-admin` 与 `ops-receiver` 两个服务，通过 `.env` 注入数据库、Redis、RabbitMQ 地址等环境变量）。
-
-### Kubernetes
-
-参见 [deploy/](deploy/) 目录下的 Deployment 与 Ingress 配置。
 
 ### 生产构建说明
 
