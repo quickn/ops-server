@@ -1,6 +1,16 @@
-# ops-server
+## ops-server 项目介绍
 
 基于 **Spring Boot 3.5 + Java 21** 构建的 Linux 运维监控系统，提供服务器性能监控、告警预警、Docker 容器监控、远程命令执行、文件管理、项目部署、API 健康监测等能力，并内置 MCP Server 支持 AI 助手直接调用运维能力。
+
+平台采用前后端分离架构，由三个工程组成：
+
+| 工程                                                        | 说明                                   | 端口 |
+|-----------------------------------------------------------|--------------------------------------| ---- |
+| **[ops-web](https://gitee.com/quickn/ops-web.git)**    | 前端，Vue 3 + TypeScript + Element Plus | 3000 |
+| **[ops-server](https://gitee.com/quickn/ops-server.git)** | Java 后端（Spring Boot），主要业务接口          | 8989 |
+| **[ops-py](https://gitee.com/quickn/ops-py)**             | Python 后端，管理中间件账号，提供中间件接口操作          | 18080 |
+| **[ops-agent](https://gitee.com/quickn/ops-agent)**       | 运维终端 ，采集服务器信息，执行远程命令                 |  |
+前端通过 **双后端代理** 同时对接 Java 与 Python 两个后端
 
 ## 功能特性
 
