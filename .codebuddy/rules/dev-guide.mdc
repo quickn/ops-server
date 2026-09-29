@@ -1,14 +1,14 @@
 ---
-description: monitor-server 项目开发指导规范
+description: ops-server 项目开发指导规范
 globs:
 alwaysApply: true
 ---
 
-# monitor-server 开发指导
+# ops-server 开发指导
 
 ## 项目概述
 
-monitor-server 是一个 Linux 运维监控系统，基于 Spring Boot 3.5 + Java 21 构建的多模块 Maven 项目。系统包含权限管理、服务器监控、告警预警、Docker 容器监控、命令执行、API 健康监测等功能。
+ops-server 是一个 Linux 运维监控系统，基于 Spring Boot 3.5 + Java 21 构建的多模块 Maven 项目。系统包含权限管理、服务器监控、告警预警、Docker 容器监控、命令执行、API 健康监测等功能。
 
 ## 技术栈
 
@@ -31,7 +31,7 @@ monitor-server 是一个 Linux 运维监控系统，基于 Spring Boot 3.5 + Jav
 ## 模块结构
 
 ```
-monitor-server/
+ops-server/
 ├── ops-common/          # 公共基础模块（实体、Mapper、工具、通用配置）
 ├── ops-admin/           # 主服务模块（权限管理、监控面板、告警、Docker、MCP Server）- 端口 8989
 ├── ops-receiver/        # 监控数据接收服务（RabbitMQ 消费 Agent 上报数据）- 端口 9999
@@ -196,7 +196,7 @@ ops-admin:8989 <──查询─────────────────�
 
 ```bash
 # 构建镜像
-docker build -t monitor-server .
+docker build -t ops-server .
 # 使用 docker-compose
 cd docker && docker-compose up -d
 ```

@@ -1,4 +1,4 @@
-# monitor-server
+# ops-server
 
 基于 **Spring Boot 3.5 + Java 21** 构建的 Linux 运维监控系统，提供服务器性能监控、告警预警、Docker 容器监控、远程命令执行、文件管理、项目部署、API 健康监测等能力，并内置 MCP Server 支持 AI 助手直接调用运维能力。
 
@@ -67,7 +67,7 @@ ops-admin :8989（Web API / MCP Server）<──查询──────┘
 ## 模块结构
 
 ```
-monitor-server/
+ops-server/
 ├── ops-common/          # 公共基础模块（实体、Mapper、动态 SQL 引擎、工具、通用配置）
 ├── ops-admin/           # 主服务模块（系统管理、监控面板、告警、Docker、MCP Server）- 端口 8989
 ├── ops-receiver/        # 监控数据接收服务（消费 RabbitMQ 上报数据并入库）- 端口 9999
