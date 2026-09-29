@@ -1,143 +1,229 @@
-# 项目简述
+# monitor-server
 
-项目基于 SpringBoot3、SpringSecurity6 、 JWT 、 Redis 、 Mybatis-Plus 、 Knife4j 等技术栈搭建的前后端分离开源权限管理系统。
+基于 **Spring Boot 3.5 + Java 21** 构建的 Linux 运维监控系统，提供服务器性能监控、告警预警、Docker 容器监控、远程命令执行、文件管理、项目部署、API 健康监测等能力，并内置 MCP Server 支持 AI 助手直接调用运维能力。
 
+## 功能特性
 
-## 项目预览
-**在线预览地址**
+### 服务器监控
 
-[http://vue3.youlai.tech/](http://vue3.youlai.tech/)
+- **性能采集**：CPU、内存、磁盘分区、网络 IO、系统负载、进程级资源与网络流量统计
+- **主机管理**：Agent 纳管、在线状态检测（超时自动标记离线并告警）、系统信息与磁盘使用查询
+- **Docker 监控**：容器清单自动同步、容器 CPU / 内存统计、远程重启 / 停止容器
+- **实时日志**：日志文件浏览、在线日志分析、预警日志查询
 
-**首页控制台**
+### 告警预警
 
-| ![明亮模式](https://s2.loli.net/2023/03/26/oltnAHfFcbw18GL.png) |
-|-------------------------------------------------------------|
-| ![暗黑模式](https://s2.loli.net/2023/03/13/QvjY4zf3VCGteNF.png) |
+- **预警规则**：支持阈值 / 关键字触发、多级别、静默期、连续触发阈值、聚合窗口降噪
+- **通知渠道**：邮件（可在线配置邮件服务器并测试发送）、短信
+- **告警对象**：CPU / 内存 / 磁盘超阈值、Docker 容器异常、主机离线、应用下线、接口超时、定时任务异常
+- **联系人管理**：报警联系人、联系人组、告警发送记录
 
-**接口文档**
+### 运维操作
 
-![接口文档](https://s2.loli.net/2023/03/13/bH4J3O6WRgCUpwt.png)
+- **命令执行**：常用指令库管理、批量下发指令到 Agent / 主机 / 容器 / 服务、指令执行日志审计
+- **文件管理**：远程文件浏览 / 创建 / 删除 / 在线编辑、文件上传与 rsync 批量分发同步
+- **项目部署**：JAR 包版本管理、多机部署 / 重新部署 / 同步 / 备份恢复、部署记录查询
+- **Nginx 管理**：配置语法测试、重载、启动、停止
+- **定时任务**：基于 XXL-Job 的指令任务、JAR 同步、定时并行部署
 
-**权限管理系统**
+### 平台能力
 
-| ![用户管理](https://s2.loli.net/2023/03/13/L9xgT5sSMVZukQj.png) | ![角色管理](https://s2.loli.net/2023/03/13/nQg6HmrtFUkPDYv.png) |
-| ------------------------------------------------------------ | ------------------------------------------------------------ |
-| ![菜单管理](https://s2.loli.net/2023/03/13/C4fDRJeTuUO7gPI.png) | ![字典管理](https://s2.loli.net/2023/03/13/BzqjHpa64wfeWhE.png) |
+- **API 健康监测**：HTTP 接口可用性检测与超时预警
+- **MCP Server**：内置 Streamable-HTTP 模式 MCP 服务（端点 `/mcp`），提供登录、Agent 列表、服务列表、项目列表 / 部署 / 同步 / 备份等 7 个工具，可接入 AI 助手实现对话式运维
+- **系统管理**：用户 / 角色 / 菜单 / 部门 / 字典（RBAC 权限模型、接口与按钮级权限控制、数据权限行级过滤）
+- **安全认证**：Spring Security 6 + JWT（Access Token + Refresh Token）、验证码、登录密码 RSA 加密传输
 
+## 系统架构
 
+```
+被监控机器（Agent 采集端）──RabbitMQ──> ops-receiver :9999 ──入库──> MySQL 8.x
+                                                                │
+ops-admin :8989（Web API / MCP Server）<──查询──────┘
+```
 
-## 项目特色
-- Spring Boot 3.0 + Vue3 前后端分离单体应用，适合快速开发；
-- Spring Security + JWT 认证鉴权方案；
-- 基于 RBAC 模型的权限设计，细粒度接口方法、按钮级别权限控制。
+- Agent 通过 RabbitMQ 上报监控数据（CPU、内存、磁盘、网络、进程、Docker 等）
+- `ops-receiver` 消费消息并落库，同时负责超阈值告警判定、主机离线检测、历史数据定期清理
+- `ops-admin` 提供查询与管理接口，供前端（独立工程）调用
 
-## 运行环境
-- JDK 17
-- IDEA Lombok 插件
-- IDEA MapStruct Support 插件
+## 技术栈
+
+| 类别 | 技术 | 版本 |
+|------|------|------|
+| 基础框架 | Spring Boot | 3.5.13 |
+| JDK | Java | 21 |
+| 安全框架 | Spring Security 6 + JWT | - |
+| ORM | MyBatis-Plus | 3.5.7 |
+| 数据库 | MySQL | 8.x |
+| 缓存 | Redis + Redisson | 3.21.0 |
+| 消息队列 | RabbitMQ (spring-boot-starter-amqp) | - |
+| 定时任务 | XXL-Job | 2.5.0 |
+| API 文档 | Knife4j (springdoc-openapi) | 4.3.0 / 2.8.9 |
+| 对象映射 | MapStruct | 1.5.3.Final |
+| AI 工具协议 | Spring AI MCP (Streamable-HTTP) | - |
+| 对象存储 | MinIO / 阿里云 OSS | 8.5.2 / 3.16.3 |
+| 序列化 | FastJSON2 | 2.0.53 |
+| 工具库 | Hutool | 5.8.15 |
+
+## 模块结构
+
+```
+monitor-server/
+├── ops-common/          # 公共基础模块（实体、Mapper、动态 SQL 引擎、工具、通用配置）
+├── ops-admin/           # 主服务模块（系统管理、监控面板、告警、Docker、MCP Server）- 端口 8989
+├── ops-receiver/        # 监控数据接收服务（消费 RabbitMQ 上报数据并入库）- 端口 9999
+├── db/                  # 数据库初始化脚本
+├── docker/              # Docker Compose 部署配置
+└── Dockerfile           # 容器构建文件
+```
+
+```
+ops-admin  ──>  ops-common  <──  ops-receiver
+```
+
+两个业务模块相互独立，仅共享 `ops-common`。`ops-receiver` 可独立部署，也可被 `ops-admin` 以 Maven 依赖方式引入后内嵌启动。
+
+## 快速开始
+
+### 1. 环境准备
+
+- JDK 21
+- Maven 3.8+
 - MySQL 8.x
+- Redis 6+
+- RabbitMQ 3.x
+- IDEA 插件：Lombok、MapStruct Support
 
-## 项目地址
+### 2. 初始化数据库
 
-| 项目名称 | 项目地址    |
-|------|------------------------------------------------|
-| 后端工程 | https://gitee.com/youlaiorg/youlai-boot        |
-| 前端工程 | https://gitee.com/youlaiorg/vue3-element-admin |
+在 MySQL 中依次执行 `db/` 目录下的脚本：
 
+| 脚本                      | 说明     |
+|-------------------------|--------|
+| [schema.sql](db/schema.sql)   | 数据库表结构 |
+| [init.sql](db/init.sql) | 初始化数据  |
 
+### 3. 修改配置
 
-## 接口文档
+修改 `ops-admin/src/main/resources/application-dev.yml` 中的 MySQL、Redis、RabbitMQ 连接配置；如需独立运行 receiver，同步修改 `ops-receiver/src/main/resources/application-dev.yml`。
 
-- `knife4j` 接口文档：[http://localhost:8989/doc.html](http://localhost:8989/doc.html)
+也可使用根目录 `conf-dev.properties` 作为外部配置覆盖。
 
-- `swagger` 接口文档：[http://localhost:8989/swagger-ui/index.html](http://localhost:8989/swagger-ui/index.html)
+### 4. 启动服务
 
-## 项目运行
+```bash
+# 编译打包（默认跳过 ProGuard 混淆）
+mvn clean package -DskipTests
+```
 
-### 1. 数据库创建
+- 启动 `ops-admin`：运行 `OpsAdminApplication#main()`（端口 8989）
+- 启动 `ops-receiver`：运行 `OpsReceiverApplication#main()`（端口 9999，如独立部署）
 
-执行 [user.sql](db/user.sql) 脚本完成数据库创建、表结构和基础数据的初始化。
+### 5. 验证
 
-### 2. 配置修改
+访问接口文档验证服务是否正常：
 
-[application-dev.yml](src/main/resources/application-dev.yml) 修改MySQL、Redis连接配置；
+- Knife4j：<http://localhost:8989/doc.html>
+- Swagger：<http://localhost:8989/swagger-ui/index.html>
 
-### 3. 后端启动
-执行 [SystemApplication.java](src/main/java/com/bszn/system/SystemApplication.java) 的 main 方法完成后端项目启动；
+### 6. 接入 Agent
 
-访问接口文档地址 [http://localhost:8989/doc.html](http://localhost:8989/doc.html) 验证项目启动。
+在「Agent 管理」中添加被监控机器，Agent 客户端通过 RabbitMQ 上报数据（或走 HTTP `/receiver/**` 接口），即可在监控面板查看数据。
 
-### 4. 前端启动
+## 部署
 
-文档：[README.md](https://gitee.com/youlaiorg/vue3-element-admin#%E9%A1%B9%E7%9B%AE%E5%90%AF%E5%8A%A8)
+### Docker Compose
+
+```bash
+cd docker && docker-compose up -d
+```
+
+详见 [docker/ops-server.yml](docker/ops-server.yml)（包含 `ops-admin` 与 `ops-receiver` 两个服务，通过 `.env` 注入数据库、Redis、RabbitMQ 地址等环境变量）。
+
+### Kubernetes
+
+参见 [deploy/](deploy/) 目录下的 Deployment 与 Ingress 配置。
+
+### 生产构建说明
+
+生产构建默认启用 ProGuard 代码混淆，开发阶段可使用 `-Dproguard.skip=true` 跳过。
 
 ## 开发规范
 
-### 方法命名
-
-以下命名涵盖了Controller、Service和Mapper层
-
-|作用|示例|
-|---|---|
-|分页查询|getUserPage|
-|列表查询|listUsers|
-|单个查询|getUser/getUserDetail/getUserInfo ...|
-|新增|saveUser|
-|修改|updateUser|
-|删除|deleteUser/removeUser|
-
-
 ### 实体命名
 
-| 名称     | 定义               | 示例        |
-|--------|------------------|-----------|
-| entity | 映射数据库实体，字段属性完全对应 | SysUser   |
-| bo     | 多表关联查询的业务实体      | UserBO    |
-| query  | 查询传参，建议参数≥3使用    | UserQuery |
-| form   | 表单对象             | UserForm  |
-| dto    | RPC调用，可替代VO      | UserDTO   |
-| vo     | 视图层对象            | UserVO    |
+| 名称 | 用途 | 示例 |
+|------|------|------|
+| entity | 映射数据库表 | `SysUser`, `Agent`, `CpuState` |
+| bo | 多表关联查询的业务实体 | `UserBO`, `ChartBO` |
+| query | 查询参数对象（参数≥3时使用） | `UserQuery`, `AgentQuery` |
+| form | 表单提交对象 | `UserForm`, `AlertRuleForm` |
+| vo | 视图返回对象 | `UserVO`, `AgentVo` |
+| dto | RPC/模块间传输 | `UserDTO`, `MonitorMsgDto` |
 
-### API规范
-在RESTFul架构中，每个URL代表一种资源，所以不能有动词，只能有名词，而且所用的名词往往与数据库的表格名对应。一般来说，数据库中的表都是同种记录的"集合"，所以API中的名词也应该使用复数。
+### 方法命名
 
-**请求示例：**
+| 作用 | Controller | Service | Mapper |
+|------|-----------|---------|--------|
+| 分页查询 | `getUserPage` | `getUserPage` | `selectUserPage` |
+| 列表查询 | `listUsers` | `listUsers` | `selectUserList` |
+| 单个查询 | `getUser` | `getUser` | `selectById` |
+| 新增 | `saveUser` | `saveUser` | `insert` |
+| 修改 | `updateUser` | `updateUser` | `updateById` |
+| 删除 | `deleteUser` | `deleteUser` | `deleteById` |
 
-|请求描述|请求方法|请求路径|
-|---|---|---|
-|获取所有用户信息|GET|/api/v1/users|
-|获取标识为1用户信息|GET|/api/v1/users/1|
-|删除标识为1用户信息|DELETE|/api/v1/users/1|
-|新增用户|POST|/api/v1/users|
-|修改标识为1用户信息|PUT|/api/v1/users/1|
-|修改标识为1用户状态|PATCH|/api/v1/users/1/status|
-|获取当前登录用户信息|GET|/api/v1/users/{me,current}|
+### API 路径规范
 
+RESTful 风格，资源名使用复数名词：
 
-## 请求状态码规范
+| 操作 | 方法 | 路径 |
+|------|------|------|
+| 分页查询 | GET | `/api/v1/users` |
+| 详情查询 | GET | `/api/v1/users/{id}` |
+| 新增 | POST | `/api/v1/users` |
+| 修改 | PUT | `/api/v1/users/{id}` |
+| 删除 | DELETE | `/api/v1/users/{id}` |
+| 部分更新 | PATCH | `/api/v1/users/{id}/status` |
 
-参考 [阿里Java开发手册](https://developer.aliyun.com/topic/java2020?utm_content=g_1000113416)
+### 动态 SQL 注解
 
-## Git 提交规范
+`ops-common` 封装了注解驱动的动态 SQL 查询引擎，查询对象通过注解声明查询条件，Mapper 继承 `BaseQueryMapper` 即可自动生成查询 SQL，无需手写 XML：
 
+```java
+public class AgentQuery {
+    @SelectFrom("ops_agent")
+    @SelectColumn("id, agent_name, ip, os_name")
+    @Where("agent_name LIKE '%${agentName}%'")
+    private String agentName;
 
-参考 ([Angular](https://github.com/conventional-changelog/conventional-changelog/tree/master/packages/conventional-changelog-angular)) 社区规范，建议 IDEA 安装 Git Commit Template 插件
+    @OrderBy("create_time DESC")
+    private String orderBy;
+}
+```
 
-- `feat` 增加新功能
-- `fix` 修复问题/BUG
-- `style` 代码风格相关无影响运行结果的
-- `perf` 优化/性能提升
-- `refactor` 重构
-- `revert` 撤销修改
-- `test` 测试相关
-- `docs` 文档/注释
-- `chore` 依赖更新/脚手架配置修改等
-- `workflow` 工作流改进
-- `ci` 持续集成
+## 常见问题
 
-## 联系我们
+1. **JDK 版本**：项目要求 JDK 21，请勿使用低版本编译运行
+2. **snakeyaml 版本**：切勿将 snakeyaml 覆盖到 1.x，Spring Boot 3.5 依赖 snakeyaml 2.x
+3. **springdoc 版本**：knife4j 4.3.0 自带的 springdoc-openapi 2.2.0 与 Spring Framework 6.2 不兼容，父 POM 已仲裁到 2.8.9，请勿降级
+4. **文件编码**：所有文件使用 UTF-8（不带 BOM）
+5. **ops-receiver 部署形态**：可独立部署，也可由 `ops-admin` 引入依赖后内嵌启动，二选一即可
 
-> 欢迎添加开发者微信，备注「有来」进群
+## 参与贡献
 
-| ![郝先瑞](https://s2.loli.net/2022/04/06/yRx8uzj4emA5QVr.jpg) | ![张川](https://s2.loli.net/2022/04/06/cQihGv9uPsTjXk1.jpg) |
-| --- | --- |
+欢迎提交 Issue 与 Pull Request。提交信息遵循 [Angular 社区规范](https://github.com/conventional-changelog/conventional-changelog/tree/master/packages/conventional-changelog-angular)：
+
+| 类型 | 说明 |
+|------|------|
+| `feat` | 新功能 |
+| `fix` | 修复 Bug |
+| `style` | 代码风格（不影响运行） |
+| `perf` | 性能优化 |
+| `refactor` | 重构 |
+| `revert` | 回滚 |
+| `test` | 测试 |
+| `docs` | 文档 |
+| `chore` | 构建/依赖/配置变更 |
+
+## License
+
+本项目基于 [Apache License 2.0](LICENSE) 开源。

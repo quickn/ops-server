@@ -5,7 +5,7 @@ spring:
     url: jdbc:mysql://rm-bp10zga2v8441h165.mysql.rds.aliyuncs.com:3306/bs_monitor?characterEncoding=utf-8&characterSetResults=utf8&autoReconnect=true&useSSL=false&allowMultiQueries=true
     username: monitor
     password: BSzn@1999@2022
-    pool-name: 'bs_monitor'
+    pool-name: 'ops-server'
     hikari:
       minimum-idle: 5
       maximum-pool-size: 1000
