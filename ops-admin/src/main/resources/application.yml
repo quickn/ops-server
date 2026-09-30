@@ -17,8 +17,8 @@ spring:
       config:
         server-addr: bs-nacos:8848
         # 账号密码从环境变量获取（未设置时使用冒号后的默认值）
-        username: ${NACOS_USERNAME}
-        password: ${NACOS_PASSWORD}
+        username: ${NACOS_USERNAME:}
+        password: ${NACOS_PASSWORD:}
         # namespace 留空表示 public，填的是命名空间 ID 而非名称
         # namespace:
         group: DEFAULT_GROUP
