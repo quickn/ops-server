@@ -151,7 +151,6 @@ public class BaseProviderMethodResolver implements ProviderMethodResolver {
             return selectColumn.value() + selectFrom.value();
         }
         if (selectSql == null) {
-            //throw new BsznException("未配置前置Select");
             return null;
         }
         return selectSql.value();

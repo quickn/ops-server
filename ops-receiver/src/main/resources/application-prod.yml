@@ -1,9 +1,0 @@
-spring:
-  rabbitmq:
-    port: 25672
-  datasource:
-    type: com.alibaba.druid.pool.DruidDataSource
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://rm-bp10zga2v8441h165.mysql.rds.aliyuncs.com:3306/bs_monitor?characterEncoding=utf-8&characterSetResults=utf8&autoReconnect=true&useSSL=false&allowMultiQueries=true
-    username: monitor
-    password: BSzn@1999@2022

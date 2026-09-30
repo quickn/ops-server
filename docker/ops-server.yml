@@ -16,6 +16,9 @@ services:
       redis-server: ${redisServer}
       rabbitmq-server: ${rabbitmqServer}
     container_name: ops-admin
+    environment:
+      NACOS_USERNAME: nacos
+      NACOS_PASSWORD: nacos
     network_mode: "host"
     hostname: ops-admin
     image: ops-admin

@@ -25,8 +25,6 @@ import java.io.IOException;
  * @since 2022/10/1
  */
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-    private static final String FIXED_TOKEN = "bszn_token";
-
 
     private static final AntPathRequestMatcher LOGIN_PATH_REQUEST_MATCHER = new AntPathRequestMatcher(SecurityConstants.LOGIN_PATH, "POST");
 
@@ -43,11 +41,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             // 手动放行登录接口
             chain.doFilter(request, response);
         } else {
-            String bearerToken = request.getHeader(SecurityConstants.TOKEN_KEY);
-            if (FIXED_TOKEN.equals(bearerToken)) {
-                chain.doFilter(request, response);
-                return;
-            }
             String jwt = RequestUtils.resolveToken(request);
             if (StrUtil.isNotBlank(jwt) && SecurityContextHolder.getContext().getAuthentication() == null) {
                 try {
