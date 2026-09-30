@@ -10,7 +10,6 @@ import com.cloud.ops.project.IProjectService;
 import com.cloud.ops.project.SyncRequest;
 import com.cloud.system.common.exception.BusinessException;
 import com.cloud.utils.CmdLogInfoSessionUtil;
-import com.google.common.collect.Lists;
 import com.xxl.job.core.context.XxlJobHelper;
 import com.xxl.job.core.handler.annotation.XxlJob;
 import jakarta.annotation.Resource;
@@ -120,7 +119,7 @@ public class ProjectJobHandler {
                 iCmdLogInfoService.save(cmdLogInfo);
                 return;
             }
-            List<Long> agentIds = Lists.newArrayList();
+            List<Long> agentIds = new ArrayList<>();
             for (DockerContainer dockerContainer : list) {
                 agentIds.add(dockerContainer.getAgentId());
             }

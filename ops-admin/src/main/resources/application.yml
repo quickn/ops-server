@@ -167,32 +167,6 @@ rabbitmq:
     xMessageTTL: 60000
     concurrency: 8
 
-oss:
-  # OSS 类型 (目前支持aliyun、minio)
-  type: minio
-  # MinIO 对象存储服务
-  minio:
-    # 服务Endpoint
-    endpoint: http://localhost:9000
-    # 访问凭据
-    access-key: minioadmin
-    # 凭据密钥
-    secret-key: minioadmin
-    # 存储桶名称
-    bucket-name: default
-    # (可选)自定义域名，如果配置了域名，生成的文件URL是域名格式，未配置则URL则是IP格式 (eg: https://oss.youlai.tech)
-    custom-domain:
-  # 阿里云OSS对象存储服务
-  aliyun:
-    # 服务Endpoint
-    endpoint: oss-cn-hangzhou.aliyuncs.com
-    # 访问凭据
-    access-key-id: your-access-key-id
-    # 凭据密钥
-    access-key-secret: your-access-key-secret
-    # 存储桶名称
-    bucket-name: default
-
 decrypt:
   public-key: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5zYObvo5b+AqXFjvVytZqClFaFwPxn+SnF5Z15ue/Pwl8SZMwPqJdBtHhR08QVGoK83eh72WKRAnkQ8ceMiiiD3DEEp6XWCIuOI4Wtvj0o2g/ub8F6EYLb6kLKo+5Ekb+DpN8vJ/dpBXCRuhFZNY1cqiwYJWg3g6SRAcPpmTgs1REH/MMImF4J0qoBHUVXMOjmi0happxtfGk9HS/4MPd7eUbdPDM+6tECRmxw3e0UwhwoJR0ATs+K40hegkTpwR3q/dMNiLvVk5eTPE4lKutpvDEwUoFcxYD9kUbcDe5syOZ9eA2vc5d1RqjQTy3ahJgbtDuZspdiIK9M88GvZRXQIDAQAB
   password: your_secure_password

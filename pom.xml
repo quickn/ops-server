@@ -54,12 +54,6 @@
 
         <easyexcel.version>3.2.1</easyexcel.version>
 
-        <!-- 对象存储 -->
-        <minio.version>8.5.2</minio.version>
-        <okhttp3.version>4.8.1</okhttp3.version>
-
-        <aliyun-sdk-oss.version>3.16.3</aliyun-sdk-oss.version>
-
         <!-- 验证码 -->
         <easy-captcha.version>1.6.2</easy-captcha.version>
         <nashorn.version>15.4</nashorn.version>

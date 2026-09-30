@@ -5,7 +5,6 @@ import com.cloud.ops.docker.DockerContainer;
 import com.cloud.ops.docker.IDockerContainerService;
 import com.cloud.ops.project.DeployRequest;
 import com.cloud.ops.project.IProjectService;
-import com.google.common.collect.Lists;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -115,7 +114,7 @@ public class DeployTaskHandler implements TaskTypeHandler {
                 log.warn("定时部署：docker 不存在 projectName:{}", projectName);
                 return false;
             }
-            List<Long> agentIds = Lists.newArrayList();
+            List<Long> agentIds = new ArrayList<>();
             for (DockerContainer dockerContainer : list) {
                 agentIds.add(dockerContainer.getAgentId());
             }

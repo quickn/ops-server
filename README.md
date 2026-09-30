@@ -70,7 +70,6 @@ ops-admin :8989（Web API / MCP Server）<──查询──────┘
 | API 文档 | Knife4j (springdoc-openapi) | 4.3.0 / 2.8.9 |
 | 对象映射 | MapStruct | 1.5.3.Final |
 | AI 工具协议 | Spring AI MCP (Streamable-HTTP) | - |
-| 对象存储 | MinIO / 阿里云 OSS | 8.5.2 / 3.16.3 |
 | 序列化 | FastJSON2 | 2.0.53 |
 | 工具库 | Hutool | 5.8.15 |
 
