@@ -79,6 +79,13 @@
         <proguard.version>7.5.0</proguard.version>
         <!-- 必须与 proguard-base 匹配的 proguard-core 版本（proguard-base 7.5.0 对应 core 9.1.4） -->
         <proguard.core.version>9.1.4</proguard.core.version>
+        <!--
+            Spring Cloud Alibaba（Nacos 配置中心）：
+            2025.0.0.0 对应 Spring Boot 3.5.x / Spring Cloud 2025.0.x。
+            其依赖的 nacos-client 内部已兼容 snakeyaml 2.x，
+            与旧版 nacos-config-spring-boot-starter 的冲突问题不存在。
+        -->
+        <spring-cloud-alibaba.version>2025.0.0.0</spring-cloud-alibaba.version>
         <nacos-config-spring-boot.version>0.3.0-RC</nacos-config-spring-boot.version>
         <!--
             切勿在此覆盖 snakeyaml 版本（尤其不要降到 1.x）：
@@ -93,6 +100,32 @@
 
     <dependencyManagement>
         <dependencies>
+            <!--
+                Spring Cloud Alibaba BOM：管理 Nacos 相关 starter 版本。
+                该 BOM 内部已 import 对应版本的 spring-cloud-dependencies，
+                无需再单独引入 spring-cloud-dependencies。
+            -->
+            <dependency>
+                <groupId>com.alibaba.cloud</groupId>
+                <artifactId>spring-cloud-alibaba-dependencies</artifactId>
+                <version>${spring-cloud-alibaba.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <!--
+                钉住 nacos-client 版本（必须显式声明，优先级高于上方 BOM 的 import）：
+                spring-cloud-alibaba 2025.0.0.0 默认传递 nacos-client 3.0.3，
+                而 3.x 客户端与本项目使用的 Nacos Server 2.3.2 gRPC 协议不兼容——
+                连接可建立（9848 端口正常、HTTP/2 握手正常），但配置查询静默返回 null，
+                应用启动时表现为 [Nacos Config] config[dataId=xxx] is empty。
+                实测 nacos-client 2.4.3 + Server 2.3.2 可正常拉取配置。
+                若日后升级 Nacos Server 到 3.x，可移除此钉版。
+            -->
+            <dependency>
+                <groupId>com.alibaba.nacos</groupId>
+                <artifactId>nacos-client</artifactId>
+                <version>2.4.3</version>
+            </dependency>
             <!--
                 管理传递依赖版本：knife4j 4.3.0 自带的 springdoc-openapi-starter-webmvc-ui:2.2.0
                 与 Spring Framework 6.2（Boot 3.5）二进制不兼容，统一仲裁到 2.8.9。

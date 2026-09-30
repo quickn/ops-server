@@ -256,13 +256,6 @@
             <version>1.5</version>
         </dependency>
 
-
-        <!--        <dependency>
-                    <groupId>com.alibaba.boot</groupId>
-                    <artifactId>nacos-config-spring-boot-starter</artifactId>
-                    <version>0.3.0-RC</version>
-                </dependency>
-                -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-devtools</artifactId>
@@ -295,6 +288,19 @@
             <groupId>com.alibaba</groupId>
             <artifactId>transmittable-thread-local</artifactId>
             <version>2.14.5</version> <!-- 请使用最新版本 -->
+        </dependency>
+
+        <!--
+            Nacos 配置中心（Spring Cloud Alibaba 方案，版本由父 POM 的
+            spring-cloud-alibaba-dependencies BOM 管理）。
+            配合 application.yml 中的 spring.config.import=nacos:<dataId>.yaml 使用，
+            支持配置动态刷新（@RefreshScope）。
+            注意：不要改回 com.alibaba.boot:nacos-config-spring-boot-starter，
+                  该旧 starter 与 snakeyaml 2.x 二进制不兼容（见 ops-receiver/pom.xml 注释）。
+        -->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
         </dependency>
 
     </dependencies>

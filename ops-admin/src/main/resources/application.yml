@@ -1,26 +1,30 @@
 server:
   port: 8989
-nacos:
-  config:
-    server-addr: bs-nacos:8848
-    context-path: /nacos
-    encode: UTF-8
-    #配置自动刷新
-    refresh-enabled: true
-    data-id: ${spring.application.name}.yaml
-    type: yaml
-    auto-refresh: true
-    group: DEFAULT_GROUP
-    #优先nacos配置
-    remoteFirst: true
-    #是否开启Nacos配置预加载
-    bootstrap:
-      enable: true
-      log-enable: true
 spring:
   devtools:
     restart:
       enabled: false
+  # Nacos 配置中心导入（Spring Cloud Alibaba 方案）：
+  #   optional: 前缀表示 Nacos 不可达时不阻断启动（本地开发未部署 Nacos 时仍可运行），
+  #   若要求生产环境强依赖 Nacos，可去掉 optional: 前缀。
+  #   dataId 为 ops-server.yaml / ops-server-{profile}.yaml，Nacos 控制台需创建对应配置。
+  config:
+    import:
+      - optional:nacos:${spring.application.name}.yaml
+      - optional:nacos:${spring.application.name}-${spring.profiles.active}.yaml
+  cloud:
+    nacos:
+      config:
+        server-addr: bs-nacos:8848
+        # Nacos Server 开启了鉴权时配置（默认 nacos/nacos）
+        username: bszn
+        password: nacos
+        # namespace 留空表示 public，填的是命名空间 ID 而非名称
+        # namespace:
+        group: DEFAULT_GROUP
+        file-extension: yaml
+        # 配置变更后自动推送刷新（配合 @RefreshScope 生效）
+        refresh-enabled: true
   ai:
     mcp:
       server:
@@ -53,15 +57,6 @@ spring:
     time-zone: GMT+8
   profiles:
     active: dev
-  datasource:
-    type: com.alibaba.druid.pool.DruidDataSource
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://bs-mysql:3306/bs_monitor?characterEncoding=utf-8&characterSetResults=utf8&autoReconnect=true&useSSL=false&allowMultiQueries=true
-    username: parking
-    password: BSzn@1999@2022
-    druid:
-      query-timeout: 3000
-      max-active: 1000
   data:
     redis:
       database: 9
@@ -148,11 +143,10 @@ upgradeClient:
   url: http://192.168.10.11:90/monitor/static/ops-agent-go
   version: 1.0.0
 logging:
-  #config: classpath:logback.xml
-  config: config/logback.xml
+  config: classpath:logback.xml
   level:
     com.cloud: info
-    com.alibaba.boot.nacos: info
+    com.alibaba.nacos: info
 security:
   ignore-paths:
     - "/receiver/**"
@@ -167,10 +161,6 @@ security:
     - "/ws/**"
     - "/jar/download/**"
     - "/mcp/**"
-
-docker:
-  base:
-    image: openjdk:8-jre-slim
 
 rabbitmq:
   cmd:
@@ -213,6 +203,7 @@ file:
     file-path: /logs/monitor
     jar-path: /docker
     work-path: /home/park
+    down-path: http://localhost:${server.port}/static
 # xxl-job 定时任务配置
 xxl:
   job:
